@@ -14,15 +14,16 @@ main = do
         tilArr = rawTrackToTileArray rawTrk
     putStrLn . show $ tilArr ! (19, 24)
     let rows = map snd <$> groupBy ((==) `on` (fst . fst)) (assocs tilArr)
-        diaRows = foldr ((|||) . renderTerrBg) mempty <$> rows
-        diaFull = foldr (flip (===)) mempty diaRows
+        diaRows = cat (r2 (1, 0)) <$> (map renderTerrBg <$> rows)
+        diaFull = cat (r2 (0, 1)) diaRows
     defaultMain diaFull
 
 
 renderTerrBg tile = square 1 # fillColor cl
     where
     cl = case getTerrainType tile of
-        Plain -> green
-        Water -> blue
-        Hill  -> lightgreen
-        _     -> coral
+        Plain        -> green
+        Water        -> blue
+        AngledMargin -> lightblue
+        Hill         -> lightgreen
+        _            -> steelblue
