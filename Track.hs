@@ -816,9 +816,21 @@ getTileSize :: Tile
             -> (Int, Int) -- ^ See 'getElementSize' for semantics.
 getTileSize = getElementSize . tileElement
 
+-- |Gets the orientation of a tile element.
+getTileOrientation :: Tile -> Orientation
+getTileOrientation = elementOrientation . tileElement
+
+-- |Gets the chirality of a tile element.
+getTileChirality :: Tile -> Chirality
+getTileChirality = elementChirality . tileElement
+
 -- |Gets the underlying terrain type of a tile.
 getTerrainType :: Tile -> TerrainType
 getTerrainType = terrainType . tileTerrain
+
+-- |Gets the orientation of a tile terrain.
+getTerrainOrientation :: Tile -> Orientation
+getTerrainOrientation = terrainOrientation . tileTerrain
 
 -- |Abstract representation of the track scenery
 data Scenery = Desert
