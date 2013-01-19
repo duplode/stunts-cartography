@@ -7,5 +7,6 @@ syntax:glob
 *.swp
 
 activate
+Main
 
 sandbox/**

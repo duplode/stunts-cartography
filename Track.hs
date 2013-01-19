@@ -4,6 +4,7 @@ import Data.Maybe (fromJust)
 import Control.Applicative ((<$>))
 import qualified Data.ByteString.Lazy as LB
 import Data.Word (Word8)
+import Data.Array
 
 -- |The .TRK byte string with its components separated and the padding byte
 -- excised.
@@ -834,4 +835,16 @@ byteToScenery x
     | x < 5     = toEnum $ fromIntegral x
     | otherwise = UnknownScenery
 
+-- |Converts a raw track into an array. Indexing is done in the obvious way
+-- (Cartesian coordinates, origin at bottom left, zero-based).
+rawTrackToTileArray :: VeryRawTrack -> Array (Int, Int) Tile
+rawTrackToTileArray trk = listArray ((0, 0), (29, 29)) tiles
+    where
+    elmVals = veryRawElements trk
+    terVals = LB.concat . reverse . map fst
+        . takeWhile (not . LB.null . fst) . drop 1
+        . iterate (LB.splitAt 30 . snd) $ (LB.empty, veryRawTerrain trk)
+    tiles = zipWith Tile (byteToElement <$> LB.unpack elmVals)
+        (byteToTerrain <$> LB.unpack terVals)
+    --indices = [ (x, y) | x <- [0..29], y <- [0..29]]
 
