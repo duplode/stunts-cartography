@@ -44,7 +44,6 @@ baseTerrainPic tt = case tt of
         baseTerrainPic Plain # alignBL
         # atop (squareTriangle slopeCl
             # rotateBy (3/8) # alignBL)
-        -- # atop etc.
         # centerXY
     InnerAngledSlope ->
         baseTerrainPic Hill # alignBL
@@ -91,6 +90,13 @@ baseElementPic sf et = case et of
             # scale 2 # translateY 0.5)
     Tunnel ->
         genericSquare tunnelCl # scaleY (roadW * tunnelRelW)
+    Crossroad ->
+        baseElementPic sf Road
+        # atop (baseElementPic sf Road
+            # rotateBy (1/4))
+    Highway ->
+        baseElementPic sf Road # freeze # scaleY highwayRelW
+        # atop (genericSquare hillCl # scaleY (hwDivideRelW * roadW))
     _ -> mempty
 
 --getTerrainPic :: Tile -> "Dia"
@@ -118,6 +124,9 @@ markerW = 1 / 20
 roadW = 1 / 5
 
 tunnelRelW = 5 / 3
+-- highwayRelW > 2
+highwayRelW = 3
+hwDivideRelW = highwayRelW - 2
 
 surfaceToColor sf = case sf of
     Tarmac -> tarmacCl
