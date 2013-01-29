@@ -97,6 +97,23 @@ baseElementPic sf et = case et of
     Highway ->
         baseElementPic sf Road # freeze # scaleY highwayRelW
         # atop (genericSquare hillCl # scaleY (hwDivideRelW * roadW))
+    ElevatedSpan ->
+        genericSquare bridgeCl # scaleY (roadW * bridgeRelW)
+        # atop (baseElementPic sf Road)
+        # translateY bridgeH
+    SpanOverRoad ->
+        baseElementPic sf Road # rotateBy (1/4)
+        # atop (baseElementPic sf ElevatedSpan)
+    ElevatedRoad ->
+        cat' unitX with { sep = 2 * pillarW } (replicate 3 $
+            genericSquare bridgeCl # scaleX pillarW
+            # scaleY bridgeH # translateY (bridgeH / 2))
+        # centerX
+        # atop (baseElementPic sf ElevatedSpan)
+    SolidRoad ->
+        genericSquare bridgeCl
+        # scaleY bridgeH # translateY (bridgeH / 2)
+        # atop (baseElementPic sf ElevatedSpan)
     _ -> mempty
 
 --getTerrainPic :: Tile -> "Dia"
@@ -122,11 +139,13 @@ squareTriangle cl = polygon with
 
 markerW = 1 / 20
 roadW = 1 / 5
-
 tunnelRelW = 5 / 3
 -- highwayRelW > 2
 highwayRelW = 3
 hwDivideRelW = highwayRelW - 2
+bridgeRelW = 5 / 4
+bridgeH = 1 / 4
+pillarW = 1 / 10
 
 surfaceToColor sf = case sf of
     Tarmac -> tarmacCl
@@ -146,3 +165,4 @@ iceCl = aliceblue
 signCl = yellow
 tunnelCl = coral
 blockCl = lightgrey
+bridgeCl = blanchedalmond
