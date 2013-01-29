@@ -6,15 +6,28 @@ module Pics
 
 import Diagrams.Prelude
 import Diagrams.Backend.SVG.CmdLine
-import Track (Orientation, Chirality
+import Track (Orientation(..), Chirality(..), rotateOrientation
              , ElementType(..), ElementSurface(..), TerrainType(..)
-             , Tile(), getTileOrientation, getTileChirality
+             , Tile(), getTileOrientation, getTileChirality, getTileSize
              , getTileSurface, getTerrainOrientation
              , getElementType, getTerrainType)
 
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
 rotateByOrient = rotateBy . CircleFrac . (/4) . fromIntegral . fromEnum
 
+--translateBySize :: (Orientation??) -> (Int, Int) -> ("Dia" -> "Dia")
+translateBySize (lx, ly) =
+    translateX ((fromIntegral lx - 1) / 2)
+    . translateY ((fromIntegral ly - 1) / 2)
+
+moveOriginBySize q (lx, ly) =
+    moveOriginBy $ r2 (delta q lx, delta (succ q) ly)
+        where
+        delta q z = (fromIntegral z - 1) * case q of
+            Q1 -> -0.5
+            Q2 -> 0.5
+            Q3 -> 0.5
+            Q4 -> -0.5
 
 --fitByElement, fitByTerrain :: "Dia" -> Tile -> "Dia"
 fitByElement dia tile = dia # rotateByOrient (getTileOrientation tile)
@@ -49,23 +62,29 @@ getTerrainPic tile =
     baseTerrainPic (getTerrainType tile)
     # rotateByOrient (getTerrainOrientation tile)
 
--- TODO: deal with materials.
 --baseElementPic :: Surface -> ElementType -> "Dia"
-baseElementPic sf et = beneath emptySquare $ case et of
+baseElementPic sf et = case et of
     Road ->
         hrule 1
         # lw 0.2 # lc (surfaceToColor sf)
     SharpCorner ->
         arc (0 :: CircleFrac) (1/4 :: CircleFrac) # moveOriginBy (r2 (1, 1))
         # scale 0.5 # lw 0.2 # lc (surfaceToColor sf)
-    _ -> mempty
+    LargeCorner ->
+        baseElementPic sf SharpCorner
+        # scale 3 # moveOriginBy (r2 (-0.5, -0.5))
+    _ -> mempty --emptySquare
 
 --getTerrainPic :: Tile -> "Dia"
 getTilePic tile =
     baseElementPic (getTileSurface tile) (getElementType tile)
+    # beneath (emptySquare
+        # scaleX (fromIntegral . fst . getTileSize $ tile)
+        # scaleY (fromIntegral . snd . getTileSize $ tile))
+    # moveOriginBySize (getTileOrientation tile) (getTileSize tile)
     # rotateByOrient (getTileOrientation tile)
 
-emptySquare = square 1 # lw 0
+emptySquare = square 1 # lw 0.05
 
 genericSquare cl = square 1 # lw 0 # fc cl
 

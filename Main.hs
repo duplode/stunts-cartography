@@ -18,6 +18,7 @@ main = do
         -- TODO: Do this in a single pass (can arrows help?)
         terrRows = cat (r2 (1, 0)) <$> (map getTerrainPic <$> rows)
         terrFull = cat (r2 (0, 1)) terrRows
-        elmsRows = cat (r2 (1, 0)) <$> (map getTilePic <$> rows)
-        elmsFull = cat (r2 (0, 1)) elmsRows
+        elmsRows = cat' (r2 (1, 0)) with { sep = 1, catMethod = Distrib }
+            <$> (map getTilePic <$> rows)
+        elmsFull = cat' (r2 (0, 1)) with { sep = 1, catMethod = Distrib } elmsRows
     defaultMain $ elmsFull `atop` terrFull
