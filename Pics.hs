@@ -66,10 +66,10 @@ getTerrainPic tile =
 baseElementPic sf et = case et of
     Road ->
         hrule 1
-        # lw 0.2 # lc (surfaceToColor sf)
+        # lw roadW # lc (surfaceToColor sf)
     SharpCorner ->
         arc (0 :: CircleFrac) (1/4 :: CircleFrac) # moveOriginBy (r2 (1, 1))
-        # scale 0.5 # lw 0.2 # lc (surfaceToColor sf)
+        # scale 0.5 # lw roadW # lc (surfaceToColor sf)
     LargeCorner ->
         baseElementPic sf SharpCorner
         # scale 3 # moveOriginBy (r2 (-0.5, -0.5))
@@ -84,13 +84,16 @@ getTilePic tile =
     # moveOriginBySize (getTileOrientation tile) (getTileSize tile)
     # rotateByOrient (getTileOrientation tile)
 
-emptySquare = square 1 # lw 0.05
+emptySquare = square 1 # lw markerW
 
 genericSquare cl = square 1 # lw 0 # fc cl
 
 squareTriangle cl = polygon with
     { polyType = PolySides [1/4 :: CircleFrac] [1, 1]
     } # lw 0 # fc cl
+
+markerW = 1 / 20
+roadW = 1 / 5
 
 surfaceToColor sf = case sf of
     Tarmac -> tarmacCl
