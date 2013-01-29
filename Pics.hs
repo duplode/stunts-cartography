@@ -30,6 +30,17 @@ reflectByChirality c = case c of
     Sinistral -> reflectY
     _ -> id
 
+orientationCorrection et q = case et of
+    ElevatedCorner ->
+        let (deltaX, deltaY) = (1 / (2 - 1/2)) * bridgeH * case q of
+                Q1 -> (-1, 1)
+                Q2 -> (1, 1)
+                Q3 -> (1, -1)
+                Q4 -> (-1, -1)
+        in translateX deltaX . translateY deltaY
+        . scaleX (1 + deltaX) . scaleY (1 + deltaY)
+    _ -> id
+
 --baseTerrainPic :: TerrainType -> "Dia"
 baseTerrainPic tt = case tt of
     Plain ->
@@ -117,11 +128,15 @@ baseElementPic sf et = case et of
         genericSquare bridgeCl
         # scaleY bridgeH # translateY (bridgeH / 2)
         # atop (baseElementPic sf ElevatedSpan)
+    ElevatedCorner ->
+        cornerArc bridgeCl (roadW * bridgeRelW) 2
+        # atop (baseElementPic sf LargeCorner)
     _ -> mempty
 
 --getTerrainPic :: Tile -> "Dia"
 getTilePic tile =
     baseElementPic (getTileSurface tile) (getElementType tile)
+    # orientationCorrection (getElementType tile) (getTileOrientation tile)
     # beneath (emptySquare
         # scaleX (fromIntegral . fst . getTileSize $ tile)
         # scaleY (fromIntegral . snd . getTileSize $ tile))
