@@ -25,6 +25,11 @@ moveOriginBySize q (lx, ly) =
             Q3 -> 0.5
             Q4 -> -0.5
 
+--reflectByChirality :: Chirality -> ("Dia" -> "Dia")
+reflectByChirality c = case c of
+    Sinistral -> reflectY
+    _ -> id
+
 --baseTerrainPic :: TerrainType -> "Dia"
 baseTerrainPic tt = case tt of
     Plain -> genericSquare plainCl
@@ -77,6 +82,13 @@ baseElementPic sf et = case et of
         # atop (square (roadW * 3 / 4)
             # scaleX 0.5 # translate (r2 (3/16, roadW / 8)))
             # lw 0 # fc blockCl
+    SharpSplit ->
+        baseElementPic sf SharpCorner
+            # atop (baseElementPic sf Road)
+    LargeSplit ->
+        baseElementPic sf LargeCorner
+        # atop (baseElementPic sf Road
+            # scale 2 # translateY 0.5)
     _ -> mempty
 
 --getTerrainPic :: Tile -> "Dia"
@@ -85,6 +97,7 @@ getTilePic tile =
     # beneath (emptySquare
         # scaleX (fromIntegral . fst . getTileSize $ tile)
         # scaleY (fromIntegral . snd . getTileSize $ tile))
+    # reflectByChirality (getTileChirality tile)
     # moveOriginBySize (getTileOrientation tile) (getTileSize tile)
     # rotateByOrient (getTileOrientation tile)
 

@@ -13,7 +13,7 @@ main = do
     trkBS <- LB.readFile "CYDONIA.TRK"
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
-    putStrLn . show $ tilArr ! (6, 6) -- Why are the indices swapped?
+    putStrLn . show $ tilArr ! (4, 7) -- Why are the indices swapped?
     let rows = map snd <$> groupBy ((==) `on` (fst . fst)) (assocs tilArr)
         -- TODO: Do this in a single pass (can arrows help?)
         terrRows = cat (r2 (1, 0)) <$> (map getTerrainPic <$> rows)
