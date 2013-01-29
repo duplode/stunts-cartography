@@ -32,9 +32,12 @@ reflectByChirality c = case c of
 
 --baseTerrainPic :: TerrainType -> "Dia"
 baseTerrainPic tt = case tt of
-    Plain -> genericSquare plainCl
-    Water -> genericSquare waterCl
-    Hill -> genericSquare hillCl
+    Plain ->
+        genericSquare plainCl
+    Water ->
+        genericSquare waterCl
+    Hill ->
+        genericSquare hillCl
     AngledMargin ->
         rotateBy (-1/8) $
             squareTriangle plainCl # align unit_Y
@@ -50,8 +53,10 @@ baseTerrainPic tt = case tt of
         # atop (squareTriangle slopeCl
             # rotateBy (-1/8) # alignBL)
         # centerXY
-    Slope -> genericSquare slopeCl
-    _ -> genericSquare lavaCl
+    Slope ->
+        genericSquare slopeCl
+    _ ->
+        genericSquare lavaCl
 
 --getTerrainPic :: Tile -> "Dia"
 getTerrainPic tile =
@@ -64,11 +69,9 @@ baseElementPic sf et = case et of
         hrule 1
         # lw roadW # lc (surfaceToColor sf)
     SharpCorner ->
-        arc (0 :: CircleFrac) (1/4 :: CircleFrac) # moveOriginBy (r2 (1, 1))
-        # scale 0.5 # lw roadW # lc (surfaceToColor sf)
+        cornerArc (surfaceToColor sf) roadW 1
     LargeCorner ->
-        baseElementPic sf SharpCorner
-        # scale 3 # moveOriginBy (r2 (-0.5, -0.5))
+        cornerArc (surfaceToColor sf) roadW 2
     StartFinish ->
         baseElementPic sf Road
         # atop (eqTriangle (2 * roadW)
@@ -136,6 +139,11 @@ genericSquare cl = square 1 # lw 0 # fc cl
 squareTriangle cl = polygon with
     { polyType = PolySides [1/4 :: CircleFrac] [1, 1]
     } # lw 0 # fc cl
+
+cornerArc cl w l =
+    arc (0 :: CircleFrac) (1/4 :: CircleFrac)
+    # alignBL # scale (l - 1/2) # moveOriginBy (r2 (l/2, l/2))
+    # lw w # lc cl
 
 markerW = 1 / 20
 roadW = 1 / 5
