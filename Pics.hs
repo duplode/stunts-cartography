@@ -89,6 +89,8 @@ baseElementPic sf et = case et of
         baseElementPic sf LargeCorner
         # atop (baseElementPic sf Road
             # scale 2 # translateY 0.5)
+    Tunnel ->
+        genericSquare tunnelCl # scaleY (roadW * tunnelRelW)
     _ -> mempty
 
 --getTerrainPic :: Tile -> "Dia"
@@ -100,6 +102,9 @@ getTilePic tile =
     # reflectByChirality (getTileChirality tile)
     # moveOriginBySize (getTileOrientation tile) (getTileSize tile)
     # rotateByOrient (getTileOrientation tile)
+    -- Moving the origin as below seems to work if we don't care about where
+    -- the `emptySquare`s of large elements end up.
+    -- # moveOriginBySize Q1 (getTileSize tile)
 
 emptySquare = square 1 # lw markerW
 
@@ -112,6 +117,8 @@ squareTriangle cl = polygon with
 markerW = 1 / 20
 roadW = 1 / 5
 
+tunnelRelW = 5 / 3
+
 surfaceToColor sf = case sf of
     Tarmac -> tarmacCl
     Dirt -> dirtCl
@@ -121,11 +128,12 @@ plainCl = green
 waterCl = blue
 hillCl = lightgreen
 slopeCl = steelblue
-lavaCl = coral
+lavaCl = orangered
 
 tarmacCl = dimgrey
 dirtCl = peru
 iceCl = aliceblue
 
 signCl = yellow
+tunnelCl = coral
 blockCl = lightgrey
