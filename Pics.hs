@@ -37,7 +37,7 @@ baseTerrainPic tt = case tt of
     Hill -> genericSquare hillCl
     AngledMargin ->
         rotateBy (-1/8) $
-            squareTriangle plainCl # align (r2 (0, -1))
+            squareTriangle plainCl # align unit_Y
             ===
             reflectY (squareTriangle waterCl)
     OuterAngledSlope ->
