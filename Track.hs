@@ -460,7 +460,7 @@ icyLargeCorner :: Orientation -> Element
 icyLargeCorner = Element LargeCorner Ice Achiral
 
 bankedCorner :: Orientation -> Element
-bankedCorner = Element LargeCorner Tarmac Achiral
+bankedCorner = Element BankedCorner Tarmac Achiral
 
 elevatedCorner :: Orientation -> Element
 elevatedCorner = Element ElevatedCorner Tarmac Achiral
