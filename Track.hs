@@ -824,6 +824,10 @@ getTileOrientation = elementOrientation . tileElement
 getTileChirality :: Tile -> Chirality
 getTileChirality = elementChirality . tileElement
 
+-- |Gets the surface type of a tile element.
+getTileSurface :: Tile -> ElementSurface
+getTileSurface = elementSurface . tileElement
+
 -- |Gets the underlying terrain type of a tile.
 getTerrainType :: Tile -> TerrainType
 getTerrainType = terrainType . tileTerrain

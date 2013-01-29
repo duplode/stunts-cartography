@@ -6,8 +6,10 @@ module Pics
 
 import Diagrams.Prelude
 import Diagrams.Backend.SVG.CmdLine
-import Track (Orientation, ElementType(..), TerrainType(..)
-             , Tile(), getTileOrientation, getTerrainOrientation
+import Track (Orientation, Chirality
+             , ElementType(..), ElementSurface(..), TerrainType(..)
+             , Tile(), getTileOrientation, getTileChirality
+             , getTileSurface, getTerrainOrientation
              , getElementType, getTerrainType)
 
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
@@ -48,16 +50,19 @@ getTerrainPic tile =
     # rotateByOrient (getTerrainOrientation tile)
 
 -- TODO: deal with materials.
---baseElementPic :: ElementType -> "Dia"
-baseElementPic et = beneath emptySquare $ case et of
+--baseElementPic :: Surface -> ElementType -> "Dia"
+baseElementPic sf et = beneath emptySquare $ case et of
     Road ->
         hrule 1
-        # lw 0.2 # fc tarmacCl
+        # lw 0.2 # lc (surfaceToColor sf)
+    SharpCorner ->
+        arc (0 :: CircleFrac) (1/4 :: CircleFrac) # moveOriginBy (r2 (1, 1))
+        # scale 0.5 # lw 0.2 # lc (surfaceToColor sf)
     _ -> mempty
 
 --getTerrainPic :: Tile -> "Dia"
 getTilePic tile =
-    baseElementPic (getElementType tile)
+    baseElementPic (getTileSurface tile) (getElementType tile)
     # rotateByOrient (getTileOrientation tile)
 
 emptySquare = square 1 # lw 0
@@ -68,10 +73,17 @@ squareTriangle cl = polygon with
     { polyType = PolySides [1/4 :: CircleFrac] [1, 1]
     } # lw 0 # fc cl
 
+surfaceToColor sf = case sf of
+    Tarmac -> tarmacCl
+    Dirt -> dirtCl
+    Ice -> iceCl
+
 plainCl = green
 waterCl = blue
 hillCl = lightgreen
 slopeCl = steelblue
 lavaCl = coral
 
-tarmacCl = darkgrey
+tarmacCl = dimgrey
+dirtCl = peru
+iceCl = aliceblue
