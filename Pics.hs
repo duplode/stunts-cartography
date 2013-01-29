@@ -15,11 +15,7 @@ import Track (Orientation(..), Chirality(..), rotateOrientation
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
 rotateByOrient = rotateBy . CircleFrac . (/4) . fromIntegral . fromEnum
 
---translateBySize :: (Orientation??) -> (Int, Int) -> ("Dia" -> "Dia")
-translateBySize (lx, ly) =
-    translateX ((fromIntegral lx - 1) / 2)
-    . translateY ((fromIntegral ly - 1) / 2)
-
+--moveOriginBySize :: Orientation -> (Int, Int) -> ("Dia" -> "Dia")
 moveOriginBySize q (lx, ly) =
     moveOriginBy $ r2 (delta q lx, delta (succ q) ly)
         where
@@ -28,10 +24,6 @@ moveOriginBySize q (lx, ly) =
             Q2 -> 0.5
             Q3 -> 0.5
             Q4 -> -0.5
-
---fitByElement, fitByTerrain :: "Dia" -> Tile -> "Dia"
-fitByElement dia tile = dia # rotateByOrient (getTileOrientation tile)
-fitByTerrain dia tile = dia # rotateByOrient (getTerrainOrientation tile)
 
 --baseTerrainPic :: TerrainType -> "Dia"
 baseTerrainPic tt = case tt of
@@ -73,7 +65,19 @@ baseElementPic sf et = case et of
     LargeCorner ->
         baseElementPic sf SharpCorner
         # scale 3 # moveOriginBy (r2 (-0.5, -0.5))
-    _ -> mempty --emptySquare
+    StartFinish ->
+        baseElementPic sf Road
+        # atop (eqTriangle (2 * roadW)
+            # fc signCl # rotateBy (-1/4))
+    SlalomRoad ->
+        baseElementPic sf Road
+        # atop (square (roadW * 3 / 4)
+            # scaleX 0.5 # translate (r2 (-3/16, -roadW / 8)))
+            # lw 0 # fc blockCl
+        # atop (square (roadW * 3 / 4)
+            # scaleX 0.5 # translate (r2 (3/16, roadW / 8)))
+            # lw 0 # fc blockCl
+    _ -> mempty
 
 --getTerrainPic :: Tile -> "Dia"
 getTilePic tile =
@@ -109,3 +113,6 @@ lavaCl = coral
 tarmacCl = dimgrey
 dirtCl = peru
 iceCl = aliceblue
+
+signCl = yellow
+blockCl = lightgrey
