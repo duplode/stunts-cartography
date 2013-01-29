@@ -1,6 +1,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 module Pics
     ( getTerrainPic
+    , getTilePic
     ) where
 
 import Diagrams.Prelude
@@ -19,35 +20,58 @@ fitByTerrain dia tile = dia # rotateByOrient (getTerrainOrientation tile)
 
 --baseTerrainPic :: TerrainType -> "Dia"
 baseTerrainPic tt = case tt of
-    Plain -> genericSquare  green
-    Water -> genericSquare  blue
-    Hill -> genericSquare lightgreen
+    Plain -> genericSquare plainCl
+    Water -> genericSquare waterCl
+    Hill -> genericSquare hillCl
     AngledMargin ->
         rotateBy (-1/8) $
-            squareTriangle # fc green # align (r2 (0, -1))
+            squareTriangle plainCl # align (r2 (0, -1))
             ===
-            reflectY (squareTriangle # fc blue)
+            reflectY (squareTriangle waterCl)
     OuterAngledSlope ->
         baseTerrainPic Plain # alignBL
-        # atop (squareTriangle
-            # fc steelblue # rotateBy (3/8) # alignBL)
+        # atop (squareTriangle slopeCl
+            # rotateBy (3/8) # alignBL)
         -- # atop etc.
         # centerXY
     InnerAngledSlope ->
         baseTerrainPic Hill # alignBL
-        # atop (squareTriangle
-            # fc steelblue # rotateBy (-1/8) # alignBL)
+        # atop (squareTriangle slopeCl
+            # rotateBy (-1/8) # alignBL)
         # centerXY
-    _ -> genericSquare steelblue
+    Slope -> genericSquare slopeCl
+    _ -> genericSquare lavaCl
 
 --getTerrainPic :: Tile -> "Dia"
 getTerrainPic tile =
     baseTerrainPic (getTerrainType tile)
     # rotateByOrient (getTerrainOrientation tile)
 
+-- TODO: deal with materials.
+--baseElementPic :: ElementType -> "Dia"
+baseElementPic et = beneath emptySquare $ case et of
+    Road ->
+        hrule 1
+        # lw 0.2 # fc tarmacCl
+    _ -> mempty
+
+--getTerrainPic :: Tile -> "Dia"
+getTilePic tile =
+    baseElementPic (getElementType tile)
+    # rotateByOrient (getTileOrientation tile)
+
+emptySquare = square 1 # lw 0
+
 genericSquare cl = square 1 # lw 0 # fc cl
 
-squareTriangle = polygon with
+squareTriangle cl = polygon with
     { polyType = PolySides [1/4 :: CircleFrac] [1, 1]
-    } # lw 0
+    } # lw 0 # fc cl
 
+plainCl = green
+waterCl = blue
+hillCl = lightgreen
+slopeCl = steelblue
+lavaCl = coral
+
+tarmacCl = darkgrey
