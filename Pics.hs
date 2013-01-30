@@ -152,6 +152,14 @@ baseElementPic q sf et = case et of
         in cornerArc bankingCl bankingH 2
         # atop (cornerArc tarmacCl roadW (2 - offset)
             # translate (r2 (-offset / 2, -offset / 2)))
+    BankedTransition ->
+        rightTriangle bankingCl bankingH
+        # alignT
+        # atop (baseElementPic q sf Road # freeze
+            # shearY bankingH `under` translationX 0.5)
+        # translateY (bankingH / 2)
+        # reflectY
+        -- # rotateBy (-1/4) # reflectY
     _ -> mempty
 
 elevatedCornerCorrection q =
