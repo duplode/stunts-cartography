@@ -122,11 +122,12 @@ baseElementPic q sf et = case et of
         cat' unitX with { sep = 2 * pillarW } (replicate 3 $
             genericSquare bridgeCl
             # scaleX pillarW # scaleY bridgeH)
-        # centerX
+        # centerX # alignWithRoadY
         # atop (baseElementPic q sf ElevatedSpan)
     SolidRoad ->
         genericSquare bridgeCl
         # scaleY bridgeH
+        # alignWithRoadY
         # atop (baseElementPic q sf ElevatedSpan)
     ElevatedCorner ->
         cornerArc bridgeCl (roadW * bridgeRelW) 2
@@ -135,15 +136,18 @@ baseElementPic q sf et = case et of
     ElevatedRamp ->
         rightTriangle bridgeCl bridgeH
         # clipBy (square 1 # translateX (-0.5))
+        # alignWithRoadY
         # rampBaseCorrection q
         # atop (rampTransition bridgeCl q sf)
     BridgeRamp ->
         rightTriangle fancyBridgeCl bridgeH
         # clipBy (square 1 # translateX (-0.5))
+        # alignWithRoadY
         # rampBaseCorrection q
         # atop (rampTransition fancyBridgeCl q sf)
     SolidRamp ->
         rightTriangle bridgeCl bridgeH
+        # alignWithRoadY
         # rampBaseCorrection q
         # atop (rampTransition bridgeCl q sf)
     BankedCorner ->
@@ -205,6 +209,8 @@ rampCorrection q =
 
 rampBaseCorrection q = scaleY (corrSignumY q)
 
+alignWithRoadY = juxtapose unitY (hrule 1 # translateY (-roadW / 2))
+
 emptySquare = square 1 # lw markerW
 
 genericSquare cl = square 1 # lw 0 # fc cl
@@ -243,7 +249,6 @@ rampTransition cl q sf =
     isoscelesTransition cl bridgeRelW
     # atop (baseElementPic q sf Road)
     # rampCorrection q
-
 
 --getTerrainPic :: Tile -> "Dia"
 getTilePic tile =
