@@ -127,12 +127,12 @@ baseElementPic c q sf et = case et of
         # atop (baseElementPicNoO sf ElevatedSpan)
     ElevatedRoad ->
         cat' unitX with { sep = 2 * pillarW } (replicate 3 $
-            genericSquare bridgeCl
+            genericSquare pillarCl
             # scaleX pillarW # scaleY bridgeH)
         # centerX # alignWithRoadY
         # atop (baseElementPicNoO sf ElevatedSpan)
     SolidRoad ->
-        genericSquare bridgeCl
+        genericSquare pillarCl
         # scaleY bridgeH
         # alignWithRoadY
         # atop (baseElementPicNoO sf ElevatedSpan)
@@ -141,19 +141,19 @@ baseElementPic c q sf et = case et of
         # atop (baseElementPicNoO sf LargeCorner)
         # elevatedCornerCorrection q
     ElevatedRamp ->
-        rightTriangle bridgeCl bridgeH
+        rightTriangle pillarCl bridgeH
         # clipBy (square 1 # translateX (-0.5))
         # alignWithRoadY
         # rampBaseCorrection q
         # atop (rampTransition bridgeCl q sf)
     BridgeRamp ->
-        rightTriangle fancyBridgeCl bridgeH
+        rightTriangle fancyPillarCl bridgeH
         # clipBy (square 1 # translateX (-0.5))
         # alignWithRoadY
         # rampBaseCorrection q
         # atop (rampTransition fancyBridgeCl q sf)
     SolidRamp ->
-        rightTriangle bridgeCl bridgeH
+        rightTriangle pillarCl bridgeH
         # alignWithRoadY
         # rampBaseCorrection q
         # atop (rampTransition bridgeCl q sf)
@@ -324,7 +324,9 @@ tunnelCl = coral
 blockCl = lightgrey
 highwayCl = lightgreen
 bridgeCl = blanchedalmond
-fancyBridgeCl = orchid
+fancyBridgeCl = hotpink
+fancyPillarCl = orchid
+pillarCl = navajowhite
 bankCl = tomato
 pipeCl = darkgoldenrod
 meshCl = darkgrey
