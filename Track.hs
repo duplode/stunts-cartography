@@ -335,6 +335,11 @@ eTypeToProps et
               , FillerQ4
               ]
 
+-- |Tests an element type for an attribute.
+isElemAttrOf :: ElementAttribute -> ElementType -> Bool
+attr `isElemAttrOf` et =
+    attr `elem` (elementAttributes . eTypeToProps $ et)
+
 -- |Recovers the size of an element, in tile units.
 getElementSize :: Element
                -> (Int, Int) -- ^ Pair of lengths. The first value is the

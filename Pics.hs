@@ -7,38 +7,34 @@ module Pics
 import Diagrams.Prelude
 import Diagrams.Backend.SVG.CmdLine
 import Track (Orientation(..), Chirality(..), rotateOrientation
-             , ElementType(..), ElementSurface(..), TerrainType(..)
+             , ElementType(..), ElementSurface(..), ElementAttribute(..)
+             , TerrainType(..)
              , Tile(), getTileOrientation, getTileChirality, getTileSize
              , getTileSurface, getTerrainOrientation
-             , getElementType, getTerrainType)
+             , getElementType, getTerrainType
+             , isElemAttrOf )
 
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
 rotateByOrient = rotateBy . CircleFrac . (/4) . fromIntegral . fromEnum
 
+{-# INLINE corrSignumX #-}
+corrSignumX q = case q of
+    Q1 -> -1
+    Q2 -> 1
+    Q3 -> 1
+    Q4 -> -1
+
+{-# INLINE corrSignumY #-}
+corrSignumY q = corrSignumX (succ q)
+
 --moveOriginBySize :: Orientation -> (Int, Int) -> ("Dia" -> "Dia")
 moveOriginBySize q (lx, ly) =
-    moveOriginBy $ r2 (delta q lx, delta (succ q) ly)
-        where
-        delta q z = (fromIntegral z - 1) * case q of
-            Q1 -> -0.5
-            Q2 -> 0.5
-            Q3 -> 0.5
-            Q4 -> -0.5
+    let delta l = (fromIntegral l - 1) / 2
+    in moveOriginBy $ r2 (corrSignumX q * delta lx, corrSignumY q * delta ly)
 
 --reflectByChirality :: Chirality -> ("Dia" -> "Dia")
 reflectByChirality c = case c of
     Sinistral -> reflectY
-    _ -> id
-
-orientationCorrection et q = case et of
-    ElevatedCorner ->
-        let (deltaX, deltaY) = (1 / (2 - 1/2)) * bridgeH * case q of
-                Q1 -> (-1, 1)
-                Q2 -> (1, 1)
-                Q3 -> (1, -1)
-                Q4 -> (-1, -1)
-        in translateX deltaX . translateY deltaY
-        . scaleX (1 + deltaX) . scaleY (1 + deltaY)
     _ -> id
 
 --baseTerrainPic :: TerrainType -> "Dia"
@@ -75,7 +71,7 @@ getTerrainPic tile =
     # rotateByOrient (getTerrainOrientation tile)
 
 --baseElementPic :: Surface -> ElementType -> "Dia"
-baseElementPic sf et = case et of
+baseElementPic q sf et = case et of
     Road ->
         hrule 1
         # lw roadW # lc (surfaceToColor sf)
@@ -84,11 +80,11 @@ baseElementPic sf et = case et of
     LargeCorner ->
         cornerArc (surfaceToColor sf) roadW 2
     StartFinish ->
-        baseElementPic sf Road
+        baseElementPic q sf Road
         # atop (eqTriangle (2 * roadW)
             # fc signCl # rotateBy (-1/4))
     SlalomRoad ->
-        baseElementPic sf Road
+        baseElementPic q sf Road
         # atop (square (roadW * 3 / 4)
             # scaleX 0.5 # translate (r2 (-3/16, -roadW / 8)))
             # lw 0 # fc blockCl
@@ -96,20 +92,20 @@ baseElementPic sf et = case et of
             # scaleX 0.5 # translate (r2 (3/16, roadW / 8)))
             # lw 0 # fc blockCl
     SharpSplit ->
-        baseElementPic sf SharpCorner
-            # atop (baseElementPic sf Road)
+        baseElementPic q sf SharpCorner
+            # atop (baseElementPic q sf Road)
     LargeSplit ->
-        baseElementPic sf LargeCorner
-        # atop (baseElementPic sf Road
+        baseElementPic q sf LargeCorner
+        # atop (baseElementPic q sf Road
             # scale 2 # translateY 0.5)
     Tunnel ->
         genericSquare tunnelCl # scaleY (roadW * tunnelRelW)
     Crossroad ->
-        baseElementPic sf Road
-        # atop (baseElementPic sf Road
+        baseElementPic q sf Road
+        # atop (baseElementPic q sf Road
             # rotateBy (1/4))
     Highway ->
-        baseElementPic sf Road # freeze # scaleY highwayRelW
+        baseElementPic q sf Road # freeze # scaleY highwayRelW
         # atop (genericSquare hillCl # scaleY (hwDivideRelW * roadW))
     HighwayTransition ->
         isoscelesTransition tarmacCl highwayRelW
@@ -118,39 +114,52 @@ baseElementPic sf et = case et of
             # rotateBy (1/4) # lw 0 # fc hillCl)
     ElevatedSpan ->
         genericSquare bridgeCl # scaleY (roadW * bridgeRelW)
-        # atop (baseElementPic sf Road)
+        # atop (baseElementPic q sf Road)
         # translateY bridgeH
     SpanOverRoad ->
-        baseElementPic sf Road # rotateBy (1/4)
-        # atop (baseElementPic sf ElevatedSpan)
+        baseElementPic q sf Road # rotateBy (1/4)
+        # atop (baseElementPic q sf ElevatedSpan)
     ElevatedRoad ->
         cat' unitX with { sep = 2 * pillarW } (replicate 3 $
             genericSquare bridgeCl # scaleX pillarW
             # scaleY bridgeH # translateY (bridgeH / 2))
         # centerX
-        # atop (baseElementPic sf ElevatedSpan)
+        # atop (baseElementPic q sf ElevatedSpan)
     SolidRoad ->
         genericSquare bridgeCl
         # scaleY bridgeH # translateY (bridgeH / 2)
-        # atop (baseElementPic sf ElevatedSpan)
+        # atop (baseElementPic q sf ElevatedSpan)
     ElevatedCorner ->
         cornerArc bridgeCl (roadW * bridgeRelW) 2
-        # atop (baseElementPic sf LargeCorner)
+        # atop (baseElementPic q sf LargeCorner)
+        # elevatedCornerCorrection q
+    ElevatedRamp ->
+        rightTriangle bridgeCl bridgeH # translateY (bridgeH / 2)
+        # clipBy (square 1 # translateX (-0.5))
+        # rampBaseCorrection q
+        # atop (rampTransition bridgeCl q sf)
+    BridgeRamp ->
+        rightTriangle fancyBridgeCl bridgeH # translateY (bridgeH / 2)
+        # clipBy (square 1 # translateX (-0.5))
+        # rampBaseCorrection q
+        # atop (rampTransition fancyBridgeCl q sf)
+    SolidRamp ->
+        rightTriangle bridgeCl bridgeH # translateY (bridgeH / 2)
+        # rampBaseCorrection q
+        # atop (rampTransition bridgeCl q sf)
     _ -> mempty
 
---getTerrainPic :: Tile -> "Dia"
-getTilePic tile =
-    baseElementPic (getTileSurface tile) (getElementType tile)
-    # orientationCorrection (getElementType tile) (getTileOrientation tile)
-    # beneath (emptySquare
-        # scaleX (fromIntegral . fst . getTileSize $ tile)
-        # scaleY (fromIntegral . snd . getTileSize $ tile))
-    # reflectByChirality (getTileChirality tile)
-    # moveOriginBySize (getTileOrientation tile) (getTileSize tile)
-    # rotateByOrient (getTileOrientation tile)
-    -- Moving the origin as below seems to work if we don't care about where
-    -- the `emptySquare`s of large elements end up.
-    -- # moveOriginBySize Q1 (getTileSize tile)
+elevatedCornerCorrection q =
+    let correction = (1 / (2 - 1/2)) * bridgeH
+        deltaX = corrSignumX q * correction
+        deltaY = corrSignumY q * correction
+    in translateX deltaX . translateY deltaY
+    . scaleX (1 + deltaX) . scaleY (1 + deltaY)
+
+rampCorrection q =
+    shearY (corrSignumY q * bridgeH) `under` translationX 0.5
+
+rampBaseCorrection q = scaleY (corrSignumY q)
 
 emptySquare = square 1 # lw markerW
 
@@ -165,6 +174,14 @@ cornerArc cl w l =
     # alignBL # scale (l - 1/2) # moveOriginBy (r2 (l/2, l/2))
     # lw w # lc cl
 
+rightTriangle cl h =
+    polygon with
+        { polyType = PolySides [1/4 :: CircleFrac]
+                               [ h, 1 ]
+        , polyOrient = OrientV }
+    # alignB # centerX # reflectY
+    # lw 0 # fc cl
+
 isoscelesTransition cl ratio =
     let sidePad = polygon with
             { polyType = PolySides [1/4 :: CircleFrac]
@@ -178,6 +195,25 @@ isoscelesTransition cl ratio =
     ===
     sidePad
 
+rampTransition cl q sf =
+    isoscelesTransition cl bridgeRelW
+    # atop (baseElementPic q sf Road # freeze)
+    # rampCorrection q
+
+
+--getTerrainPic :: Tile -> "Dia"
+getTilePic tile =
+    baseElementPic (getTileOrientation tile) (getTileSurface tile) (getElementType tile)
+    -- # orientationCorrection (getElementType tile) (getTileOrientation tile)
+    # beneath (emptySquare
+        # scaleX (fromIntegral . fst . getTileSize $ tile)
+        # scaleY (fromIntegral . snd . getTileSize $ tile))
+    # reflectByChirality (getTileChirality tile)
+    # moveOriginBySize (getTileOrientation tile) (getTileSize tile)
+    # rotateByOrient (getTileOrientation tile)
+    -- Moving the origin as below seems to work if we don't care about where
+    -- the `emptySquare`s of large elements end up.
+    -- # moveOriginBySize Q1 (getTileSize tile)
 
 markerW = 1 / 20
 roadW = 1 / 5
@@ -189,6 +225,7 @@ bridgeRelW = 5 / 4
 bridgeH = 1 / 4
 pillarW = 1 / 10
 
+{-# INLINE surfaceToColor #-}
 surfaceToColor sf = case sf of
     Tarmac -> tarmacCl
     Dirt -> dirtCl
