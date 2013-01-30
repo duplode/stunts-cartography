@@ -232,9 +232,8 @@ getTilePic tile =
 markerW = 1 / 20
 roadW = 1 / 5
 tunnelRelW = 5 / 3
--- highwayRelW > 2
-highwayRelW = 3
-hwDivideRelW = highwayRelW - 2
+hwDivideRelW = 1
+highwayRelW = 2 + hwDivideRelW
 bridgeRelW = 5 / 4
 bridgeH = 1 / 4
 pillarW = 1 / 10
