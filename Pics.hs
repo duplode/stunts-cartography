@@ -103,7 +103,7 @@ baseElementPic c q sf et = case et of
     LargeSplit ->
         baseElementPicNoO sf LargeCorner
         # atop (baseElementPicNoO sf Road
-            # scale 2 # translateY 0.5)
+            # scaleX 2 # translateY 0.5)
     Tunnel ->
         genericSquare tunnelCl # scaleY (roadW * tunnelRelW)
     Crossroad ->
