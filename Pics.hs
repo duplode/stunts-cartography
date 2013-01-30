@@ -182,6 +182,15 @@ baseElementPic q sf et = case et of
         # atop (fromSegments [ straight (r2 (1, -roadW / 2)) ]
             # translate (r2 (-0.5, roadW / 4)) # lw markerW # lc warningCl)
         # scaleX 2
+    Loop ->
+        let loopLeg = baseElementPic q sf Road
+                # shearY (loopRelB * roadW) `under` translationX (0.5)
+        in centerX (loopLeg ||| loopLeg # rotateBy (1/2))
+        # atop (fromOffsets
+            [ r2 (loopD, 0)
+            , r2 (-2 * loopD, -2 * loopRelB * roadW)
+            , r2 (loopD, 0)]
+            # centerXY # lw roadW # lc meshCl)
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -256,6 +265,8 @@ bridgeH = 1 / 4
 pillarW = 1 / 10
 bankingH = 1 / 10
 pipeRelW = 5 / 3
+loopRelB = 1
+loopD = 1 / 2
 
 {-# INLINE surfaceToColor #-}
 surfaceToColor sf = case sf of
