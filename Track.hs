@@ -597,14 +597,14 @@ byteToElement x = case x of
     0x25 -> elevatedRamp Q3
     0x26 -> elevatedRamp Q2
     0x27 -> elevatedRamp Q4
-    0x28 -> bankedTransitionDex Q2
-    0x29 -> bankedTransitionDex Q1
-    0x2A -> bankedTransitionDex Q4
-    0x2B -> bankedTransitionDex Q3
-    0x2C -> bankedTransitionSin Q2
-    0x2D -> bankedTransitionSin Q1
-    0x2E -> bankedTransitionSin Q4
-    0x2F -> bankedTransitionSin Q3
+    0x28 -> bankedTransitionDex Q3
+    0x29 -> bankedTransitionDex Q2
+    0x2A -> bankedTransitionDex Q1
+    0x2B -> bankedTransitionDex Q4
+    0x2C -> bankedTransitionSin Q1
+    0x2D -> bankedTransitionSin Q4
+    0x2E -> bankedTransitionSin Q3
+    0x2F -> bankedTransitionSin Q2
     0x30 -> bankedRoad Q3
     0x31 -> bankedRoad Q1
     0x32 -> bankedRoad Q2

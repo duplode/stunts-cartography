@@ -160,8 +160,7 @@ baseElementPic q sf et = case et of
         # alignT
         # atop (baseElementPic q sf Road # freeze
             # shearY bankingH `under` translationX (0.5))
-        # reflectY
-        -- # rotateBy (-1/4) # reflectY
+        # reflectY # rotateBy (-1/4)
     _ -> mempty
 
 elevatedCornerCorrection q =
