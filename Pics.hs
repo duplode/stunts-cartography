@@ -174,6 +174,14 @@ baseElementPic q sf et = case et of
     PipeObstacle ->
         baseElementPic q sf Pipe
         # atop (genericSquare pipeCl # scale roadW)
+    CorkLeftRight ->
+        baseElementPic q sf Road
+        # atop (genericSquare meshCl
+            # scaleY roadW # scaleX (1/2)
+            # alignBL # shearX (1 / (2 * roadW)) # centerXY)
+        # atop (fromSegments [ straight (r2 (1, -roadW / 2)) ]
+            # translate (r2 (-0.5, roadW / 4)) # lw markerW # lc warningCl)
+        # scaleX 2
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -274,3 +282,4 @@ fancyBridgeCl = orchid
 bankingCl = tomato
 pipeCl = darkgoldenrod
 meshCl = darkgrey
+warningCl = indianred
