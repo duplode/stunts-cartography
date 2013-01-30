@@ -197,6 +197,10 @@ baseElementPic q sf et = case et of
             , r2 (-2 * loopD, -2 * loopRelB * roadW)
             , r2 (loopD, 0)]
             # centerXY # lw roadW # lc meshCl)
+    Chicane ->
+        fromSegments [ bezier3 (r2 (1, 0)) (r2 (1, -1)) (r2 (2, -1)) ]
+        # stroke # centerXY
+        # lw roadW # lc (surfaceToColor sf)
     _ -> mempty
 
 elevatedCornerCorrection q =
