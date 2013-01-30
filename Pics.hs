@@ -159,8 +159,7 @@ baseElementPic q sf et = case et of
         rightTriangle bankingCl bankingH
         # alignT
         # atop (baseElementPic q sf Road # freeze
-            # shearY bankingH `under` translationX 0.5)
-        # translateY (bankingH / 2)
+            # shearY bankingH `under` translationX (0.5))
         # reflectY
         -- # rotateBy (-1/4) # reflectY
     _ -> mempty
