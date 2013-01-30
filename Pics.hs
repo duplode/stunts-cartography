@@ -121,13 +121,13 @@ baseElementPic q sf et = case et of
         # atop (baseElementPic q sf ElevatedSpan)
     ElevatedRoad ->
         cat' unitX with { sep = 2 * pillarW } (replicate 3 $
-            genericSquare bridgeCl # scaleX pillarW
-            # scaleY bridgeH # translateY (bridgeH / 2))
+            genericSquare bridgeCl
+            # scaleX pillarW # scaleY bridgeH)
         # centerX
         # atop (baseElementPic q sf ElevatedSpan)
     SolidRoad ->
         genericSquare bridgeCl
-        # scaleY bridgeH # translateY (bridgeH / 2)
+        # scaleY bridgeH
         # atop (baseElementPic q sf ElevatedSpan)
     ElevatedCorner ->
         cornerArc bridgeCl (roadW * bridgeRelW) 2
