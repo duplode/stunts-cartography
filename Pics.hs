@@ -219,10 +219,6 @@ rampTransition cl q sf =
 --getTerrainPic :: Tile -> "Dia"
 getTilePic tile =
     baseElementPic (getTileOrientation tile) (getTileSurface tile) (getElementType tile)
-    -- # orientationCorrection (getElementType tile) (getTileOrientation tile)
-    # beneath (emptySquare
-        # scaleX (fromIntegral . fst . getTileSize $ tile)
-        # scaleY (fromIntegral . snd . getTileSize $ tile))
     # reflectByChirality (getTileChirality tile)
     # moveOriginBySize (getTileOrientation tile) (getTileSize tile)
     # rotateByOrient (getTileOrientation tile)
