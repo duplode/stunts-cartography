@@ -70,7 +70,14 @@ getTerrainPic tile =
     baseTerrainPic (getTerrainType tile)
     # rotateByOrient (getTerrainOrientation tile)
 
---baseElementPic :: Surface -> ElementType -> "Dia"
+baseElementPicNoC = baseElementPic Dextral
+
+baseElementPicNoO = baseElementPicNoC Q1
+
+-- Note that baseElementPic would work without recieving chiralities or
+-- orientations weren't it for the "vertical" offset in the bridge graphics.
+
+--baseElementPic :: Chirality -> Orientation -> Surface -> ElementType -> "Dia"
 baseElementPic c q sf et = case et of
     Road ->
         genericSquare (surfaceToColor sf) # scaleY roadW
@@ -79,11 +86,11 @@ baseElementPic c q sf et = case et of
     LargeCorner ->
         cornerArc (surfaceToColor sf) roadW 2
     StartFinish ->
-        baseElementPic c q sf Road
+        baseElementPicNoO sf Road
         # atop (eqTriangle (2 * roadW)
             # fc signCl # rotateBy (-1/4))
     SlalomRoad ->
-        baseElementPic c q sf Road
+        baseElementPicNoO sf Road
         # atop (square (slalomRelW * roadW)
             # scaleX 0.5 # translate (r2 (-3/16, -roadW / 8)))
             # lw 0 # fc blockCl
@@ -91,20 +98,20 @@ baseElementPic c q sf et = case et of
             # scaleX 0.5 # translate (r2 (3/16, roadW / 8)))
             # lw 0 # fc blockCl
     SharpSplit ->
-        baseElementPic c q sf SharpCorner
-            # atop (baseElementPic c q sf Road)
+        baseElementPicNoO sf SharpCorner
+            # atop (baseElementPicNoO sf Road)
     LargeSplit ->
-        baseElementPic c q sf LargeCorner
-        # atop (baseElementPic c q sf Road
+        baseElementPicNoO sf LargeCorner
+        # atop (baseElementPicNoO sf Road
             # scale 2 # translateY 0.5)
     Tunnel ->
         genericSquare tunnelCl # scaleY (roadW * tunnelRelW)
     Crossroad ->
-        baseElementPic c q sf Road
-        # atop (baseElementPic c q sf Road
+        baseElementPicNoO sf Road
+        # atop (baseElementPicNoO sf Road
             # rotateBy (1/4))
     Highway ->
-        baseElementPic c q sf Road # scaleY highwayRelW
+        baseElementPicNoO sf Road # scaleY highwayRelW
         # atop (genericSquare highwayCl # scaleY (hwDivideRelW * roadW))
     HighwayTransition ->
         isoscelesTransition tarmacCl highwayRelW
@@ -113,25 +120,25 @@ baseElementPic c q sf et = case et of
             # rotateBy (1/4) # lw 0 # fc highwayCl)
     ElevatedSpan ->
         genericSquare bridgeCl # scaleY (roadW * bridgeRelW)
-        # atop (baseElementPic c q sf Road)
+        # atop (baseElementPicNoO sf Road)
         # translateY bridgeH
     SpanOverRoad ->
-        baseElementPic c q sf Road # rotateBy (1/4)
-        # atop (baseElementPic c q sf ElevatedSpan)
+        baseElementPicNoO sf Road # rotateBy (1/4)
+        # atop (baseElementPicNoO sf ElevatedSpan)
     ElevatedRoad ->
         cat' unitX with { sep = 2 * pillarW } (replicate 3 $
             genericSquare bridgeCl
             # scaleX pillarW # scaleY bridgeH)
         # centerX # alignWithRoadY
-        # atop (baseElementPic c q sf ElevatedSpan)
+        # atop (baseElementPicNoO sf ElevatedSpan)
     SolidRoad ->
         genericSquare bridgeCl
         # scaleY bridgeH
         # alignWithRoadY
-        # atop (baseElementPic c q sf ElevatedSpan)
+        # atop (baseElementPicNoO sf ElevatedSpan)
     ElevatedCorner ->
         cornerArc bridgeCl (roadW * bridgeRelW) 2
-        # atop (baseElementPic c q sf LargeCorner)
+        # atop (baseElementPicNoO sf LargeCorner)
         # elevatedCornerCorrection q
     ElevatedRamp ->
         rightTriangle bridgeCl bridgeH
@@ -161,26 +168,26 @@ baseElementPic c q sf et = case et of
     BankedTransition ->
         rightTriangle bankCl (roadW * bankRelH)
         # centerY # translateY (-roadW * (1 - bankRelH) / 2)
-        # atop (baseElementPic c q sf Road
+        # atop (baseElementPicNoO sf Road
             # shearY (roadW * bankRelH) `under` translationX (0.5))
         # reflectY # rotateBy (-1/4)
     BankedRoad ->
-        baseElementPic c q sf Road # rotateBy (-1/4)
+        baseElementPicNoO sf Road # rotateBy (-1/4)
         # translateX (-roadW * bankRelH)
         |||
         genericSquare bankCl # scaleX (roadW * bankRelH)
     PipeTransition ->
         isoscelesTransition pipeCl pipeRelW
-        # atop (baseElementPic c q sf Road)
+        # atop (baseElementPicNoO sf Road)
     Pipe ->
         genericSquare pipeCl # scaleY (roadW * pipeRelW)
         # atop (genericSquare meshCl # scaleY roadW)
     PipeObstacle ->
-        baseElementPic c q sf Pipe
+        baseElementPicNoO sf Pipe
         # atop (genericSquare pipeCl
             # scaleY roadW # scaleX (pipeObstacleRelW * roadW))
     CorkLeftRight ->
-        baseElementPic c q sf Road
+        baseElementPicNoO sf Road
         # atop (genericSquare meshCl
             # scaleY roadW # scaleX (1/2)
             # alignBL # shearX (1 / (2 * roadW)) # centerXY)
@@ -189,7 +196,7 @@ baseElementPic c q sf et = case et of
             # lw (corkWallRelW * roadW) # lc warningCl)
         # scaleX 2
     Loop ->
-        let loopLeg = baseElementPic c q sf Road
+        let loopLeg = baseElementPicNoO sf Road
                 # shearY (loopRelB * roadW) `under` translationX (0.5)
         in centerX (loopLeg ||| loopLeg # rotateBy (1/2))
         # atop (fromOffsets
@@ -202,13 +209,13 @@ baseElementPic c q sf et = case et of
         # stroke # centerXY
         # lw roadW # lc (surfaceToColor sf)
     CorkUpDown ->
-        baseElementPic c q sf Road
+        baseElementPicNoO sf Road
         # translate (r2 (-0.5, 0.5))
         # atop (arc (0 :: CircleFrac) (1 :: CircleFrac)
             # scale 0.5 # lw (bridgeRelW * roadW) # lc bridgeCl)
         # atop (arc (0 :: CircleFrac) (1 :: CircleFrac)
             # scale 0.5 # lw roadW # lc tarmacCl)
-        # atop (baseElementPic c q sf ElevatedSpan
+        # atop (baseElementPicNoO sf ElevatedSpan
             # rampCorrection q
             # reflectByChirality c `under` translation (r2 (0.5, -bridgeH))
             # translate (r2 (0.5, 0.5 - bridgeH)))
@@ -264,7 +271,7 @@ isoscelesTransition cl ratio =
 
 rampTransition cl q sf =
     isoscelesTransition cl bridgeRelW
-    # atop (baseElementPic Dextral q sf Road)
+    # atop (baseElementPicNoO sf Road)
     # rampCorrection q
 
 --getTerrainPic :: Tile -> "Dia"
