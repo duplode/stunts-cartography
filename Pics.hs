@@ -168,6 +168,12 @@ baseElementPic q sf et = case et of
     PipeTransition ->
         isoscelesTransition pipeCl pipeRelW
         # atop (baseElementPic q sf Road)
+    Pipe ->
+        genericSquare pipeCl # scaleY (roadW * pipeRelW)
+        # atop (genericSquare meshCl # scaleY roadW)
+    PipeObstacle ->
+        baseElementPic q sf Pipe
+        # atop (genericSquare pipeCl # scale roadW)
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -266,4 +272,5 @@ highwayCl = lightgreen
 bridgeCl = blanchedalmond
 fancyBridgeCl = orchid
 bankingCl = tomato
-pipeCl = burlywood
+pipeCl = darkgoldenrod
+meshCl = darkgrey
