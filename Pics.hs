@@ -148,12 +148,13 @@ baseElementPic q sf et = case et of
         # rampBaseCorrection q
         # atop (rampTransition bridgeCl q sf)
     BankedCorner ->
-        let outerRadius = 2 + (roadW - bankingH) / 2
-            innerRadius = 2 - bankingH
-            offset = outerRadius - innerRadius
-        in cornerArc bankingCl bankingH outerRadius
-        # atop (cornerArc tarmacCl roadW innerRadius
+        let outerLen = 2 + (roadW - bankingH) / 2
+            innerLen = 2 - bankingH
+            offset = outerLen - innerLen
+        in cornerArc bankingCl bankingH outerLen
+        # atop (cornerArc tarmacCl roadW innerLen
             # translate (r2 (-offset / 2, -offset / 2)))
+        # translate (r2 (outerLen / 2 - 1, outerLen / 2 - 1))
     BankedTransition ->
         rightTriangle bankingCl bankingH
         # alignT
