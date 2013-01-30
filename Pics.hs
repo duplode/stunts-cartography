@@ -157,7 +157,7 @@ baseElementPic q sf et = case et of
         # translate (r2 (outerLen / 2 - 1, outerLen / 2 - 1))
     BankedTransition ->
         rightTriangle bankingCl bankingH
-        # alignT
+        # centerY # translateY ((bankingH - roadW) / 2)
         # atop (baseElementPic q sf Road # freeze
             # shearY bankingH `under` translationX (0.5))
         # reflectY # rotateBy (-1/4)
