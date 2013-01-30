@@ -111,6 +111,11 @@ baseElementPic sf et = case et of
     Highway ->
         baseElementPic sf Road # freeze # scaleY highwayRelW
         # atop (genericSquare hillCl # scaleY (hwDivideRelW * roadW))
+    HighwayTransition ->
+        isoscelesTransition tarmacCl highwayRelW
+        # atop (eqTriangle (2 * sqrt 3 / 3) # alignT
+            # scaleY (1/2) # scaleX (roadW * hwDivideRelW)
+            # rotateBy (1/4) # lw 0 # fc hillCl)
     ElevatedSpan ->
         genericSquare bridgeCl # scaleY (roadW * bridgeRelW)
         # atop (baseElementPic sf Road)
@@ -160,6 +165,20 @@ cornerArc cl w l =
     # alignBL # scale (l - 1/2) # moveOriginBy (r2 (l/2, l/2))
     # lw w # lc cl
 
+isoscelesTransition cl ratio =
+    let sidePad = polygon with
+            { polyType = PolySides [1/4 :: CircleFrac]
+                                   [ roadW * (ratio - 1) / 2, 1 ]
+            , polyOrient = OrientV }
+            # lw 0 # fc cl # centerXY
+    in centerY $
+    sidePad # reflectY
+    ===
+    genericSquare cl # scaleY roadW
+    ===
+    sidePad
+
+
 markerW = 1 / 20
 roadW = 1 / 5
 tunnelRelW = 5 / 3
@@ -189,3 +208,4 @@ signCl = yellow
 tunnelCl = coral
 blockCl = lightgrey
 bridgeCl = blanchedalmond
+fancyBridgeCl = orchid
