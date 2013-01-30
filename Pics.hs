@@ -165,6 +165,9 @@ baseElementPic q sf et = case et of
         # translateX (-bankingH)
         |||
         genericSquare bankingCl # scaleX bankingH
+    PipeTransition ->
+        isoscelesTransition pipeCl pipeRelW
+        # atop (baseElementPic q sf Road)
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -238,6 +241,7 @@ bridgeRelW = 5 / 4
 bridgeH = 1 / 4
 pillarW = 1 / 10
 bankingH = 1 / 10
+pipeRelW = 5 / 3
 
 {-# INLINE surfaceToColor #-}
 surfaceToColor sf = case sf of
@@ -262,3 +266,4 @@ highwayCl = lightgreen
 bridgeCl = blanchedalmond
 fancyBridgeCl = orchid
 bankingCl = tomato
+pipeCl = burlywood
