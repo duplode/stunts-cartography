@@ -10,7 +10,7 @@ import Track
 import Pics
 
 main = do
-    trkBS <- LB.readFile "FONYOD.TRK"
+    trkBS <- LB.readFile "CYDONIA.TRK"
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
     --putStrLn . show $ tilArr ! (4, 7) -- Why are the indices swapped?

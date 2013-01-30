@@ -73,8 +73,7 @@ getTerrainPic tile =
 --baseElementPic :: Surface -> ElementType -> "Dia"
 baseElementPic q sf et = case et of
     Road ->
-        hrule 1
-        # lw roadW # lc (surfaceToColor sf)
+        genericSquare (surfaceToColor sf) # scaleY roadW
     SharpCorner ->
         cornerArc (surfaceToColor sf) roadW 1
     LargeCorner ->
@@ -105,7 +104,7 @@ baseElementPic q sf et = case et of
         # atop (baseElementPic q sf Road
             # rotateBy (1/4))
     Highway ->
-        baseElementPic q sf Road # freeze # scaleY highwayRelW
+        baseElementPic q sf Road # scaleY highwayRelW
         # atop (genericSquare hillCl # scaleY (hwDivideRelW * roadW))
     HighwayTransition ->
         isoscelesTransition tarmacCl highwayRelW
@@ -158,7 +157,7 @@ baseElementPic q sf et = case et of
     BankedTransition ->
         rightTriangle bankingCl bankingH
         # centerY # translateY ((bankingH - roadW) / 2)
-        # atop (baseElementPic q sf Road # freeze
+        # atop (baseElementPic q sf Road
             # shearY bankingH `under` translationX (0.5))
         # reflectY # rotateBy (-1/4)
     _ -> mempty
@@ -211,7 +210,7 @@ isoscelesTransition cl ratio =
 
 rampTransition cl q sf =
     isoscelesTransition cl bridgeRelW
-    # atop (baseElementPic q sf Road # freeze)
+    # atop (baseElementPic q sf Road)
     # rampCorrection q
 
 
