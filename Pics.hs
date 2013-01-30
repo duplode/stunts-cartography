@@ -84,10 +84,10 @@ baseElementPic q sf et = case et of
             # fc signCl # rotateBy (-1/4))
     SlalomRoad ->
         baseElementPic q sf Road
-        # atop (square (roadW * 3 / 4)
+        # atop (square (slalomRelW * roadW)
             # scaleX 0.5 # translate (r2 (-3/16, -roadW / 8)))
             # lw 0 # fc blockCl
-        # atop (square (roadW * 3 / 4)
+        # atop (square (slalomRelW * roadW)
             # scaleX 0.5 # translate (r2 (3/16, roadW / 8)))
             # lw 0 # fc blockCl
     SharpSplit ->
@@ -177,14 +177,16 @@ baseElementPic q sf et = case et of
         # atop (genericSquare meshCl # scaleY roadW)
     PipeObstacle ->
         baseElementPic q sf Pipe
-        # atop (genericSquare pipeCl # scale roadW)
+        # atop (genericSquare pipeCl
+            # scaleY roadW # scaleX (pipeObstacleRelW * roadW))
     CorkLeftRight ->
         baseElementPic q sf Road
         # atop (genericSquare meshCl
             # scaleY roadW # scaleX (1/2)
             # alignBL # shearX (1 / (2 * roadW)) # centerXY)
         # atop (fromSegments [ straight (r2 (1, -roadW / 2)) ]
-            # translate (r2 (-0.5, roadW / 4)) # lw markerW # lc warningCl)
+            # translate (r2 (-0.5, roadW / 4))
+            # lw (corkWallRelW * roadW) # lc warningCl)
         # scaleX 2
     Loop ->
         let loopLeg = baseElementPic q sf Road
@@ -211,7 +213,7 @@ rampBaseCorrection q = scaleY (corrSignumY q)
 
 alignWithRoadY = juxtapose unitY (hrule 1 # translateY (-roadW / 2))
 
-emptySquare = square 1 # lw markerW
+emptySquare = square 1 # lw (1/20)
 
 genericSquare cl = square 1 # lw 0 # fc cl
 
@@ -260,8 +262,10 @@ getTilePic tile =
     -- the `emptySquare`s of large elements end up.
     -- # moveOriginBySize Q1 (getTileSize tile)
 
-markerW = 1 / 20
 roadW = 1 / 5
+slalomRelW = 3 / 4
+pipeObstacleRelW = 1
+corkWallRelW = 1 / 4
 tunnelRelW = 5 / 3
 hwDivideRelW = 1
 highwayRelW = 2 + hwDivideRelW
