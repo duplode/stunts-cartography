@@ -147,6 +147,11 @@ baseElementPic q sf et = case et of
         rightTriangle bridgeCl bridgeH # translateY (bridgeH / 2)
         # rampBaseCorrection q
         # atop (rampTransition bridgeCl q sf)
+    BankedCorner ->
+        let offset = (bankingH + roadW) / 2
+        in cornerArc bankingCl bankingH 2
+        # atop (cornerArc tarmacCl roadW (2 - offset)
+            # translate (r2 (-offset / 2, -offset / 2)))
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -224,6 +229,7 @@ hwDivideRelW = highwayRelW - 2
 bridgeRelW = 5 / 4
 bridgeH = 1 / 4
 pillarW = 1 / 10
+bankingH = 1 / 10
 
 {-# INLINE surfaceToColor #-}
 surfaceToColor sf = case sf of
@@ -246,3 +252,4 @@ tunnelCl = coral
 blockCl = lightgrey
 bridgeCl = blanchedalmond
 fancyBridgeCl = orchid
+bankingCl = tomato
