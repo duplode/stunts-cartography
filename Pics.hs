@@ -147,24 +147,24 @@ baseElementPic q sf et = case et of
         # rampBaseCorrection q
         # atop (rampTransition bridgeCl q sf)
     BankedCorner ->
-        let outerLen = 2 + (roadW - bankingH) / 2
-            innerLen = 2 - bankingH
+        let outerLen = 2 + roadW * (1 - bankRelH) / 2
+            innerLen = 2 - roadW * bankRelH
             offset = outerLen - innerLen
-        in cornerArc bankingCl bankingH outerLen
+        in cornerArc bankCl (roadW * bankRelH) outerLen
         # atop (cornerArc tarmacCl roadW innerLen
             # translate (r2 (-offset / 2, -offset / 2)))
         # translate (r2 (outerLen / 2 - 1, outerLen / 2 - 1))
     BankedTransition ->
-        rightTriangle bankingCl bankingH
-        # centerY # translateY ((bankingH - roadW) / 2)
+        rightTriangle bankCl (roadW * bankRelH)
+        # centerY # translateY (-roadW * (1 - bankRelH) / 2)
         # atop (baseElementPic q sf Road
-            # shearY bankingH `under` translationX (0.5))
+            # shearY (roadW * bankRelH) `under` translationX (0.5))
         # reflectY # rotateBy (-1/4)
     BankedRoad ->
         baseElementPic q sf Road # rotateBy (-1/4)
-        # translateX (-bankingH)
+        # translateX (-roadW * bankRelH)
         |||
-        genericSquare bankingCl # scaleX bankingH
+        genericSquare bankCl # scaleX (roadW * bankRelH)
     PipeTransition ->
         isoscelesTransition pipeCl pipeRelW
         # atop (baseElementPic q sf Road)
@@ -263,7 +263,7 @@ highwayRelW = 2 + hwDivideRelW
 bridgeRelW = 5 / 4
 bridgeH = 1 / 4
 pillarW = 1 / 10
-bankingH = 1 / 10
+bankRelH = 1 / 2
 pipeRelW = 5 / 3
 loopRelB = 1
 loopD = 1 / 2
@@ -290,7 +290,7 @@ blockCl = lightgrey
 highwayCl = lightgreen
 bridgeCl = blanchedalmond
 fancyBridgeCl = orchid
-bankingCl = tomato
+bankCl = tomato
 pipeCl = darkgoldenrod
 meshCl = darkgrey
 warningCl = indianred
