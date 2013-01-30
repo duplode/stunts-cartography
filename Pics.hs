@@ -134,17 +134,17 @@ baseElementPic q sf et = case et of
         # atop (baseElementPic q sf LargeCorner)
         # elevatedCornerCorrection q
     ElevatedRamp ->
-        rightTriangle bridgeCl bridgeH # translateY (bridgeH / 2)
+        rightTriangle bridgeCl bridgeH
         # clipBy (square 1 # translateX (-0.5))
         # rampBaseCorrection q
         # atop (rampTransition bridgeCl q sf)
     BridgeRamp ->
-        rightTriangle fancyBridgeCl bridgeH # translateY (bridgeH / 2)
+        rightTriangle fancyBridgeCl bridgeH
         # clipBy (square 1 # translateX (-0.5))
         # rampBaseCorrection q
         # atop (rampTransition fancyBridgeCl q sf)
     SolidRamp ->
-        rightTriangle bridgeCl bridgeH # translateY (bridgeH / 2)
+        rightTriangle bridgeCl bridgeH
         # rampBaseCorrection q
         # atop (rampTransition bridgeCl q sf)
     BankedCorner ->
@@ -184,7 +184,7 @@ rightTriangle cl h =
         { polyType = PolySides [1/4 :: CircleFrac]
                                [ h, 1 ]
         , polyOrient = OrientV }
-    # alignB # centerX # reflectY
+    # alignB # centerX # reflectY # translateY (h / 2)
     # lw 0 # fc cl
 
 isoscelesTransition cl ratio =
