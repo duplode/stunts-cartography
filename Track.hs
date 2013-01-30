@@ -1,4 +1,24 @@
-module Track where
+module Track
+    ( Orientation(..)
+    , Chirality(..)
+    , rotateOrientation
+    , ElementType(..)
+    , ElementSurface(..)
+    , ElementAttribute(..)
+    , TerrainType(..)
+    , Tile()
+    , getTileOrientation
+    , getTileChirality
+    , getTileSize
+    , getTileSurface
+    , getTerrainOrientation
+    , getElementType
+    , getTerrainType
+    , isElemAttrOf
+
+    , veryRawReadTrack
+    , rawTrackToTileArray
+    ) where
 
 import Data.Maybe (fromJust)
 import Control.Applicative ((<$>))
