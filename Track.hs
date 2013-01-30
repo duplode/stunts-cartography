@@ -674,14 +674,14 @@ byteToElement x = case x of
     0x72 -> highwayTransition Q3
     0x73 -> slalomRoad Q2
     0x74 -> slalomRoad Q1
-    0x75 -> corkUpDownSin Q2
-    0x76 -> corkUpDownSin Q3
-    0x77 -> corkUpDownSin Q4
-    0x78 -> corkUpDownSin Q1
-    0x79 -> corkUpDownDex Q2
-    0x7A -> corkUpDownDex Q3
-    0x7B -> corkUpDownDex Q4
-    0x7C -> corkUpDownDex Q1
+    0x75 -> corkUpDownDex Q2
+    0x76 -> corkUpDownDex Q3
+    0x77 -> corkUpDownDex Q4
+    0x78 -> corkUpDownDex Q1
+    0x79 -> corkUpDownSin Q2
+    0x7A -> corkUpDownSin Q3
+    0x7B -> corkUpDownSin Q4
+    0x7C -> corkUpDownSin Q1
     0x7D -> dirtCrossroad Q1
     0x7E -> dirtSharpSplitSin Q2
     0x7F -> dirtSharpSplitSin Q3
