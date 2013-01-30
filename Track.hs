@@ -22,9 +22,10 @@ module Track
 
 import Data.Maybe (fromJust)
 import Control.Applicative ((<$>))
-import qualified Data.ByteString.Lazy as LB
+import qualified OurByteString as LB
 import Data.Word (Word8)
 import Data.Array
+import Utils
 
 -- |The .TRK byte string with its components separated and the padding byte
 -- excised.
@@ -882,10 +883,15 @@ rawTrackToTileArray :: VeryRawTrack -> Array (Int, Int) Tile
 rawTrackToTileArray trk = listArray ((0, 0), (29, 29)) tiles
     where
     elmVals = veryRawElements trk
-    terVals = LB.concat . reverse . map fst
-        . takeWhile (not . LB.null . fst) . drop 1
-        . iterate (LB.splitAt 30 . snd) $ (LB.empty, veryRawTerrain trk)
+    terVals = LB.concat . reverse
+        . bsSplitAtEvery30th $ veryRawTerrain trk
     tiles = zipWith Tile (byteToElement <$> LB.unpack elmVals)
         (byteToTerrain <$> LB.unpack terVals)
     --indices = [ (x, y) | x <- [0..29], y <- [0..29]]
 
+        -- . splitAtEvery30th $ veryRawTerrain trk
+    {-
+    terVals = LB.concat . reverse . map fst
+        . takeWhile (not . LB.null . fst) . drop 1
+        . iterate (LB.splitAt 30 . snd) $ (LB.empty, veryRawTerrain trk)
+        -}
