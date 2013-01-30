@@ -309,10 +309,10 @@ surfaceToColor sf = case sf of
     Dirt -> dirtCl
     Ice -> iceCl
 
-plainCl = green
-waterCl = blue
+plainCl = forestgreen
+waterCl = dodgerblue
 hillCl = lightgreen
-slopeCl = steelblue
+slopeCl = limegreen
 lavaCl = orangered
 
 tarmacCl = dimgrey
