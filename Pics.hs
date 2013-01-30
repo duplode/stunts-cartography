@@ -201,6 +201,16 @@ baseElementPic q sf et = case et of
         fromSegments [ bezier3 (r2 (1, 0)) (r2 (1, -1)) (r2 (2, -1)) ]
         # stroke # centerXY
         # lw roadW # lc (surfaceToColor sf)
+    CorkUpDown ->
+        baseElementPic q sf Road
+        # translate (r2 (-0.5, 0.5))
+        # atop (arc (0 :: CircleFrac) (1 :: CircleFrac)
+            # scale 0.5 # lw (bridgeRelW * roadW) # lc bridgeCl)
+        # atop (arc (0 :: CircleFrac) (1 :: CircleFrac)
+            # scale 0.5 # lw roadW # lc tarmacCl)
+        # atop (baseElementPic q sf ElevatedSpan
+            # rampCorrection q
+            # translate (r2 (0.5, 0.5 - bridgeH)))
     _ -> mempty
 
 elevatedCornerCorrection q =
