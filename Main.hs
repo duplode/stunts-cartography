@@ -22,7 +22,11 @@ main = do
         elmsRows = cat' unitX with { sep = 1, catMethod = Distrib }
             <$> (map getTilePic <$> rows)
         elmsFull = cat' unitY with { sep = 1, catMethod = Distrib } elmsRows
-    defaultMain $ elmsFull <> terrFull
+    defaultMain $
+        (elmsFull <> terrFull)
+        # centerXY
+        # atop (vcat' with { sep = 1 } (replicate 29 $ hrule 30) # centerY)
+        # atop (hcat' with { sep = 1 } (replicate 29 $ vrule 30) # centerX)
 
 
 -- Hand-rolled:
