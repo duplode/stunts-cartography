@@ -5,16 +5,20 @@ module Track
     , ElementType(..)
     , ElementSurface(..)
     , ElementAttribute(..)
+    , ElementSize(..)
     , TerrainType(..)
     , Tile()
     , getTileOrientation
     , getTileChirality
     , getTileSize
+    , getAbstractTileSize
     , getTileSurface
     , getTerrainOrientation
     , getElementType
     , getTerrainType
     , isElemAttrOf
+
+    , blankTile
 
     , veryRawReadTrack
     , rawTrackToTileArray
@@ -375,6 +379,10 @@ getElementSize el
     sz = case elSize of
         Large -> 2
         _     -> 1
+
+-- |Recovers the size specification of an element.
+getAbstractSize :: Element -> ElementSize
+getAbstractSize = elementSize . eTypeToProps . elementType
 
 -- Smart constructors. TODO: These will be exported, document.
 -- TODO: consider const'ing or removing the argument from the rotationally
@@ -833,6 +841,10 @@ data Tile = Tile
     }
     deriving (Eq, Show)
 
+-- |An empty tile.
+blankTile :: Tile
+blankTile = Tile (blank Q1) (plain Q1)
+
 -- |Gets the underlying element type of a tile.
 getElementType :: Tile -> ElementType
 getElementType = elementType . tileElement
@@ -841,6 +853,10 @@ getElementType = elementType . tileElement
 getTileSize :: Tile
             -> (Int, Int) -- ^ See 'getElementSize' for semantics.
 getTileSize = getElementSize . tileElement
+
+-- |Gets the size specification of the tile element.
+getAbstractTileSize :: Tile -> ElementSize
+getAbstractTileSize = getAbstractSize . tileElement
 
 -- |Gets the orientation of a tile element.
 getTileOrientation :: Tile -> Orientation

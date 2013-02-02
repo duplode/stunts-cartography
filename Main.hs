@@ -11,15 +11,27 @@ import Pics
 import Utils
 
 main = do
-    trkBS <- LB.readFile "CYDONIA.TRK"
+    trkBS <- LB.readFile "VISEGRAD.TRK"
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
     --putStrLn . show $ tilArr ! (4, 7) -- Why are the indices swapped?
-    let rows = map snd <$> splitAtEvery30th (assocs tilArr)
+    let
+        {-
+        rows = map snd <$> splitAtEvery30th (assocs tilArr)
         terrRows = catTiles <$> (map getTerrainPic <$> rows)
         terrFull = catRows terrRows
         elmsRows = catTiles <$> (map getTilePic <$> rows)
         elmsFull = catRows elmsRows
+        -}
+        tiles = map snd $ assocs tilArr
+        terrRows = catTiles <$> (map getTerrainPic <$> splitAtEvery30th tiles)
+        terrFull = catRows terrRows
+        (seTiles, leTiles) = separateTilesBySize tiles
+        seRows = catTiles <$> (map getTilePic <$> splitAtEvery30th seTiles)
+        seFull = catRows seRows
+        leRows = catTiles <$> (map getTilePic <$> splitAtEvery30th leTiles)
+        leFull = catRows leRows
+        elmsFull = seFull <> leFull
     defaultMain $
         gridLines
         <> cat unitX [yIndices, strutX 30, yIndices]
@@ -28,6 +40,13 @@ main = do
 
 catTiles = cat' unitX with { sep = 1, catMethod = Distrib }
 catRows = cat' unitY with { sep = 1, catMethod = Distrib }
+
+separateTilesBySize :: [Tile] -> ([Tile], [Tile])
+separateTilesBySize = unzip . map separate
+    where
+    separate tl = case getAbstractTileSize tl of
+        Large -> (blankTile, tl)
+        _     -> (tl, blankTile)
 
 gridLines =
     vcat' with { sep = 1 } (replicate 31 $ hrule 30) # alignBL
