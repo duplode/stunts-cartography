@@ -2,6 +2,7 @@
 module Pics
     ( getTerrainPic
     , getTilePic
+    , plainCl
     ) where
 
 import Diagrams.Prelude
@@ -40,7 +41,7 @@ reflectByChirality c = case c of
 --baseTerrainPic :: TerrainType -> "Dia"
 baseTerrainPic tt = case tt of
     Plain ->
-        genericSquare plainCl
+        mempty -- strutX 1 --genericSquare plainCl
     Water ->
         genericSquare waterCl
     Hill ->

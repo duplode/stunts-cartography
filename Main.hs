@@ -16,8 +16,9 @@ main = do
         tilArr = rawTrackToTileArray rawTrk
     --putStrLn . show $ tilArr ! (4, 7) -- Why are the indices swapped?
     let rows = map snd <$> splitAtEvery30th (assocs tilArr)
-        terrRows = cat unitX <$> (map getTerrainPic <$> rows)
-        terrFull = cat unitY terrRows
+        terrRows = cat' unitX with { sep = 1, catMethod = Distrib }
+            <$> (map getTerrainPic <$> rows)
+        terrFull = cat' unitY with { sep = 1, catMethod = Distrib } terrRows
         elmsRows = cat' unitX with { sep = 1, catMethod = Distrib }
             <$> (map getTilePic <$> rows)
         elmsFull = cat' unitY with { sep = 1, catMethod = Distrib } elmsRows
@@ -25,7 +26,7 @@ main = do
         gridLines
         <> cat unitX [yIndices, strutX 30, yIndices]
         <> cat unitY [xIndices, strutY 30, xIndices]
-        <> (elmsFull <> terrFull) # alignBL
+        <> (elmsFull <> terrFull) # alignBL # bg plainCl
 
 gridLines =
     vcat' with { sep = 1 } (replicate 31 $ hrule 30) # alignBL
