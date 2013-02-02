@@ -5,7 +5,7 @@ import qualified OurByteString as LB
 import Data.List (groupBy, splitAt, unfoldr)
 import Data.Function (on)
 import Diagrams.Prelude
-import Diagrams.Backend.SVG.CmdLine
+import Diagrams.Backend.Cairo.CmdLine
 import Track
 import Pics
 import Utils
