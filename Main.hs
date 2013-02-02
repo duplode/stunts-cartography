@@ -22,20 +22,20 @@ main = do
             <$> (map getTilePic <$> rows)
         elmsFull = cat' unitY with { sep = 1, catMethod = Distrib } elmsRows
     defaultMain $
-        (elmsFull <> terrFull) # alignBL
-        # atop gridLines
-        # atop (cat unitX [yIndices # alignBR, strutX 30, yIndices # alignBR])
-        # atop (cat unitY [xIndices # alignTL, strutY 30, xIndices # alignBL])
+        gridLines
+        <> cat unitX [yIndices, strutX 30, yIndices]
+        <> cat unitY [xIndices, strutY 30, xIndices]
+        <> (elmsFull <> terrFull) # alignBL
 
 gridLines =
     vcat' with { sep = 1 } (replicate 31 $ hrule 30) # alignBL
     <> hcat' with { sep = 1 } (replicate 31 $ vrule 30) # alignBL
 
 xIndices =
-    hcat $ map indexCell [0..29]
+    hcat $ map indexCell [0..29] # alignTL
 
 yIndices =
-    cat unitY $ map indexCell [0..29]
+    cat unitY (map indexCell [0..29]) # alignBR
 
 indexCell n =
     square 1 # lw 0
