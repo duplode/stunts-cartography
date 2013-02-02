@@ -109,6 +109,7 @@ baseElementPic c q sf et = case et of
         # atop (genericSquare highwayCl # scaleY (hwDivideRelW * roadW))
     HighwayTransition ->
         isoscelesTransition tarmacCl highwayRelW
+        # atop (baseElementPicNoO sf Road)
         # atop (eqTriangle (2 * sqrt 3 / 3) # alignT
             # scaleY (1/2) # scaleX (roadW * hwDivideRelW)
             # rotateBy (1/4) # lw 0 # fc highwayCl)
@@ -260,7 +261,7 @@ isoscelesTransition cl ratio =
     in centerY $
     sidePad # reflectY
     ===
-    genericSquare cl # scaleY roadW
+    strutY roadW
     ===
     sidePad
 
