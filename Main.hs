@@ -11,7 +11,7 @@ import Pics
 import Utils
 
 main = do
-    trkBS <- LB.readFile "FONYOD.TRK"
+    trkBS <- LB.readFile "CYDONIA.TRK"
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
     --putStrLn . show $ tilArr ! (4, 7) -- Why are the indices swapped?
@@ -35,7 +35,7 @@ main = do
 catTiles = cat' unitX with { sep = 1, catMethod = Distrib }
 catRows = cat' unitY with { sep = 1, catMethod = Distrib }
 
-plainStripe = square 1 # scaleX 30 # translateX 14.5 # fc plainCl
+plainStripe = square 1 # scaleX 30 # translateX 14.5 # fc plainCl # lw 0
 
 separateTilesBySize :: [Tile] -> ([Tile], [Tile])
 separateTilesBySize = unzip . map separate
