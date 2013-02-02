@@ -41,26 +41,19 @@ reflectByChirality c = case c of
 --baseTerrainPic :: TerrainType -> "Dia"
 baseTerrainPic tt = case tt of
     Plain ->
-        mempty -- strutX 1 --genericSquare plainCl
+        mempty
     Water ->
         genericSquare waterCl
     Hill ->
         genericSquare hillCl
     AngledMargin ->
-        rotateBy (-1/8) $
-            squareTriangle plainCl # align unit_Y
-            ===
-            reflectY (squareTriangle waterCl)
+        diagonalTriangle waterCl
     OuterAngledSlope ->
-        baseTerrainPic Plain # alignBL
-        # atop (squareTriangle slopeCl
-            # rotateBy (3/8) # alignBL)
-        # centerXY
+        diagonalTriangle slopeCl
     InnerAngledSlope ->
-        baseTerrainPic Hill # alignBL
-        # atop (squareTriangle slopeCl
-            # rotateBy (-1/8) # alignBL)
-        # centerXY
+        baseTerrainPic Hill
+        # atop (diagonalTriangle slopeCl
+            # rotateBy (-1/2))
     Slope ->
         genericSquare slopeCl
     _ ->
@@ -240,9 +233,10 @@ emptySquare = square 1 # lw (1/20)
 
 genericSquare cl = square 1 # lw 0 # fc cl
 
-squareTriangle cl = polygon with
-    { polyType = PolySides [1/4 :: CircleFrac] [1, 1]
-    } # lw 0 # fc cl
+diagonalTriangle cl = polygon with
+    { polyType = PolySides [-3/8 :: CircleFrac]
+                           [ 1, sqrt 2 ]
+    } # centerXY # lw 0 # fc cl
 
 cornerArc cl w l =
     arc (0 :: CircleFrac) (1/4 :: CircleFrac)
