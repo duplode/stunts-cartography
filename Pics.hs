@@ -214,28 +214,25 @@ baseElementPic c q sf et = case et of
             # reflectByChirality c `under` translation (r2 (0.5, -bridgeH))
             # translate (r2 (0.5, 0.5 - bridgeH)))
     Pine ->
-        eqTriangle (3/4) # fc leafCl
+        eqTriangle (3/4) # lc darkleafCl # fc leafCl
         ===
         square (1/8) # fc woodCl
     Palm ->
         let leaf = arc (1/8 :: CircleFrac) (3/8 :: CircleFrac)
-                # scale 0.25 # fc leafCl
+                # scale 0.25 # lc darkleafCl # fc leafCl
         in beside unitY
             (square (2/3) # scaleX (1/8) # fc woodCl)
             ((leaf ||| leaf # reflectX) # centerX)
     Cactus ->
-        let arm = (roundedRect' (1/4) (3/8)
-                with { radiusTL = 1/8, radiusBL = 1/8 }
-                # alignTR
-                <> roundedRect' (1/8) (5/16)
-                with { radiusBL = 1/8 }
-                # alignTR)
-                # stroke # centerXY
-                # lw 0 # fc leafCl # fillRule EvenOdd
-            trunk = roundedRect' (3/16) (2/3)
-                with { radiusTL = 3/64, radiusTR = 3/64 }
-                # fc leafCl
-        in beside unit_X trunk arm ||| arm # reflectX
+        (
+            fromOffsets [ 0 & (-3/8)
+                        , (1/2) & 0
+                        , 0 & (3/8)
+                        ]
+            # stroke # centerXY
+            # lineJoin LineJoinRound
+            <> vrule (2/3))
+        # lw 0.15 # lc cactusCl # lineCap LineCapRound
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -352,3 +349,5 @@ meshCl = darkgrey
 warningCl = orangered
 leafCl = springgreen
 woodCl = burlywood
+cactusCl = yellowgreen
+darkleafCl = darkgreen
