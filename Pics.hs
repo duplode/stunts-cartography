@@ -214,7 +214,7 @@ baseElementPic c q sf et = case et of
             # reflectByChirality c `under` translation (r2 (0.5, -bridgeH))
             # translate (r2 (0.5, 0.5 - bridgeH)))
     Pine ->
-        eqTriangle (3/4) # lc darkleafCl # fc leafCl
+        eqTriangle (5/8) # lc darkleafCl # fc leafCl
         ===
         square (1/8) # fc woodCl
     Palm ->
@@ -225,13 +225,13 @@ baseElementPic c q sf et = case et of
             ((leaf ||| leaf # reflectX) # centerX)
     Cactus ->
         (
-            fromOffsets [ 0 & (-3/8)
-                        , (1/2) & 0
-                        , 0 & (3/8)
+            fromOffsets [ 0 & (-3/16)
+                        , (3/8) & 0
+                        , 0 & (1/4)
                         ]
             # stroke # centerXY
             # lineJoin LineJoinRound
-            <> vrule (2/3))
+            <> vrule (1/2))
         # lw 0.15 # lc cactusCl # lineCap LineCapRound
     _ -> mempty
 
@@ -347,7 +347,7 @@ bankCl = tomato
 pipeCl = darkgoldenrod
 meshCl = darkgrey
 warningCl = orangered
-leafCl = springgreen
+leafCl = chartreuse
 woodCl = burlywood
 cactusCl = yellowgreen
 darkleafCl = darkgreen
