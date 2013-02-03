@@ -48,6 +48,8 @@ baseTerrainPic tt = case tt of
         genericSquare hillCl
     Slope ->
         genericSquare slopeCl
+        # atop (vrule 0.5 # translateX 0.25
+            # lw 0.1 # lc hillCl # lineCap LineCapRound)
     AngledMargin ->
         diagonalTriangle waterCl
     OuterAngledSlope ->
