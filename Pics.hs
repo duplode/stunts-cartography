@@ -84,13 +84,12 @@ baseElementPic c q sf et = case et of
         # atop (eqTriangle (2 * roadW)
             # fc signCl # rotateBy (-1/4))
     SlalomRoad ->
-        baseElementPicNoO sf Road
-        # atop (square (slalomRelW * roadW)
-            # scaleX 0.5 # translate (r2 (-3/16, -roadW / 8)))
-            # lw 0 # fc blockCl
-        # atop (square (slalomRelW * roadW)
-            # scaleX 0.5 # translate (r2 (3/16, roadW / 8)))
-            # lw 0 # fc blockCl
+        let slalomBlock = square (slalomRelW * roadW) # scaleX 0.5
+                # translate (r2 (-3/16, -(1 - slalomRelW) * roadW / 2))
+                # lw 0 # fc blockCl
+        in baseElementPicNoO sf Road
+        # atop slalomBlock
+        # atop (slalomBlock # reflectX # reflectY)
     SharpSplit ->
         baseElementPicNoO sf SharpCorner
             # atop (baseElementPicNoO sf Road)
@@ -283,7 +282,7 @@ getTilePic tile =
     -- # moveOriginBySize Q1 (getTileSize tile)
 
 roadW = 1 / 5
-slalomRelW = 3 / 4
+slalomRelW = 2 / 3
 pipeObstacleRelW = 1
 corkWallRelW = 1 / 4
 tunnelRelW = 5 / 3
