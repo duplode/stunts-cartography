@@ -46,16 +46,15 @@ baseTerrainPic tt = case tt of
         genericSquare waterCl
     Hill ->
         genericSquare hillCl
+    Slope ->
+        genericSquare slopeCl
     AngledMargin ->
         diagonalTriangle waterCl
     OuterAngledSlope ->
         diagonalTriangle slopeCl
     InnerAngledSlope ->
-        baseTerrainPic Hill
-        # atop (diagonalTriangle slopeCl
-            # rotateBy (-1/2))
-    Slope ->
-        genericSquare slopeCl
+        diagonalTriangle hillCl
+        # atop (diagonalTriangle slopeCl # rotateBy (1/2))
     _ ->
         genericSquare lavaCl
 
