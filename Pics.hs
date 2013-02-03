@@ -100,6 +100,7 @@ baseElementPic c q sf et = case et of
             # scaleX 2 # translateY 0.5)
     Tunnel ->
         genericSquare tunnelCl # scaleY (roadW * tunnelRelW)
+        # atop (genericSquare insideTunnelCl # scaleY roadW)
     Crossroad ->
         baseElementPicNoO sf Road
         # atop (baseElementPicNoO sf Road
@@ -286,7 +287,7 @@ roadW = 1 / 5
 slalomRelW = 2 / 3
 pipeObstacleRelW = 1
 corkWallRelW = 1 / 2
-tunnelRelW = 5 / 3
+tunnelRelW = 2
 hwDivideRelW = 1
 highwayRelW = 2 + hwDivideRelW
 bridgeRelW = 3 / 2
@@ -315,6 +316,7 @@ iceCl = aliceblue
 
 signCl = yellow
 tunnelCl = coral
+insideTunnelCl = sienna
 blockCl = lightgrey
 highwayCl = lightgreen
 bridgeCl = blanchedalmond
