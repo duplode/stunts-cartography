@@ -206,10 +206,8 @@ baseElementPic c q sf et = case et of
     CorkUpDown ->
         baseElementPicNoO sf Road
         # translate (r2 (-0.5, 0.5))
-        # atop (arc (0 :: CircleFrac) (1 :: CircleFrac)
-            # scale 0.5 # lw (bridgeRelW * roadW) # lc bridgeCl)
-        # atop (arc (0 :: CircleFrac) (1 :: CircleFrac)
-            # scale 0.5 # lw roadW # lc tarmacCl)
+        # atop (circle 0.5 # lw (bridgeRelW * roadW) # lc bridgeCl)
+        # atop (circle 0.5 # lw roadW # lc tarmacCl)
         # atop (baseElementPicNoO sf ElevatedSpan
             # rampCorrection q
             # reflectByChirality c `under` translation (r2 (0.5, -bridgeH))
