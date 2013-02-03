@@ -11,7 +11,7 @@ import Pics
 import Utils
 
 main = do
-    trkBS <- LB.readFile "FONYOD.TRK"
+    trkBS <- LB.readFile "ZCT82.TRK"
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
     --putStrLn . show $ tilArr ! (4, 7) -- Why are the indices swapped?

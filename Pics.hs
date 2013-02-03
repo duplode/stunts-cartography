@@ -58,7 +58,7 @@ baseTerrainPic tt = case tt of
         diagonalTriangle hillCl
         # atop (diagonalTriangle slopeCl # rotateBy (1/2))
     _ ->
-        genericSquare lavaCl
+        genericSquare chasmCl
 
 --getTerrainPic :: Tile -> "Dia"
 getTerrainPic tile =
@@ -186,8 +186,8 @@ baseElementPic c q sf et = case et of
         # atop (genericSquare meshCl
             # scaleY roadW # scaleX (1/2)
             # alignBL # shearX (1 / (2 * roadW)) # centerXY)
-        # atop (fromSegments [ straight (r2 (1, -roadW / 2)) ]
-            # translate (r2 (-0.5, roadW / 4))
+        # atop (fromSegments [ straight (r2 (1/2, -roadW)) ]
+            # translate (r2 (-1/4, roadW / 2))
             # lw (corkWallRelW * roadW) # lc warningCl)
         # scaleX 2
     Loop ->
@@ -285,7 +285,7 @@ getTilePic tile =
 roadW = 1 / 5
 slalomRelW = 2 / 3
 pipeObstacleRelW = 1
-corkWallRelW = 1 / 4
+corkWallRelW = 1 / 2
 tunnelRelW = 5 / 3
 hwDivideRelW = 1
 highwayRelW = 2 + hwDivideRelW
@@ -307,7 +307,7 @@ plainCl = forestgreen
 waterCl = dodgerblue
 hillCl = lightgreen
 slopeCl = limegreen
-lavaCl = orangered
+chasmCl = midnightblue
 
 tarmacCl = dimgrey
 dirtCl = peru
@@ -324,4 +324,4 @@ pillarCl = navajowhite
 bankCl = tomato
 pipeCl = darkgoldenrod
 meshCl = darkgrey
-warningCl = indianred
+warningCl = orangered
