@@ -390,9 +390,9 @@ rampTransition cl q sf =
 
 acura cl =
     (
-        rect (1/10) (3/10) # fc sunroofCl
-        <> roundedRect (1/4) (3/10) (1/20) # fc windshieldCl)
-    # lw 0 # translateX (-1/32)
+        rect (1/10) (1/4) # fc sunroofCl # lw 0
+        <> roundedRect (1/4) (1/4) (1/20) # fc windshieldCl)
+    # translateX (-1/32)
     <>
     roundedRect' (1/2) (3/10) with
         { radiusTR = 1/10
