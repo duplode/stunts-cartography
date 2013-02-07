@@ -298,14 +298,36 @@ baseElementPic c q sf et = case et of
                     strutY (1/16)
                     ===
                     rect (1/10) (3/32) # alignR
-                    # lw 0 # fc petrolCl
-                ) # centerY
+                    # lw 0 # fc petrolCl)
+                # centerY
                 <> roundedRect' (3/10) (3/5)
                     with { radiusTL = 1/16 }
                 # alignR
                 # lw 0 # fc masonryCl)
             # alignL)
         # centerXY
+    Joe's ->
+        (
+            (
+                (
+                    text "Joe's" # scale (1/6) # fc neonCl
+                    <> rect (1/2) (1/4)
+                    # lw 0 # fc miscDarkCl)
+                ===
+                vrule (1/4)
+                # lw 0.1 # lc miscDarkCl # lineCap LineCapSquare)
+            # rotateBy (1/4) # alignR # translateY (-1/10)
+            <> (
+                eqTriangle (3/4) # rotateBy (1/4) # scaleX 0.25
+                # lw 0 # fc joesDetailsCl
+                ||| (
+                    rect (1/5) (3/10) # alignR
+                    # lw 0 # fc joesDetailsCl
+                    <> rect (1/3) (3/5) # alignR
+                    # lw 0 # fc joesCl)
+               )
+           # alignTR)
+       # centerXY
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -438,3 +460,6 @@ petrolCl = red
 ethanolCl = lime
 masonryCl = whitesmoke
 blueWindowCl = darkturquoise
+joesCl = sandybrown
+joesDetailsCl = chocolate
+neonCl = violet
