@@ -272,6 +272,15 @@ baseElementPic c q sf et = case et of
             # alignR
             <> rect (11/16) (1/2) # alignR # lw 0 # fc officeCl)
         # centerXY
+    Windmill ->
+        let blades = hrule (1/2) # lw 0.05 # rotateBy (1/8)
+                # lw 0 # lc windmillDetailsCl
+        in (
+            reflectY blades <> blades
+            <> eqTriangle (2/5) # rotateBy (1/4) # centerXY
+            # lw 0 # fc windmillCl)
+        ||| rect (3/20) (2/5) # fc windmillCl
+        # alignL # lw 0
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -397,3 +406,5 @@ miscLightCl = whitesmoke
 miscDarkCl = dimgrey
 barnCl = lightcoral
 officeCl = navajowhite
+windmillCl = firebrick
+windmillDetailsCl = whitesmoke
