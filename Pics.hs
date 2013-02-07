@@ -263,6 +263,15 @@ baseElementPic c q sf et = case et of
             # lc barnCl # fc barnCl
             ||| rect (2/5) (1/2) # lc barnCl # fc barnCl)
         # centerXY
+    OfficeBuilding ->
+        (
+            (
+                decoratePath (rect (1/4) (1/4))
+                    (replicate 4 $ square (3/16) # lw 0  # fc miscDarkCl)
+                ||| strutX (1/16) ||| rect (1/8) (1/4) # lw 0 # fc miscDarkCl)
+            # alignR
+            <> rect (11/16) (1/2) # alignR # lw 0 # fc officeCl)
+        # centerXY
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -387,3 +396,4 @@ shipCl = chocolate
 miscLightCl = whitesmoke
 miscDarkCl = dimgrey
 barnCl = lightcoral
+officeCl = navajowhite
