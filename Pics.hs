@@ -328,6 +328,10 @@ baseElementPic c q sf et = case et of
                )
            # alignTR)
        # centerXY
+    PlayerGhost ->
+        acura playerCl
+    OpponentGhost ->
+        acura opponentCl
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -383,6 +387,18 @@ rampTransition cl q sf =
     isoscelesTransition cl bridgeRelW
     # atop (baseElementPicNoO sf Road)
     # rampCorrection q
+
+acura cl =
+    (
+        rect (1/10) (3/10) # fc sunroofCl
+        <> roundedRect (1/4) (3/10) (1/20) # fc windshieldCl)
+    # lw 0 # translateX (-1/32)
+    <>
+    roundedRect' (1/2) (3/10) with
+        { radiusTR = 1/10
+        , radiusBR = 1/10
+        }
+    # fc cl
 
 --getTerrainPic :: Tile -> "Dia"
 getTilePic tile =
@@ -463,3 +479,8 @@ blueWindowCl = darkturquoise
 joesCl = sandybrown
 joesDetailsCl = chocolate
 neonCl = violet
+playerCl = blue
+opponentCl = red
+windshieldCl = grey
+sunroofCl = darkslategrey
+wheelCl = black
