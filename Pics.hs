@@ -281,6 +281,31 @@ baseElementPic c q sf et = case et of
             # lw 0 # fc windmillCl)
         ||| rect (3/20) (2/5) # fc windmillCl
         # alignL # lw 0
+    GasStation ->
+        (
+            vrule (3/10) # alignT
+            # lw 0.1 # lc gasRoofCl # lineCap LineCapRound
+            <> (
+                (
+                    rect (3/16) (1/6) # alignR
+                    # lw 0 # fc blueWindowCl
+                    ===
+                    strutY (1/16)
+                    ===
+                    rect (1/10) (3/32) # alignR
+                    # lw 0 # fc ethanolCl
+                    ===
+                    strutY (1/16)
+                    ===
+                    rect (1/10) (3/32) # alignR
+                    # lw 0 # fc petrolCl
+                ) # centerY
+                <> roundedRect' (3/10) (3/5)
+                    with { radiusTL = 1/16 }
+                # alignR
+                # lw 0 # fc masonryCl)
+            # alignL)
+        # centerXY
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -408,3 +433,8 @@ barnCl = lightcoral
 officeCl = navajowhite
 windmillCl = firebrick
 windmillDetailsCl = whitesmoke
+gasRoofCl = indianred
+petrolCl = red
+ethanolCl = lime
+masonryCl = whitesmoke
+blueWindowCl = darkturquoise
