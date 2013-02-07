@@ -233,6 +233,11 @@ baseElementPic c q sf et = case et of
             # lineJoin LineJoinRound
             <> vrule (1/2))
         # lw 0.15 # lc cactusCl # lineCap LineCapRound
+    TennisCourt ->
+        (
+            hrule (3/4) # lw 0.1 # lc netCl
+            <> square (3/4) # fc tennisCl)
+        # scaleX 0.5
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -351,3 +356,5 @@ leafCl = chartreuse
 woodCl = burlywood
 cactusCl = yellowgreen
 darkleafCl = darkgreen
+tennisCl = lawngreen
+netCl = whitesmoke
