@@ -238,6 +238,31 @@ baseElementPic c q sf et = case et of
             hrule (3/4) # lw 0.1 # lc netCl
             <> square (3/4) # fc tennisCl)
         # scaleX 0.5
+    Ship ->
+        (
+            polygon with
+                { polyType = PolySides [-1/4 :: CircleFrac, -1/8 :: CircleFrac]
+                                       [ 1/4, 2/4, sqrt 2 * 1 / 4 ]
+                } # lw 0 # fc shipCl
+            ===
+            (vrule (1/2) # lc miscLightCl # alignT
+                ||| strutX (1/10) ||| square (1/5) # alignT
+                # lw 0 # fc miscDarkCl)
+            # centerX)
+        # centerXY
+    Barn ->
+        let roofArc = wedge (1/2) (1/4 :: CircleFrac) (5/12 :: CircleFrac)
+                # centerY
+            diagLine = hrule (1/3) # rotateBy (1/8)
+        in (
+            diagLine <> reflectY diagLine
+            <> arc' (1/6) (0 :: CircleFrac) (1 :: CircleFrac))
+        # translateX (1/20) # lw 0.025 # lc miscLightCl
+        <> (
+            (reflectY roofArc <> roofArc) # scaleX 0.4
+            # lc barnCl # fc barnCl
+            ||| rect (2/5) (1/2) # lc barnCl # fc barnCl)
+        # centerXY
     _ -> mempty
 
 elevatedCornerCorrection q =
@@ -358,3 +383,7 @@ cactusCl = yellowgreen
 darkleafCl = darkgreen
 tennisCl = lawngreen
 netCl = whitesmoke
+shipCl = chocolate
+miscLightCl = whitesmoke
+miscDarkCl = dimgrey
+barnCl = lightcoral
