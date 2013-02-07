@@ -588,8 +588,8 @@ byteToElement :: Word8 -> Element
 byteToElement x = case x of
     0x00 -> blank Q1
     0x01 -> pavedStartFinish Q2
-    0x02 -> playerGhost Q1
-    0x03 -> opponentGhost Q1
+    0x02 -> playerGhost Q2
+    0x03 -> opponentGhost Q2
     0x04 -> pavedRoad Q2
     0x05 -> pavedRoad Q1
     0x06 -> pavedSharpCorner Q2
