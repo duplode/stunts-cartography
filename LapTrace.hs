@@ -1,5 +1,9 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
-module LapTrace where
+module LapTrace
+    ( pathFromTrace
+    , simpleRenderTracePath
+    , readRawTrace
+    ) where
 
 import Diagrams.Prelude
 import Palette (signCl)

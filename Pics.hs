@@ -2,11 +2,10 @@
 module Pics
     ( getTerrainPic
     , getTilePic
-    , plainCl
+    , acura
     ) where
 
 import Diagrams.Prelude
-import Diagrams.Backend.SVG.CmdLine
 import Track (Orientation(..), Chirality(..), rotateOrientation
              , ElementType(..), ElementSurface(..), ElementAttribute(..)
              , TerrainType(..)
