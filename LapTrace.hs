@@ -2,6 +2,7 @@
 module LapTrace where
 
 import Diagrams.Prelude
+import Palette (signCl)
 
 scaleTrace :: [(Integer, Integer)] -> [(Double, Double)]
 scaleTrace = map sclBoth
@@ -19,7 +20,7 @@ pathFromTrace tr = tr
 
 simpleRenderTracePath path = path
     # stroke
-    # lw 0.05 # lc yellow
+    # lw 0.05 # lc signCl
     -- # flip decoratePath (repeat $ square 0.1)
 
 readRawTrace :: String -> [(Integer, Integer)]

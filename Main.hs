@@ -10,6 +10,7 @@ import Track
 import Pics
 import Utils
 import LapTrace
+import Palette (plainCl)
 
 main = do
     trkBS <- LB.readFile "ZCT070.TRK"

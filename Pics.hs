@@ -14,6 +14,7 @@ import Track (Orientation(..), Chirality(..), rotateOrientation
              , getTileSurface, getTerrainOrientation
              , getElementType, getTerrainType
              , isElemAttrOf )
+import Palette
 
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
 rotateByOrient = rotateBy . CircleFrac . (/4) . fromIntegral . fromEnum
@@ -435,52 +436,3 @@ surfaceToColor sf = case sf of
     Dirt -> dirtCl
     Ice -> iceCl
 
-plainCl = forestgreen
-waterCl = dodgerblue
-hillCl = lightgreen
-slopeCl = limegreen
-chasmCl = midnightblue
-
-tarmacCl = dimgrey
-dirtCl = peru
-iceCl = aliceblue
-
-signCl = yellow
-tunnelCl = coral
-insideTunnelCl = sienna
-blockCl = lightgrey
-highwayCl = lightgreen
-bridgeCl = blanchedalmond
-fancyBridgeCl = hotpink
-fancyPillarCl = orchid
-pillarCl = navajowhite
-bankCl = tomato
-pipeCl = darkgoldenrod
-meshCl = darkgrey
-warningCl = orangered
-leafCl = chartreuse
-woodCl = burlywood
-cactusCl = yellowgreen
-darkleafCl = darkgreen
-tennisCl = lawngreen
-netCl = whitesmoke
-shipCl = chocolate
-miscLightCl = whitesmoke
-miscDarkCl = dimgrey
-barnCl = lightcoral
-officeCl = navajowhite
-windmillCl = firebrick
-windmillDetailsCl = whitesmoke
-gasRoofCl = indianred
-petrolCl = red
-ethanolCl = lime
-masonryCl = whitesmoke
-blueWindowCl = darkturquoise
-joesCl = sandybrown
-joesDetailsCl = chocolate
-neonCl = violet
-playerCl = blue
-opponentCl = red
-windshieldCl = grey
-sunroofCl = darkslategrey
-wheelCl = black
