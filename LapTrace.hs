@@ -2,10 +2,12 @@
 module LapTrace
     ( pathFromTrace
     , simpleRenderTracePath
+    , renderTracePathWithCars
     , readRawTrace
     ) where
 
 import Diagrams.Prelude
+import Pics (acura)
 import Palette (signCl)
 
 scaleTrace :: [(Integer, Integer)] -> [(Double, Double)]
@@ -22,10 +24,13 @@ pathFromTrace tr = tr
     # dropFinal19Frames # scaleTrace
     # map p2 # fromVertices
 
-simpleRenderTracePath path = path
-    # stroke
+simpleRenderTracePath path = path # stroke
     # lw 0.05 # lc signCl
-    -- # flip decoratePath (repeat $ square 0.1)
+
+renderTracePathWithCars path = path
+    # flip decoratePath (cycle $ raceCar : replicate 9 mempty)
+
+raceCar = acura signCl # scale 0.5
 
 readRawTrace :: String -> [(Integer, Integer)]
 readRawTrace dat =
