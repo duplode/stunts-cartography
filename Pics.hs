@@ -116,7 +116,7 @@ baseElementPic c q sf et = case et of
             # rotateBy (1/4) # lw 0 # fc highwayCl)
     ElevatedSpan ->
         genericSquare bridgeCl # scaleY (roadW * bridgeRelW)
-        # atop (baseElementPicNoO sf Road)
+        # atop (spanSegment bridgeMeshCl # opacity 0.75)
         # translateY bridgeH
     SpanOverRoad ->
         baseElementPicNoO sf Road # rotateBy (1/4)
@@ -126,33 +126,33 @@ baseElementPic c q sf et = case et of
             genericSquare pillarCl
             # scaleX pillarW # scaleY bridgeH)
         # centerX # alignWithRoadY
-        # atop (baseElementPicNoO sf ElevatedSpan)
+        # atop (spanSegment bridgeMeshCl)
     SolidRoad ->
         genericSquare pillarCl
         # scaleY bridgeH
         # alignWithRoadY
-        # atop (baseElementPicNoO sf ElevatedSpan)
+        # atop (spanSegment tarmacCl)
     ElevatedCorner ->
         cornerArc bridgeCl (roadW * bridgeRelW) 2
-        # atop (baseElementPicNoO sf LargeCorner)
+        # atop (cornerArc bridgeMeshCl roadW 2)
         # elevatedCornerCorrection q
     ElevatedRamp ->
         rightTriangle pillarCl bridgeH
         # clipBy (square 1 # translateX (-0.5))
         # alignWithRoadY
         # rampBaseCorrection q
-        # atop (rampTransition bridgeCl q sf)
+        # atop (rampTransition bridgeCl q)
     BridgeRamp ->
         rightTriangle fancyPillarCl bridgeH
         # clipBy (square 1 # translateX (-0.5))
         # alignWithRoadY
         # rampBaseCorrection q
-        # atop (rampTransition fancyBridgeCl q sf)
+        # atop (rampTransition fancyBridgeCl q)
     SolidRamp ->
         rightTriangle pillarCl bridgeH
         # alignWithRoadY
         # rampBaseCorrection q
-        # atop (rampTransition bridgeCl q sf)
+        # atop (rampTransitionSolid bridgeCl q)
     BankedCorner ->
         let outerLen = 2 + roadW * (1 - bankRelH) / 2
             innerLen = 2 - roadW * bankRelH
@@ -209,7 +209,7 @@ baseElementPic c q sf et = case et of
         # translate (r2 (-0.5, 0.5))
         # atop (circle 0.5 # lw (bridgeRelW * roadW) # lc bridgeCl)
         # atop (circle 0.5 # lw roadW # lc tarmacCl)
-        # atop (baseElementPicNoO sf ElevatedSpan
+        # atop (spanSegment tarmacCl
             # rampCorrection q
             # reflectByChirality c `under` translation (r2 (0.5, -bridgeH))
             # translate (r2 (0.5, 0.5 - bridgeH)))
@@ -383,10 +383,19 @@ isoscelesTransition cl ratio =
     ===
     sidePad
 
-rampTransition cl q sf =
+rampTransition' flCl cl q =
     isoscelesTransition cl bridgeRelW
-    # atop (baseElementPicNoO sf Road)
+    # atop (genericSquare flCl # scaleY roadW)
     # rampCorrection q
+
+rampTransition = rampTransition' bridgeMeshCl
+
+rampTransitionSolid = rampTransition' tarmacCl
+
+spanSegment flCl =
+    genericSquare bridgeCl # scaleY (roadW * bridgeRelW)
+    # atop (genericSquare flCl # scaleY roadW)
+    # translateY bridgeH
 
 acura cl =
     (

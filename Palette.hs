@@ -18,6 +18,7 @@ insideTunnelCl = sienna
 blockCl = lightgrey
 highwayCl = lightgreen
 bridgeCl = blanchedalmond
+bridgeMeshCl = grey
 fancyBridgeCl = hotpink
 fancyPillarCl = orchid
 pillarCl = navajowhite
