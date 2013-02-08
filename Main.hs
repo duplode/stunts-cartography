@@ -16,13 +16,16 @@ main = do
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
         tiles = map snd $ assocs tilArr
-    --putStrLn . show $ tilArr ! (4, 7) -- Why are the indices swapped?
+    --putStrLn . show $ tilArr ! (4, 7)
     trDat <- readFile "070zgut.dat"
     let lapTrace = readRawTrace trDat
         lapPath = pathFromTrace lapTrace
     defaultMain $
         simpleRenderTracePath lapPath
-        <> gridLines
-        <> renderIndices
-        <> renderMap tiles
+        <>
+        gridLines
+        <>
+        renderIndices
+        <>
+        renderMap tiles
 
