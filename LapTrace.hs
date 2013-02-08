@@ -16,19 +16,28 @@ scaleTrace = map sclBoth
     factor = 1/65536
     sclBoth (x, z) = (factor * fromIntegral x, factor * fromIntegral z)
 
-dropLastSecond = reverse . drop 20 . reverse
-
-dropFinal19Frames = reverse . drop 19 . reverse
+-- Ideally, we would drop 20 frames from a normal completed replay to get the
+-- trace of the lap proper. Here, we discount one frame due to the sync
+-- correction in the coordinate extraction process and another one to ensure
+-- there will be a direction for every relevant frame when using cars to
+-- decorate the path.
+dropFinalFrames = reverse . drop 18 . reverse
 
 pathFromTrace tr = tr
-    # dropFinal19Frames # scaleTrace
+    # dropFinalFrames # scaleTrace
     # map p2 # fromVertices
 
 simpleRenderTracePath path = path # stroke
     # lw 0.05 # lc signCl
 
-renderTracePathWithCars path = path
-    # flip decoratePath (cycle $ raceCar : replicate 9 mempty)
+renderTracePathWithCars path =
+    let angles = (path :: Path (V P2))
+            # explodePath # concat # drop 1
+            # concatMap pathOffsets # map direction
+            :: [Rad]
+        cars = zipWith rotate angles
+            (cycle $ raceCar : replicate 9 mempty)
+    in decoratePath path cars
 
 raceCar = acura signCl # scale 0.5
 
