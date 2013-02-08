@@ -414,15 +414,17 @@ getTilePic tile =
     -- the `emptySquare`s of large elements end up.
     -- # moveOriginBySize Q1 (getTileSize tile)
 
-roadW = 1 / 5
+-- Standard values: roadW 1 / 5, bridgeRelW = 3 / 2, bridgeH = 1 / 4;
+-- roadW 1 / 4, bridgeRelW = 2 and bridgeH = 0.
+roadW = 1 / 4
 slalomRelW = 2 / 3
 pipeObstacleRelW = 1
 corkWallRelW = 1 / 2
 tunnelRelW = 2
 hwDivideRelW = 1
 highwayRelW = 2 + hwDivideRelW
-bridgeRelW = 3 / 2
-bridgeH = 1 / 4
+bridgeRelW = 2
+bridgeH = 0
 pillarW = 1 / 10
 bankRelH = 1 / 2
 pipeRelW = 5 / 3
