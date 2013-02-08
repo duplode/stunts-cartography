@@ -9,9 +9,10 @@ import Diagrams.Backend.Cairo.CmdLine
 import Track
 import Pics
 import Utils
+import LapTrace
 
 main = do
-    trkBS <- LB.readFile "VISEGRAD.TRK"
+    trkBS <- LB.readFile "ZCT070.TRK"
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
     --putStrLn . show $ tilArr ! (4, 7) -- Why are the indices swapped?
@@ -26,8 +27,12 @@ main = do
         leRows = catTiles <$> (map getTilePic <$> splitAtEvery30th leTiles)
         leFull = catRows leRows
         elmsFull = seFull <> leFull
+    trDat <- readFile "070zgut.dat"
+    let lapTrace = readRawTrace trDat
+        lapPath = pathFromTrace lapTrace
     defaultMain $
-        gridLines
+        simpleRenderTracePath lapPath
+        <> gridLines
         <> cat unitX [yIndices, strutX 30, yIndices]
         <> cat unitY [xIndices, strutY 30, xIndices]
         <> (elmsFull <> terrFull) # alignBL
