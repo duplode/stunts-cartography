@@ -2,14 +2,10 @@
 module Main where
 
 import Data.Array
-import Control.Monad.Instances
 import qualified OurByteString as LB
-import Data.List (groupBy, splitAt, unfoldr)
-import Data.Function (on)
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo.CmdLine
-import Track
-import Pics
+import Track (veryRawReadTrack, rawTrackToTileArray)
 import Utils
 import LapTrace
 import Palette (plainCl)
