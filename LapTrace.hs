@@ -3,6 +3,8 @@ module LapTrace
     ( pathFromTrace
     , simpleRenderTracePath
     , renderTracePathWithCars
+    , carsOnRails
+    , animatedTrace
     , readRawTrace
     ) where
 
@@ -23,23 +25,37 @@ scaleTrace = map sclBoth
 -- decorate the path.
 dropFinalFrames = reverse . drop 18 . reverse
 
-pathFromTrace tr = tr
-    # dropFinalFrames # scaleTrace
-    # map p2 # fromVertices
+tracePoints tr = tr
+    # dropFinalFrames # scaleTrace # map p2
+
+pathFromTrace = fromVertices . tracePoints
 
 simpleRenderTracePath path = path # stroke
     # lw 0.05 # lc signCl
 
+pathAngles :: Path (V P2) -> [Rad]
+pathAngles path = path
+    # explodePath # concat # drop 1
+    # concatMap pathOffsets # map direction
+
+raceCar = acura signCl # scale 0.5
+
 renderTracePathWithCars path =
-    let angles = (path :: Path (V P2))
-            # explodePath # concat # drop 1
-            # concatMap pathOffsets # map direction
-            :: [Rad]
-        cars = zipWith rotate angles
+    let cars = zipWith rotate
+            (pathAngles path)
             (cycle $ raceCar : replicate 9 mempty)
     in decoratePath path cars
 
-raceCar = acura signCl # scale 0.5
+carsOnRails path = zipWith arrangeCar arrangement (repeat raceCar)
+    where
+    pathPos= path
+        # pathVertices # concat
+    arrangement = zip (pathPos) (pathAngles path)
+    arrangeCar (pos, ang) = moveTo pos . rotate ang
+
+animatedTrace path =
+    let cars = carsOnRails path
+    in  discrete cars
 
 readRawTrace :: String -> [(Integer, Integer)]
 readRawTrace dat =

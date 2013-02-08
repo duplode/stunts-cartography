@@ -15,17 +15,13 @@ main = do
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
         tiles = map snd $ assocs tilArr
-    --putStrLn . show $ tilArr ! (4, 7)
+        baseMap =
+            gridLines
+            <>
+            renderMap tiles
     trDat <- readFile "070zgut.dat"
     let lapTrace = readRawTrace trDat
         lapPath = pathFromTrace lapTrace
-    defaultMain $
-        renderTracePathWithCars lapPath
-        -- simpleRenderTracePath lapPath
-        <>
-        gridLines
-        <>
-        renderIndices
-        <>
-        renderMap tiles
-
+    animMain $
+        animatedTrace lapPath
+        <> pure baseMap

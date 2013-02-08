@@ -12,3 +12,4 @@ activate
 Main
 
 sandbox/**
+movie/*
