@@ -1,4 +1,6 @@
 #!/bin/sh
-rm -f movie/*
+mkdir -p movie
+rm -f movie/*.png
 ghc -O --make Animate.hs
-time ./Animate -o movie/frame.png -w 960 --fpu 20
+# Remember that the default frame rate is 30fps.
+time ./Animate -o movie/frame.png -w 960

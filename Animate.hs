@@ -9,6 +9,7 @@ import Track (veryRawReadTrack, rawTrackToTileArray)
 import Utils
 import LapTrace
 import Composition
+import Data.Ratio ((%))
 
 main = do
     trkBS <- LB.readFile "ZCT070.TRK"
@@ -22,6 +23,8 @@ main = do
     trDat <- readFile "070zgut.dat"
     let lapTrace = readRawTrace trDat
         lapPath = pathFromTrace lapTrace
+        nSteps = (length . concat $ pathVertices lapPath) - 1
     animMain $
         animatedTrace lapPath
+        # stretch (fromIntegral nSteps % 20)
         <> pure baseMap
