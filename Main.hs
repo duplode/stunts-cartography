@@ -20,8 +20,9 @@ main = do
     let lapTrace = readRawTrace trDat
         lapPath = pathFromTrace lapTrace
     defaultMain $
-        renderTracePathWithCars lapPath
-        -- simpleRenderTracePath lapPath
+        --renderTracePathWithCars lapPath
+        -- <>
+        simpleRenderTracePath lapPath
         <>
         gridLines
         <>

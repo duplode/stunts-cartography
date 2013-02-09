@@ -1,0 +1,159 @@
+1. SETTING UP SCANMEM
+
+Grab the scanmem sources:
+
+> svn checkout http://scanmem.googlecode.com/svn/ scanmem-read-only
+
+We will build a modified version of scanmem, as we need to adapt its watch
+command to fit our purposes. Go to the `_watch` function in handlers.c. At
+its very end, you will find a `sleep(1);` call. That sets the timeout between
+sucessive memory watches. As we will want to watch at least once every Stunts
+frame, we need to replace it with a call to `nanosleep` with an interval
+somewhat lower than 0.05s (I used 0.036s). Then just do the usual
+
+> ./configure && make
+
+2. SETTING UP DOSBOX
+
+Next, we need to ensure that Stunts replays will play with perfect fluency in
+DOSBox; otherwise we might miss frames in our log. Prepare a special-purpose
+dosbox.conf geared at making it run as fast as possible. My options included
+no scaler, no sound, default 320x200 resolution, higher priority, core=dynamic
+and 32000 cycles. Once you start Stunts, it is a good idea to go to the
+options menu and lower graphical detail to the minimum.
+
+3. KNOWING OUR TARGET
+
+Thanks to the restunts project we know that the current player coordinates are
+kept at the very beginning of the player state data structure, as a vector of
+32-bit integers with three coordinates; namely, x (east axis), y (height) and
+z (north axis). The watch command of scanmem, however, can only log a single
+integer value up to 64 bits wide in a single run. Rather than modifying
+scanmem again, we will rely on the fortunate circumstance that the player
+state struct stores, immediately after the the coordinates vector, the
+coordinates of the previous time step [*]. Since we are, for now, only
+interested in the x and z components, we can watch z from the current vector
+and x from the old vector (eight contiguous bytes, as scanmem demands), and
+then fix the coordinates at a later post-processing step.
+
+There still remains the problem of how to locate the player state struct
+amidst the memory in use by the DOSBox process. Luckily, there is an excellent
+vector in the struct: 0xBE bytes ahead of the beginning of the current
+position vector the following sequence of bytes lies:
+
+- current gear (one byte);
+- sum of surface codes for each of the wheel axes (two bytes);
+- sum of surface codes for all wheels (one byte); and
+- surface code for each wheel (four bytes).
+
+It is very easy to control these values in game. For instance, driving the car
+fully into grass while in first gear leads to the values:
+
+01 08 08 10 04 04 04 04
+
+Furthemore. the sequence is long enough to make coincidences with unrelated data
+unlikely.
+
+[*] At the start of the replay, this old coordinates vector contains the
+initial x and z coordinates and the height of the terrain at the s/f line
+which, for some reason, is very slightly different from the initial y
+coordinate of the player.
+
+4. LOGGING THE COORDINATES
+
+Start scanmem with:
+
+> ./scanmem 2>&1 | tee -i foo.dat
+
+foo.dat will be used as a temporary dump for the watch log.
+
+Next, start Stunts in DOSBox, using the dosbox.conf prepared in step 2. Check
+the PID of the DOSBox process, go to scanmem and use (replace the number here
+by the actual PID, of course):
+
+> pid 28939
+
+Now, start driving in Stunts and throw your car on the grass while still in
+first gear. Then, pause the game and return to scanmem.
+
+In scanmem, run the following commands:
+
+> option scan_data_type bytearray
+> 01 08 08 10 04 04 04 04
+
+If all goes to plan, scanmem will only identify one match. To see what it is,
+use:
+
+> list
+[ 0]       0x7fac93036694, 01 08 08 10 04 04 04 04, [bytearray]
+
+0x7fac93036694 is the address of the beginning of the matched string, which
+should be 0xbe bytes ahead of the car global coordinates. Since the byte
+string we are looking for begins with the z coordinate, the target position
+thn becomes:
+
+0x7fac93036694 - 0xb6 = 0x7fac930365de
+
+As far as my tests have shown, the locations within the player structure are
+fixed throughout the lifetime of an instance of Stunts; so as long as you
+don't quit the game there is no need to repeat this step before loading
+different replays.
+
+Now we are in a position to match the contents of the global coordinates vector.
+Load the desired replay and run:
+
+> dump 0x7fac930365de 0x8
+0x7fac930365d6: 80 B4 0D 00 00 77 0E 00            .....w..
+
+> reset
+
+> 80 B4 0D 00 00 77 0E 00
+
+> list
+[ 0]       0x7fac930365de, 80 b4 0d 00 00 77 0e 00, [bytearray]
+
+Match [ 0] is indeed what we were looking for; the out-of-sync z and x
+coordinates of the car. Next, load the desired replay, rewind it to the
+beginning and, finally, use:
+
+> watch 0
+
+Play the replay and watch the data being printed to the screen. When the
+replay ends, stop the watching with Ctrl-C. You will be left with a long list
+of entries looking like this:
+
+info: [22:14:34] monitoring 0x7fac930365de for changes until interrupted...
+info: [22:15:44] 0x7fac930365de -> 2199024203518, [I64 I32 I16 I8 F64 F32 ]
+info: [22:15:56] 0x7fac930365de -> 2199024203526, [I64 I32 I16 I8 F64 F32 ]
+info: [22:15:56] 0x7fac930365de -> 2199024203546, [I64 I32 I16 I8 F64 F32 ]
+info: [22:15:56] 0x7fac930365de -> 2199024203587, [I64 I32 I16 I8 F64 F32 ]
+info: [22:15:57] 0x7fac930365de -> 2199024203651, [I64 I32 I16 I8 F64 F32 ]
+info: [22:15:57] 0x7fac930365de -> 2199024203752, [I64 I32 I16 I8 F64 F32 ]
+
+The numbers after the arrow are the coordinates, encoded as raw integers. For
+instance,
+
+2199024203518
+0x200000E76FE (hex)
+FE 76 0E 00 00 02 00 00
+
+(Attentive readers might get the correct suspicion that the quoted values
+above look more like x and y coordinates than z and x ones. Please excuse this
+tiny inconsistency.)
+
+Now all that is necessary is to parse the output to recover the coordinates and
+then fix the syncing of the x and z values.
+
+5. INCONVENIENCES AND INFELICITIES
+
+Retrieveing the y values (or other relevant data, such as car orientations)
+with this approach will probably be very annoying. Not being able to watch the
+relevant values in a single run means the logs for the different coordinats
+would need to be synced. That, however, is not trivial if we want to ensure
+correctness, as y coordinates need not change in tandem with x and z ones.
+Another obvious shortcoming is that the log does not contain frames in which
+neither x nor z coordinates changed. One possible, if still rather unsightly,
+workaround would be changing the watch handler in scanmem so that the values
+are logged regardless of whether there were changes or not. With such an
+strategy, the problem of eliminating the unavoidable redundancies in a
+completely safe manner would demand some thought.

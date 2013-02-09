@@ -10,6 +10,12 @@ syntax:glob
 
 activate
 Main
+Animate
+Sandbox
+laptrace/hackparser
 
 sandbox/**
 movie/*
+
+laptrace/*.ods
+laptrace/*.dat
