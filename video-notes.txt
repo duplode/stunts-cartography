@@ -1,0 +1,17 @@
+Once the PNG frames are generated, build the video with ffmpeg. The following
+command generates a nice and small MP4 video. Obviously, you may need to
+adjust the file name format if there are more than 9999 or less than 1000
+frames:
+
+ffmpeg -r 30 -i 'frame%04d.png' -vcodec libx264 -r 30 070zgut_aerial.mp4
+
+For some reason, however, YouTube does not play well with such an encoding.
+One option is switching to the ZMBV codec - the same one used by DOSBox for
+video captures - which results in reasonably good-looking and not too large
+output:
+
+ffmpeg -r 30 -i 'frame%04d.png' -vcodec zmbv -vf "scale=720:720,pad=1280:720:280:0" -s hd720 -r 30 070zgut_aerial_zh.avi
+
+The command above, incidentally, was used to generate the tech demo at:
+
+http://www.youtube.com/watch?v=Dwnej8PUsjg&hd=1
