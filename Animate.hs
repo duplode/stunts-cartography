@@ -12,7 +12,7 @@ import Composition
 import Data.Ratio ((%))
 
 main = do
-    trkBS <- LB.readFile "ZCT070.TRK"
+    trkBS <- LB.readFile "data/ZCT070.TRK"
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
         tiles = map snd $ assocs tilArr
@@ -20,7 +20,7 @@ main = do
             gridLines
             <>
             renderMap tiles
-    trDat <- readFile "070zgut.dat"
+    trDat <- readFile "data/070zgut.dat"
     let lapTrace = readRawTrace trDat
         lapPath = pathFromTrace lapTrace
         nSteps = (length . concat $ pathVertices lapPath) - 1
