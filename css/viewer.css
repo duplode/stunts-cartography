@@ -1,0 +1,13 @@
+div.left-bar {
+  float: left;
+  clear: left;
+  width: 10em;
+  margin: 0 0 0 0;
+  padding: 0.5em 0.5em 0.5em 0.5em;
+}
+
+div.main-wrap {
+  float: none;
+  clear: none;
+  margin: 0 16em 0 14em;
+}

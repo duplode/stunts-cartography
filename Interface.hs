@@ -23,21 +23,19 @@ main = do
 
 setup :: Window -> IO ()
 setup w = void $ do
-    return w # set title "Vectorial Track Viewer"
-    fileInput <- mkFileInput
-    buttonGo <- mkButtonGo
+    return w # set title "Yet Another Track Viewer"
+    UI.addStyleSheet w "viewer.css"
     trackPng <- loadTrackPng w
-    imgTrack <- mkImgTrack # set UI.src trackPng
     getBody w #+
-        [ UI.div #. "wrap-go" #+ map element [fileInput, buttonGo]
-        , UI.div #. "wrap-map" #+ map element [imgTrack]
+        [ UI.div #. "left-bar" #+
+            [ UI.p #+ [string ".TRK file path:"]
+            , UI.input # set UI.type_ "text" # set UI.name "trk-input"
+                # set UI.id_ "trk-input"
+            , mkButtonGo
+            ]
+        , UI.div #. "main-wrap" #+
+            [ UI.img # set UI.id_ "track-map"]
         ]
-
-mkImgTrack :: IO Element
-mkImgTrack = UI.img #. "track-map" # set UI.id_ "track-map"
-
-mkFileInput :: IO Element
-mkFileInput = UI.input # set UI.id_ "trk-input" -- # set UI.type_ "file"
 
 mkButtonGo :: IO Element
 mkButtonGo = do
