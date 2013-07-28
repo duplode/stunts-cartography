@@ -334,19 +334,69 @@ baseElementPic c q sf et = case et of
         acura opponentCl
     _ -> mempty
 
-elevatedCornerCorrection q =
-    let correction = (1 / (2 - 1/2)) * bridgeH
-        deltaX = corrSignumX q * correction
-        deltaY = corrSignumY q * correction
-    in translateX deltaX . translateY deltaY
-    . scaleX (1 + deltaX) . scaleY (1 + deltaY)
+    where
+    elevatedCornerCorrection q =
+        let correction = (1 / (2 - 1/2)) * bridgeH
+            deltaX = corrSignumX q * correction
+            deltaY = corrSignumY q * correction
+        in translateX deltaX . translateY deltaY
+        . scaleX (1 + deltaX) . scaleY (1 + deltaY)
 
-rampCorrection q =
-    shearY (corrSignumY q * bridgeH) `under` translationX 0.5
+    rampCorrection q =
+        shearY (corrSignumY q * bridgeH) `under` translationX 0.5
 
-rampBaseCorrection q = scaleY (corrSignumY q)
+    rampBaseCorrection q = scaleY (corrSignumY q)
 
-alignWithRoadY = juxtapose unitY (hrule 1 # translateY (-roadW / 2))
+    alignWithRoadY = juxtapose unitY (hrule 1 # translateY (-roadW / 2))
+
+    cornerArc cl w l =
+        arc (0 :: CircleFrac) (1/4 :: CircleFrac)
+        # alignBL # scale (l - 1/2) # moveOriginBy (r2 (l/2, l/2))
+        # lw w # lc cl
+
+    isoscelesTransition cl ratio =
+        let sidePad = polygon with
+                { polyType = PolySides [1/4 :: CircleFrac]
+                                       [ roadW * (ratio - 1) / 2, 1 ]
+                , polyOrient = OrientV }
+                # lw 0 # fc cl # centerXY
+        in centerY $
+        sidePad # reflectY
+        ===
+        strutY roadW
+        ===
+        sidePad
+
+    rampTransition' flCl cl q =
+        isoscelesTransition cl bridgeRelW
+        # atop (genericSquare flCl # scaleY roadW)
+        # rampCorrection q
+
+    rampTransition = rampTransition' bridgeMeshCl
+
+    rampTransitionSolid = rampTransition' tarmacCl
+
+    spanSegment flCl =
+        genericSquare bridgeCl # scaleY (roadW * bridgeRelW)
+        # atop (genericSquare flCl # scaleY roadW)
+        # translateY bridgeH
+
+    -- Standard values: roadW 1 / 5, bridgeRelW = 3 / 2, bridgeH = 1 / 4;
+    -- roadW 1 / 4, bridgeRelW = 2 and bridgeH = 0.
+    roadW = 1 / 4
+    slalomRelW = 2 / 3
+    pipeObstacleRelW = 1
+    corkWallRelW = 1 / 2
+    tunnelRelW = 2
+    hwDivideRelW = 1
+    highwayRelW = 2 + hwDivideRelW
+    bridgeRelW = 2
+    bridgeH = 0
+    pillarW = 1 / 10
+    bankRelH = 1 / 2
+    pipeRelW = 5 / 3
+    loopRelB = 1
+    loopD = 1 / 2
 
 emptySquare = square 1 # lw (1/20)
 
@@ -357,11 +407,6 @@ diagonalTriangle cl = polygon with
                            [ 1, sqrt 2 ]
     } # centerXY # lw 0 # fc cl
 
-cornerArc cl w l =
-    arc (0 :: CircleFrac) (1/4 :: CircleFrac)
-    # alignBL # scale (l - 1/2) # moveOriginBy (r2 (l/2, l/2))
-    # lw w # lc cl
-
 rightTriangle cl h =
     polygon with
         { polyType = PolySides [1/4 :: CircleFrac]
@@ -369,33 +414,6 @@ rightTriangle cl h =
         , polyOrient = OrientV }
     # alignB # centerX # reflectY # translateY (h / 2)
     # lw 0 # fc cl
-
-isoscelesTransition cl ratio =
-    let sidePad = polygon with
-            { polyType = PolySides [1/4 :: CircleFrac]
-                                   [ roadW * (ratio - 1) / 2, 1 ]
-            , polyOrient = OrientV }
-            # lw 0 # fc cl # centerXY
-    in centerY $
-    sidePad # reflectY
-    ===
-    strutY roadW
-    ===
-    sidePad
-
-rampTransition' flCl cl q =
-    isoscelesTransition cl bridgeRelW
-    # atop (genericSquare flCl # scaleY roadW)
-    # rampCorrection q
-
-rampTransition = rampTransition' bridgeMeshCl
-
-rampTransitionSolid = rampTransition' tarmacCl
-
-spanSegment flCl =
-    genericSquare bridgeCl # scaleY (roadW * bridgeRelW)
-    # atop (genericSquare flCl # scaleY roadW)
-    # translateY bridgeH
 
 acura cl =
     (
@@ -409,7 +427,7 @@ acura cl =
         }
     # fc cl
 
---getTerrainPic :: Tile -> "Dia"
+--getTilePic :: Tile -> "Dia"
 getTilePic tile =
     let c = getTileChirality tile
         q = getTileOrientation tile
@@ -422,23 +440,6 @@ getTilePic tile =
     -- Moving the origin as below seems to work if we don't care about where
     -- the `emptySquare`s of large elements end up.
     -- # moveOriginBySize Q1 (getTileSize tile)
-
--- Standard values: roadW 1 / 5, bridgeRelW = 3 / 2, bridgeH = 1 / 4;
--- roadW 1 / 4, bridgeRelW = 2 and bridgeH = 0.
-roadW = 1 / 4
-slalomRelW = 2 / 3
-pipeObstacleRelW = 1
-corkWallRelW = 1 / 2
-tunnelRelW = 2
-hwDivideRelW = 1
-highwayRelW = 2 + hwDivideRelW
-bridgeRelW = 2
-bridgeH = 0
-pillarW = 1 / 10
-bankRelH = 1 / 2
-pipeRelW = 5 / 3
-loopRelB = 1
-loopD = 1 / 2
 
 {-# INLINE surfaceToColor #-}
 surfaceToColor sf = case sf of
