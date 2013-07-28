@@ -12,18 +12,14 @@ import Utils
 import LapTrace
 import Composition
 
-writePngOutput :: IO ()
-writePngOutput = do
-    trkBS <- LB.readFile "data/ZCT135.TRK"
+writePngOutput :: FilePath -> IO ()
+writePngOutput trkPath = do
+    trkBS <- LB.readFile trkPath
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
         tiles = map snd $ assocs tilArr
-    trDat <- readFile "data/135zdup.dat"
-    let lapTrace = readRawTrace trDat
-        lapPath = pathFromTrace lapTrace
     fst . renderDia Cairo (CairoOptions "test.png" (Width 960) PNG False) $
-        simpleRenderTracePath lapPath
-        <>
+        --TODO: Restore the capability of tracing paths.
         gridLines
         <>
         renderIndices
