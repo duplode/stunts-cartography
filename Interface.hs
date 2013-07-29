@@ -34,6 +34,9 @@ setup w = void $ do
             , UI.p #+ [string "Road width (0.1 - 0.5):"]
             , UI.input # set UI.type_ "text" # set UI.name "road-w-input"
                 # set UI.id_ "road-w-input" # set value "0.2"
+            , UI.p #+ [string "Bridge height (0 - 0.5):"]
+            , UI.input # set UI.type_ "text" # set UI.name "bridge-h-input"
+                # set UI.id_ "bridge-h-input" # set value "0"
             , mkButtonGo
             ]
         , UI.div #. "main-wrap" #+
@@ -48,8 +51,10 @@ mkButtonGo = do
         trkPath <- join $ get value . fromJust
             <$> getElementById w "trk-input"
         roadW <- selectedRoadWidth w
+        bridgeH <- selectedBridgeHeight w
         let params = Params.defaultRenderingParameters
                 { Params.roadWidth = roadW
+                , Params.bridgeHeight = bridgeH
                 }
         trkExists <- doesFileExist trkPath
         mFileSize <- retrieveFileSize trkPath
@@ -69,6 +74,13 @@ selectedRoadWidth w = do
         <$> getElementById w "road-w-input"
     let width = fromMaybe 0.2 . readMaybe $ widthStr
     return $ min 0.5 . max 0.1 $ width
+
+selectedBridgeHeight :: Window -> IO Double
+selectedBridgeHeight w = do
+    heightStr <- join $ get value . fromJust
+        <$> getElementById w "bridge-h-input"
+    let height = fromMaybe 0 . readMaybe $ heightStr
+    return $ min 0.5 . max 0 $ height
 
 --Lifted from RWH chapter 9.
 retrieveFileSize :: FilePath -> IO (Maybe Integer)
