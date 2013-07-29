@@ -40,6 +40,9 @@ setup w = void $ do
             , UI.p #+ [string "Bridge relative width (1 - 3):"]
             , UI.input # set UI.type_ "text" # set UI.name "bridge-rel-w-input"
                 # set UI.id_ "bridge-rel-w-input" # set value "2"
+            , UI.p #+ [string "Banking relative height (0.25 - 1):"]
+            , UI.input # set UI.type_ "text" # set UI.name "bank-rel-h-input"
+                # set UI.id_ "bank-rel-h-input" # set value "0.5"
             , UI.p #+ [string "Pixels per tile (8 - 64):"]
             , UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
                 # set UI.id_ "px-per-tile-input" # set value "32"
@@ -59,11 +62,13 @@ mkButtonGo = do
         roadW <- selectedRoadWidth w
         bridgeH <- selectedBridgeHeight w
         bridgeRelW <- selectedBridgeRelativeWidth w
+        bankRelH <- selectedBankingRelativeHeight w
         pxPerTile <- selectedPixelsPerTile w
         let params = Params.defaultRenderingParameters
                 { Params.roadWidth = roadW
                 , Params.bridgeHeight = bridgeH
                 , Params.bridgeRelativeWidth = bridgeRelW
+                , Params.bankingRelativeHeight = bankRelH
                 , Params.pixelsPerTile = pxPerTile
                 }
         trkExists <- doesFileExist trkPath
@@ -97,6 +102,10 @@ selectedBridgeHeight = do
 selectedBridgeRelativeWidth :: Window -> IO Double
 selectedBridgeRelativeWidth = do
     selectedDoubleFromTextInput "bridge-rel-w-input" 1 2 3
+
+selectedBankingRelativeHeight :: Window -> IO Double
+selectedBankingRelativeHeight = do
+    selectedDoubleFromTextInput "bank-rel-h-input" 0.25 0.5 1
 
 selectedPixelsPerTile :: Window -> IO Double
 selectedPixelsPerTile =
