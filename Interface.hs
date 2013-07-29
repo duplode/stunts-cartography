@@ -37,6 +37,9 @@ setup w = void $ do
             , UI.p #+ [string "Bridge height (0 - 0.5):"]
             , UI.input # set UI.type_ "text" # set UI.name "bridge-h-input"
                 # set UI.id_ "bridge-h-input" # set value "0"
+            , UI.p #+ [string "Bridge relative width (1 - 3):"]
+            , UI.input # set UI.type_ "text" # set UI.name "bridge-rel-w-input"
+                # set UI.id_ "bridge-rel-w-input" # set value "2"
             , mkButtonGo
             ]
         , UI.div #. "main-wrap" #+
@@ -52,9 +55,11 @@ mkButtonGo = do
             <$> getElementById w "trk-input"
         roadW <- selectedRoadWidth w
         bridgeH <- selectedBridgeHeight w
+        bridgeRelW <- selectedBridgeRelativeWidth w
         let params = Params.defaultRenderingParameters
                 { Params.roadWidth = roadW
                 , Params.bridgeHeight = bridgeH
+                , Params.bridgeRelativeWidth = bridgeRelW
                 }
         trkExists <- doesFileExist trkPath
         mFileSize <- retrieveFileSize trkPath
@@ -68,19 +73,26 @@ mkButtonGo = do
 loadTrackPng :: Window -> IO String
 loadTrackPng w = loadFile w "image/png" "./test.png"
 
+selectedDoubleFromTextInput :: String -> Double -> Double -> Double
+                            -> Window -> IO Double
+selectedDoubleFromTextInput elemId minVal defVal maxVal = \w -> do
+    inputStr <- join $ get value . fromJust
+        <$> getElementById w elemId
+    let val = fromMaybe defVal . readMaybe $ inputStr
+    return $ min maxVal . max minVal $ val
+
 selectedRoadWidth :: Window -> IO Double
-selectedRoadWidth w = do
-    widthStr <- join $ get value . fromJust
-        <$> getElementById w "road-w-input"
-    let width = fromMaybe 0.2 . readMaybe $ widthStr
-    return $ min 0.5 . max 0.1 $ width
+selectedRoadWidth =
+    selectedDoubleFromTextInput "road-w-input" 0.1 0.2 0.5
 
 selectedBridgeHeight :: Window -> IO Double
-selectedBridgeHeight w = do
-    heightStr <- join $ get value . fromJust
-        <$> getElementById w "bridge-h-input"
-    let height = fromMaybe 0 . readMaybe $ heightStr
-    return $ min 0.5 . max 0 $ height
+selectedBridgeHeight = do
+    selectedDoubleFromTextInput "bridge-h-input" 0 0 0.5
+
+selectedBridgeRelativeWidth :: Window -> IO Double
+selectedBridgeRelativeWidth = do
+    selectedDoubleFromTextInput "bridge-rel-w-input" 1 2 3
+
 
 --Lifted from RWH chapter 9.
 retrieveFileSize :: FilePath -> IO (Maybe Integer)

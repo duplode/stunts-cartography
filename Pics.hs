@@ -80,6 +80,7 @@ baseElementPic c q sf et = do
     env <- ask
     roadW <- asks Params.roadWidth
     bridgeH <- asks Params.bridgeHeight
+    bridgeRelW <- asks Params.bridgeRelativeWidth
     let elevatedCornerCorrection q =
             let correction = (1 / (2 - 1/2)) * bridgeH
                 deltaX = corrSignumX q * correction
@@ -135,7 +136,7 @@ baseElementPic c q sf et = do
         tunnelRelW = 2
         hwDivideRelW = 1
         highwayRelW = 2 + hwDivideRelW
-        bridgeRelW = 2
+        --bridgeRelW = 2
         --bridgeH = 0
         pillarW = 1 / 10
         bankRelH = 1 / 2
