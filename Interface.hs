@@ -9,6 +9,7 @@ import Control.Exception (handle)
 import System.IO (IOMode(..), hClose, hFileSize, openFile)
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
+import Diagrams.Backend.Cairo (OutputType(..))
 
 import Output
 import qualified Parameters as Params
@@ -25,10 +26,12 @@ setup :: Window -> IO ()
 setup w = void $ do
     return w # set title "Yet Another Track Viewer"
     UI.addStyleSheet w "viewer.css"
-    trackPng <- loadTrackPng w
     getBody w #+
         [ UI.div #. "left-bar" #+
-            [ UI.p #+ [string ".TRK file path:"]
+            [ UI.p #+ [string "Generate image:"]
+            , mkButtonGo
+            , mkButtonSVG
+            , UI.p #+ [string ".TRK file path:"]
             , UI.input # set UI.type_ "text" # set UI.name "trk-input"
                 # set UI.id_ "trk-input"
             , UI.p #+ [string "Road width (0.1 - 0.5):"]
@@ -43,7 +46,7 @@ setup w = void $ do
             , UI.p #+ [string "Banking relative height (0.25 - 1):"]
             , UI.input # set UI.type_ "text" # set UI.name "bank-rel-h-input"
                 # set UI.id_ "bank-rel-h-input" # set value "0.5"
-            , UI.p #+ [string "Pixels per tile (8 - 64):"]
+            , UI.p #+ [string "Pixels (PNG) or points (SVG) per tile (8 - 64):"]
             , UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
                 # set UI.id_ "px-per-tile-input" # set value "32"
             , UI.p #+ [string "Grid mode:"]
@@ -55,7 +58,6 @@ setup w = void $ do
                 ]
             , UI.input # set UI.type_ "text" # set UI.name "grid-mode-input"
                 # set UI.id_ "grid-mode-input" # set value "3"
-            , mkButtonGo
             ]
         , UI.div #. "main-wrap" #+
             [ UI.img # set UI.id_ "track-map"]
@@ -63,40 +65,54 @@ setup w = void $ do
 
 mkButtonGo :: IO Element
 mkButtonGo = do
-    button <- UI.button #. "button" #+ [string "Go!"]
-    on UI.click button $ \_ -> do
-        w <- fromJust <$> getWindow button --TODO: ick
-        trkPath <- join $ get value . fromJust
-            <$> getElementById w "trk-input"
-        roadW <- selectedRoadWidth w
-        bridgeH <- selectedBridgeHeight w
-        bridgeRelW <- selectedBridgeRelativeWidth w
-        bankRelH <- selectedBankingRelativeHeight w
-        pxPerTile <- selectedPixelsPerTile w
-        (drawGrid, drawIxs) <- parseGridMode
-            <$> selectedGridMode w
-        let params = Params.defaultRenderingParameters
-                { Params.roadWidth = roadW
-                , Params.bridgeHeight = bridgeH
-                , Params.bridgeRelativeWidth = bridgeRelW
-                , Params.bankingRelativeHeight = bankRelH
-                , Params.pixelsPerTile = pxPerTile
-                , Params.drawGridLines = drawGrid
-                , Params.drawIndices = drawIxs
-                }
-        trkExists <- doesFileExist trkPath
-        mFileSize <- retrieveFileSize trkPath
-        let sizeIsCorrect = mFileSize == Just 1802
-            proceedWithLoading = trkExists && sizeIsCorrect
-        when proceedWithLoading $ writePngOutput params trkPath
-        trackPng <- loadTrackPng w
-        (fromJust <$> getElementById w "track-map")
-            # set UI.src (if proceedWithLoading then trackPng else "")
-        --getBody w #+ [UI.p #. "message" #+ [string trkPath]]
+    button <- UI.button #. "button" #+ [string "PNG"]
+    on UI.click button $ generateImageHandler PNG button
     return button
 
-loadTrackPng :: Window -> IO String
-loadTrackPng w = loadFile w "image/png" "./test.png"
+mkButtonSVG :: IO Element
+mkButtonSVG = do
+    button <- UI.button #. "button" #+ [string "SVG"]
+    on UI.click button $ generateImageHandler SVG button
+    return button
+
+generateImageHandler :: OutputType -> Element -> (a -> IO ())
+generateImageHandler outType button = \_ -> do
+    w <- fromJust <$> getWindow button --TODO: ick
+    trkPath <- join $ get value . fromJust
+        <$> getElementById w "trk-input"
+    roadW <- selectedRoadWidth w
+    bridgeH <- selectedBridgeHeight w
+    bridgeRelW <- selectedBridgeRelativeWidth w
+    bankRelH <- selectedBankingRelativeHeight w
+    pxPerTile <- selectedPixelsPerTile w
+    (drawGrid, drawIxs) <- parseGridMode
+        <$> selectedGridMode w
+    let params = Params.defaultRenderingParameters
+            { Params.roadWidth = roadW
+            , Params.bridgeHeight = bridgeH
+            , Params.bridgeRelativeWidth = bridgeRelW
+            , Params.bankingRelativeHeight = bankRelH
+            , Params.pixelsPerTile = pxPerTile
+            , Params.drawGridLines = drawGrid
+            , Params.drawIndices = drawIxs
+            , Params.outputType = outType
+            }
+    trkExists <- doesFileExist trkPath
+    mFileSize <- retrieveFileSize trkPath
+    let sizeIsCorrect = mFileSize == Just 1802
+        proceedWithLoading = trkExists && sizeIsCorrect
+    when proceedWithLoading $ writePngOutput params trkPath
+    trackImage <- loadTrackImage outType w
+    (fromJust <$> getElementById w "track-map")
+        # set UI.src (if proceedWithLoading then trackImage else "")
+    --getBody w #+ [UI.p #. "message" #+ [string trkPath]]
+    return ()
+
+loadTrackImage :: OutputType -> Window -> IO String
+loadTrackImage outType w = case outType of
+    PNG -> loadFile w "image/png" "./test.png"
+    SVG -> loadFile w "image/svg+xml" "./test.svg"
+    _   -> loadFile w "image/png" "./test" --Nonsense
 
 selectedNumFromTextInput :: (Num a, Read a, Ord a)
                          => String -> a -> a -> a
@@ -139,6 +155,7 @@ parseGridMode n = case n of
     1 -> (True, False)
     2 -> (False, True)
     3 -> (True, True)
+    _ -> (True, True)
 
 --Lifted from RWH chapter 9.
 retrieveFileSize :: FilePath -> IO (Maybe Integer)

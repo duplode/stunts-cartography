@@ -1,5 +1,7 @@
 module Parameters where
 
+import Diagrams.Backend.Cairo (OutputType(..))
+
 data RenderingParameters = RenderingParameters
     { roadWidth :: Double
     , bridgeHeight :: Double
@@ -9,6 +11,7 @@ data RenderingParameters = RenderingParameters
     , pixelsPerTile :: Double
     , drawGridLines :: Bool
     , drawIndices :: Bool
+    , outputType :: OutputType
     }
 
 defaultRenderingParameters = RenderingParameters
@@ -19,4 +22,5 @@ defaultRenderingParameters = RenderingParameters
     , pixelsPerTile = 32
     , drawGridLines = True
     , drawIndices = True
+    , outputType = PNG
     }

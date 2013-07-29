@@ -23,7 +23,12 @@ writePngOutput params trkPath = do
     let willRenderIndices = Params.drawIndices params
         renWidthInTiles = if willRenderIndices then 32 else 30
         renWidth = renWidthInTiles * Params.pixelsPerTile params
-    fst . renderDia Cairo (CairoOptions "test.png" (Width renWidth) PNG False) $
+        outType = Params.outputType params
+        outFile = case outType of
+            PNG -> "test.png"
+            SVG -> "test.svg"
+            _   -> "test"
+    fst . renderDia Cairo (CairoOptions outFile (Width renWidth) outType False) $
         --TODO: Restore the capability of tracing paths.
         (if Params.drawGridLines params then gridLines else mempty)
         <>
