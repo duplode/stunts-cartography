@@ -10,6 +10,7 @@ import Track (veryRawReadTrack, rawTrackToTileArray)
 import Utils
 import LapTrace
 import Composition
+import qualified Parameters as Params
 
 main = do
     trkBS <- LB.readFile "data/ZCT135.TRK"
@@ -29,5 +30,5 @@ main = do
         <>
         renderIndices
         <>
-        runReader (renderMap tiles) (1 / 4)
+        runReader (renderMap tiles) (Params.defaultRenderingParameters)
 

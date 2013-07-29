@@ -11,8 +11,7 @@ import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
 
 import Output
-
-
+import qualified Parameters as Params
 
 main :: IO ()
 main = do
@@ -49,10 +48,13 @@ mkButtonGo = do
         trkPath <- join $ get value . fromJust
             <$> getElementById w "trk-input"
         roadW <- selectedRoadWidth w
+        let params = Params.defaultRenderingParameters
+                { Params.roadWidth = roadW
+                }
         trkExists <- doesFileExist trkPath
         mFileSize <- retrieveFileSize trkPath
         let sizeIsCorrect = mFileSize == Just 1802
-        when (trkExists && sizeIsCorrect) $ writePngOutput roadW trkPath
+        when (trkExists && sizeIsCorrect) $ writePngOutput params trkPath
         trackPng <- loadTrackPng w
         (fromJust <$> getElementById w "track-map") # set UI.src trackPng
         --getBody w #+ [UI.p #. "message" #+ [string trkPath]]

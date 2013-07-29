@@ -16,6 +16,7 @@ import Track (Orientation(..), Chirality(..), rotateOrientation
              , getElementType, getTerrainType
              , isElemAttrOf )
 import Palette
+import qualified Parameters as Params
 
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
 rotateByOrient = rotateBy . CircleFrac . (/4) . fromIntegral . fromEnum
@@ -77,7 +78,7 @@ baseElementPicNoO env = baseElementPicNoC env Q1
 --baseElementPic :: Chirality -> Orientation -> Surface -> ElementType -> "Dia"
 baseElementPic c q sf et = do
     env <- ask
-    roadW <- asks id
+    roadW <- asks Params.roadWidth
     let elevatedCornerCorrection q =
             let correction = (1 / (2 - 1/2)) * bridgeH
                 deltaX = corrSignumX q * correction

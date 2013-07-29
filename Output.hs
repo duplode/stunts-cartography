@@ -12,9 +12,10 @@ import Track (veryRawReadTrack, rawTrackToTileArray)
 import Utils
 import LapTrace
 import Composition
+import qualified Parameters as Params
 
-writePngOutput :: Double -> FilePath -> IO ()
-writePngOutput roadW trkPath = do
+writePngOutput :: Params.RenderingParameters -> FilePath -> IO ()
+writePngOutput params trkPath = do
     trkBS <- LB.readFile trkPath
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
@@ -25,5 +26,5 @@ writePngOutput roadW trkPath = do
         <>
         renderIndices
         <>
-        runReader (renderMap tiles) roadW
+        runReader (renderMap tiles) params
 
