@@ -5,6 +5,7 @@ module Composition
     , gridLines
     ) where
 
+import Control.Monad (liftM)
 import Diagrams.Prelude
 import Track
 import Pics
@@ -16,15 +17,18 @@ renderTerrain tiles =
             catTiles <$> (map getTerrainPic <$> splitAtEvery30th tiles)
     in catRows terrRows
 
-renderElements tiles =
-    let makeElementRows ts = catTiles
-            <$> (map getTilePic <$> splitAtEvery30th ts)
+renderElements tiles = do
+    let makeElementRows ts = (catTiles <$>)
+            `liftM` sequence (sequence . map getTilePic <$> splitAtEvery30th ts)
         (seTiles, leTiles) = separateTilesBySize tiles
-    in (catRows . makeElementRows $ seTiles)
-    <> (catRows . makeElementRows $ leTiles)
+    smallElementRows <- makeElementRows seTiles
+    largeElementRows <- makeElementRows leTiles
+    return $ catRows smallElementRows <> catRows largeElementRows
 
-renderMap tiles =
-    (renderElements tiles <> renderTerrain tiles) # alignBL
+renderMap tiles = do
+    let renderedTerrain = renderTerrain tiles
+    renderedElements <- renderElements tiles
+    return $ (renderedElements <> renderedTerrain) # alignBL
 
 renderIndices =
     cat unitX [yIndices, strutX 30, yIndices]

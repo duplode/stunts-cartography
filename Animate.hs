@@ -2,6 +2,7 @@
 module Main where
 
 import Data.Array
+import Control.Monad.Trans.Reader
 import qualified OurByteString as LB
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo.CmdLine
@@ -19,7 +20,7 @@ main = do
         baseMap =
             gridLines
             <>
-            renderMap tiles
+            runReader (renderMap tiles) (1 / 4)
     trDat <- readFile "data/070zgut.dat"
     let lapTrace = readRawTrace trDat
         lapPath = pathFromTrace lapTrace

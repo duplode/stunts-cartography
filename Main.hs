@@ -2,6 +2,7 @@
 module Main where
 
 import Data.Array
+import Control.Monad.Trans.Reader
 import qualified OurByteString as LB
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo.CmdLine
@@ -28,5 +29,5 @@ main = do
         <>
         renderIndices
         <>
-        renderMap tiles
+        runReader (renderMap tiles) (1 / 4)
 

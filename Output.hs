@@ -2,6 +2,7 @@
 module Output where
 
 import Data.Array
+import Control.Monad.Trans.Reader
 import qualified OurByteString as LB
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo
@@ -24,5 +25,5 @@ writePngOutput trkPath = do
         <>
         renderIndices
         <>
-        renderMap tiles
+        runReader (renderMap tiles) (1 / 4)
 
