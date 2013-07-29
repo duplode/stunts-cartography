@@ -87,9 +87,11 @@ mkButtonGo = do
         trkExists <- doesFileExist trkPath
         mFileSize <- retrieveFileSize trkPath
         let sizeIsCorrect = mFileSize == Just 1802
-        when (trkExists && sizeIsCorrect) $ writePngOutput params trkPath
+            proceedWithLoading = trkExists && sizeIsCorrect
+        when proceedWithLoading $ writePngOutput params trkPath
         trackPng <- loadTrackPng w
-        (fromJust <$> getElementById w "track-map") # set UI.src trackPng
+        (fromJust <$> getElementById w "track-map")
+            # set UI.src (if proceedWithLoading then trackPng else "")
         --getBody w #+ [UI.p #. "message" #+ [string trkPath]]
     return button
 
