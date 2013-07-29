@@ -7,6 +7,8 @@ data RenderingParameters = RenderingParameters
     , bankingRelativeHeight :: Double
 
     , pixelsPerTile :: Double
+    , drawGridLines :: Bool
+    , drawIndices :: Bool
     }
 
 defaultRenderingParameters = RenderingParameters
@@ -15,4 +17,6 @@ defaultRenderingParameters = RenderingParameters
     , bridgeRelativeWidth = 2
     , bankingRelativeHeight = 1 / 2
     , pixelsPerTile = 32
+    , drawGridLines = True
+    , drawIndices = True
     }

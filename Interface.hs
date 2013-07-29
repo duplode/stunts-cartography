@@ -46,6 +46,15 @@ setup w = void $ do
             , UI.p #+ [string "Pixels per tile (8 - 64):"]
             , UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
                 # set UI.id_ "px-per-tile-input" # set value "32"
+            , UI.p #+ [string "Grid mode:"]
+            , UI.ul #+
+                [ UI.li #+ [string "0: None"]
+                , UI.li #+ [string "1: Lines"]
+                , UI.li #+ [string "2: Indices"]
+                , UI.li #+ [string "3: Both"]
+                ]
+            , UI.input # set UI.type_ "text" # set UI.name "grid-mode-input"
+                # set UI.id_ "grid-mode-input" # set value "3"
             , mkButtonGo
             ]
         , UI.div #. "main-wrap" #+
@@ -64,12 +73,16 @@ mkButtonGo = do
         bridgeRelW <- selectedBridgeRelativeWidth w
         bankRelH <- selectedBankingRelativeHeight w
         pxPerTile <- selectedPixelsPerTile w
+        (drawGrid, drawIxs) <- parseGridMode
+            <$> selectedGridMode w
         let params = Params.defaultRenderingParameters
                 { Params.roadWidth = roadW
                 , Params.bridgeHeight = bridgeH
                 , Params.bridgeRelativeWidth = bridgeRelW
                 , Params.bankingRelativeHeight = bankRelH
                 , Params.pixelsPerTile = pxPerTile
+                , Params.drawGridLines = drawGrid
+                , Params.drawIndices = drawIxs
                 }
         trkExists <- doesFileExist trkPath
         mFileSize <- retrieveFileSize trkPath
@@ -83,9 +96,10 @@ mkButtonGo = do
 loadTrackPng :: Window -> IO String
 loadTrackPng w = loadFile w "image/png" "./test.png"
 
-selectedDoubleFromTextInput :: String -> Double -> Double -> Double
-                            -> Window -> IO Double
-selectedDoubleFromTextInput elemId minVal defVal maxVal = \w -> do
+selectedNumFromTextInput :: (Num a, Read a, Ord a)
+                         => String -> a -> a -> a
+                         -> Window -> IO a
+selectedNumFromTextInput elemId minVal defVal maxVal = \w -> do
     inputStr <- join $ get value . fromJust
         <$> getElementById w elemId
     let val = fromMaybe defVal . readMaybe $ inputStr
@@ -93,24 +107,36 @@ selectedDoubleFromTextInput elemId minVal defVal maxVal = \w -> do
 
 selectedRoadWidth :: Window -> IO Double
 selectedRoadWidth =
-    selectedDoubleFromTextInput "road-w-input" 0.1 0.2 0.5
+    selectedNumFromTextInput "road-w-input" 0.1 0.2 0.5
 
 selectedBridgeHeight :: Window -> IO Double
 selectedBridgeHeight = do
-    selectedDoubleFromTextInput "bridge-h-input" 0 0 0.5
+    selectedNumFromTextInput "bridge-h-input" 0 0 0.5
 
 selectedBridgeRelativeWidth :: Window -> IO Double
 selectedBridgeRelativeWidth = do
-    selectedDoubleFromTextInput "bridge-rel-w-input" 1 2 3
+    selectedNumFromTextInput "bridge-rel-w-input" 1 2 3
 
 selectedBankingRelativeHeight :: Window -> IO Double
 selectedBankingRelativeHeight = do
-    selectedDoubleFromTextInput "bank-rel-h-input" 0.25 0.5 1
+    selectedNumFromTextInput "bank-rel-h-input" 0.25 0.5 1
 
 selectedPixelsPerTile :: Window -> IO Double
 selectedPixelsPerTile =
-    selectedDoubleFromTextInput "px-per-tile-input" 8 32 64
+    selectedNumFromTextInput "px-per-tile-input" 8 32 64
 
+selectedGridMode :: Window -> IO Int
+selectedGridMode = do
+    selectedNumFromTextInput "grid-mode-input" 0 3 3
+
+--fst: grid lines; snd: indices.
+--TODO: Possibly refactor as a bit field.
+parseGridMode :: Int -> (Bool, Bool)
+parseGridMode n = case n of
+    0 -> (False, False)
+    1 -> (True, False)
+    2 -> (False, True)
+    3 -> (True, True)
 
 --Lifted from RWH chapter 9.
 retrieveFileSize :: FilePath -> IO (Maybe Integer)
