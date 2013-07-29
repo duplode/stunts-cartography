@@ -4,10 +4,13 @@ data RenderingParameters = RenderingParameters
     { roadWidth :: Double
     , bridgeHeight :: Double
     , bridgeRelativeWidth :: Double
+
+    , pixelsPerTile :: Double
     }
 
 defaultRenderingParameters = RenderingParameters
     { roadWidth = 1 / 5
     , bridgeHeight = 0
     , bridgeRelativeWidth = 2
+    , pixelsPerTile = 32
     }

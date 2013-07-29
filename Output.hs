@@ -20,7 +20,10 @@ writePngOutput params trkPath = do
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
         tiles = map snd $ assocs tilArr
-    fst . renderDia Cairo (CairoOptions "test.png" (Width 960) PNG False) $
+    let willRenderIndices = True
+        renWidthInTiles = if willRenderIndices then 32 else 30
+        renWidth = renWidthInTiles * Params.pixelsPerTile params
+    fst . renderDia Cairo (CairoOptions "test.png" (Width renWidth) PNG False) $
         --TODO: Restore the capability of tracing paths.
         gridLines
         <>
