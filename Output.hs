@@ -13,8 +13,8 @@ import Utils
 import LapTrace
 import Composition
 
-writePngOutput :: FilePath -> IO ()
-writePngOutput trkPath = do
+writePngOutput :: Double -> FilePath -> IO ()
+writePngOutput roadW trkPath = do
     trkBS <- LB.readFile trkPath
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
@@ -25,5 +25,5 @@ writePngOutput trkPath = do
         <>
         renderIndices
         <>
-        runReader (renderMap tiles) (1 / 4)
+        runReader (renderMap tiles) roadW
 

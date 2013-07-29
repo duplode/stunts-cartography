@@ -2,7 +2,8 @@ module Main where
 
 import Control.Monad
 import Control.Applicative ((<$>))
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, fromMaybe)
+import Text.Read (readMaybe)
 import System.Directory (doesFileExist)
 import Control.Exception (handle)
 import System.IO (IOMode(..), hClose, hFileSize, openFile)
@@ -31,6 +32,9 @@ setup w = void $ do
             [ UI.p #+ [string ".TRK file path:"]
             , UI.input # set UI.type_ "text" # set UI.name "trk-input"
                 # set UI.id_ "trk-input"
+            , UI.p #+ [string "Road width (0.1 - 0.5):"]
+            , UI.input # set UI.type_ "text" # set UI.name "road-w-input"
+                # set UI.id_ "road-w-input" # set value "0.2"
             , mkButtonGo
             ]
         , UI.div #. "main-wrap" #+
@@ -44,10 +48,11 @@ mkButtonGo = do
         w <- fromJust <$> getWindow button --TODO: ick
         trkPath <- join $ get value . fromJust
             <$> getElementById w "trk-input"
+        roadW <- selectedRoadWidth w
         trkExists <- doesFileExist trkPath
         mFileSize <- retrieveFileSize trkPath
         let sizeIsCorrect = mFileSize == Just 1802
-        when (trkExists && sizeIsCorrect) $ writePngOutput trkPath
+        when (trkExists && sizeIsCorrect) $ writePngOutput roadW trkPath
         trackPng <- loadTrackPng w
         (fromJust <$> getElementById w "track-map") # set UI.src trackPng
         --getBody w #+ [UI.p #. "message" #+ [string trkPath]]
@@ -55,6 +60,13 @@ mkButtonGo = do
 
 loadTrackPng :: Window -> IO String
 loadTrackPng w = loadFile w "image/png" "./test.png"
+
+selectedRoadWidth :: Window -> IO Double
+selectedRoadWidth w = do
+    widthStr <- join $ get value . fromJust
+        <$> getElementById w "road-w-input"
+    let width = fromMaybe 0.2 . readMaybe $ widthStr
+    return $ min 0.5 . max 0.1 $ width
 
 --Lifted from RWH chapter 9.
 retrieveFileSize :: FilePath -> IO (Maybe Integer)
@@ -66,4 +78,58 @@ retrieveFileSize path = handle nothingHandler $ do
     where
     nothingHandler :: IOError -> IO (Maybe Integer)
     nothingHandler = \_ -> return Nothing
+
+--Test snippets
+--Radio buttons for road width selection.
+            {-
+            , UI.p #+
+                [ UI.input # set UI.type_ "radio" # set UI.name "road-w"
+                    # set UI.value "standard" # set UI.id_ "road-w-standard"
+                    # set UI.checked True
+                    # registerCopyValueOnChange "road-w-copy"
+                , string "Standard (1/5)"
+                ]
+            , UI.p #+
+                [ UI.input # set UI.type_ "radio" # set UI.name "road-w"
+                    # set UI.value "wider" # set UI.id_ "road-w-wider"
+                    # registerCopyValueOnChange "road-w-copy"
+                , string "Wider (1/4)"
+                ]
+            , UI.p #+
+                [ UI.input # set UI.type_ "radio" # set UI.name "road-w"
+                    # set UI.value "wide" # set UI.id_ "road-w-wide"
+                    # registerCopyValueOnChange "road-w-copy"
+                , string "Wide (1/3)"
+                ]
+            , UI.input # set UI.type_ "hidden" # set UI.name "road-w-copy"
+                {- # set UI.value "standard" -} # set UI.id_ "road-w-copy"
+            -}
+--(Failed) attempts to make use of the radiobuttons under Threepenny 0.1.0.1.
+{-
+--There are no checks on whether the element exists.
+setValueForSomeId :: Window -> String -> String -> IO Element
+setValueForSomeId w val eid =
+    (fromJust <$> getElementById w eid) # set value val
+
+--There are no checks on whether the element has a window.
+registerCopyValueOnChange :: String -> IO Element -> IO Element
+registerCopyValueOnChange destId el = do
+    el' <- el
+    on UI.click el' $ \_ -> do
+        w <- fromJust <$> getWindow el'
+        return w # set title "FOO!"
+        val <- get value el'
+        setValueForSomeId w val destId
+    el
+
+selectedRoadWidth :: Window -> IO Double
+selectedRoadWidth w = do
+    widthStr <- join $ get value . fromJust
+        <$> getElementById w "road-w-copy"
+    return $ case widthStr of
+        "standard" -> 1 / 5
+        "wider"    -> 1 / 4
+        "wide"     -> 1 / 3
+        _          -> 1 / 5
+-}
 
