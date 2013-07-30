@@ -8,10 +8,22 @@ Maintainer:          Daniel Mlot
 Build-Type:          Simple
 Cabal-Version:       >=1.8
 
-Extra-Source-Files:  css/viewer.css
+Extra-Source-Files:  README.md
+Data-Files:          css/viewer.css
 
 Executable sc-trk-viewer
   Main-is:           Interface.hs
+  Other-Modules:     Composition
+                    ,LapTrace
+                    ,OurByteString
+                    ,Output
+                    ,Palette
+                    ,Parameters
+                    ,Pics
+                    ,Track
+                    ,Utils
+  Hs-Source-Dirs:   .
+
   Build-Depends:     base >= 4.6 && < 5
                     ,threepenny-gui >= 0.1.0.1 && < 0.2
                     ,diagrams-core >= 0.6 && < 0.7
