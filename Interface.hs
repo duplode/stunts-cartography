@@ -5,6 +5,7 @@ import Control.Applicative ((<$>))
 import Data.Maybe (fromJust, fromMaybe)
 import Text.Read (readMaybe)
 import System.Directory (doesFileExist)
+import System.FilePath ((</>))
 import Control.Exception (handle)
 import System.IO (IOMode(..), hClose, hFileSize, openFile)
 import qualified Graphics.UI.Threepenny as UI
@@ -31,7 +32,10 @@ setup w = void $ do
             [ UI.p #+ [string "Generate image:"]
             , mkButtonGo
             , mkButtonSVG
-            , UI.p #+ [string ".TRK file path:"]
+            , UI.p #+ [string "Base path"]
+            , UI.input # set UI.type_ "text" # set UI.name "base-path-input"
+                # set UI.id_ "base-path-input" # set value ".."
+            , UI.p #+ [string ".TRK relative path:"]
             , UI.input # set UI.type_ "text" # set UI.name "trk-input"
                 # set UI.id_ "trk-input"
             , UI.p #+ [string "Road width (0.1 - 0.5):"]
@@ -78,8 +82,11 @@ mkButtonSVG = do
 generateImageHandler :: OutputType -> Element -> (a -> IO ())
 generateImageHandler outType button = \_ -> do
     w <- fromJust <$> getWindow button --TODO: ick
-    trkPath <- join $ get value . fromJust
+    trkRelPath <- join $ get value . fromJust
         <$> getElementById w "trk-input"
+    basePath <- join $ get value . fromJust
+        <$> getElementById w "base-path-input"
+    let trkPath = basePath </> trkRelPath
     roadW <- selectedRoadWidth w
     bridgeH <- selectedBridgeHeight w
     bridgeRelW <- selectedBridgeRelativeWidth w

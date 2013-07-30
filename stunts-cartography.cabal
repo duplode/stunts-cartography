@@ -21,4 +21,5 @@ Executable stunts-cartography-viewer
                     ,array >= 0.4 && < 0.6
                     ,transformers >= 0.3 && < 0.5
                     ,directory >= 1.2 && < 1.4
+                    ,filepath >= 1.2 && < 1.4
 
