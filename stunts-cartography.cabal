@@ -1,0 +1,24 @@
+Name:                stunts-cartography
+Version:             0.1
+Description:         Power tools for creating Stunts track maps.
+License:             BSD3
+License-file:        LICENSE
+Author:              Daniel Mlot
+Maintainer:          Daniel Mlot
+Build-Type:          Simple
+Cabal-Version:       >=1.8
+
+Extra-Source-Files:  css/viewer.css
+
+Executable stunts-cartography-viewer
+  Main-is:           Interface.hs
+  Build-Depends:     base >= 4.6 && < 5
+                    ,threepenny-gui >= 0.1.0.1 && < 0.2
+                    ,diagrams-core >= 0.6 && < 0.7
+                    ,diagrams-lib >= 0.6 && < 0.7
+                    ,diagrams-cairo >= 0.6 && < 0.7
+                    ,bytestring >= 0.10 && < 0.12
+                    ,array >= 0.4 && < 0.6
+                    ,transformers >= 0.3 && < 0.5
+                    ,directory >= 1.2 && < 1.4
+
