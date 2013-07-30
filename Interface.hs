@@ -32,7 +32,7 @@ setup w = void $ do
             [ UI.p #+ [string "Generate image:"]
             , mkButtonGo
             , mkButtonSVG
-            , UI.p #+ [string "Base path"]
+            , UI.p #+ [string "Base path:"]
             , UI.input # set UI.type_ "text" # set UI.name "base-path-input"
                 # set UI.id_ "base-path-input" # set value ".."
             , UI.p #+ [string ".TRK relative path:"]
