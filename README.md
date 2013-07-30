@@ -9,6 +9,6 @@ Power tools for track map rendering and analysis for the classic racing game
 
 ## Track Viewer
 
-* Executable: stunts-cartography-viewer
+* Executable: sc-trk-viewer
 * Instructions: launch it in a console window and navigate in a web browser to
   http://0.0.0.0:10000 .

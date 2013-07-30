@@ -10,7 +10,7 @@ Cabal-Version:       >=1.8
 
 Extra-Source-Files:  css/viewer.css
 
-Executable stunts-cartography-viewer
+Executable sc-trk-viewer
   Main-is:           Interface.hs
   Build-Depends:     base >= 4.6 && < 5
                     ,threepenny-gui >= 0.1.0.1 && < 0.2
