@@ -20,7 +20,6 @@ sandbox/**
 movie/*
 demos/*
 laptrace/z70-demo
-data/*
 
 laptrace/*.ods
 laptrace/*.dat
