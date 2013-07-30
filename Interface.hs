@@ -24,7 +24,7 @@ main = do
 
 setup :: Window -> IO ()
 setup w = void $ do
-    return w # set title "Yet Another Track Viewer"
+    return w # set title "Stunts Cartography - Track Viewer"
     UI.addStyleSheet w "viewer.css"
     getBody w #+
         [ UI.div #. "left-bar" #+
@@ -110,9 +110,9 @@ generateImageHandler outType button = \_ -> do
 
 loadTrackImage :: OutputType -> Window -> IO String
 loadTrackImage outType w = case outType of
-    PNG -> loadFile w "image/png" "./test.png"
-    SVG -> loadFile w "image/svg+xml" "./test.svg"
-    _   -> loadFile w "image/png" "./test" --Nonsense
+    PNG -> loadFile w "image/png" "./stunts-cartography-map-tmp.png"
+    SVG -> loadFile w "image/svg+xml" "./stunts-cartography-map-tmp.svg"
+    _   -> loadFile w "image/png" "./stunts-cartography-map" --Nonsense
 
 selectedNumFromTextInput :: (Num a, Read a, Ord a)
                          => String -> a -> a -> a

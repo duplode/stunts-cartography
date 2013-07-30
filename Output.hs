@@ -25,9 +25,9 @@ writePngOutput params trkPath = do
         renWidth = renWidthInTiles * Params.pixelsPerTile params
         outType = Params.outputType params
         outFile = case outType of
-            PNG -> "test.png"
-            SVG -> "test.svg"
-            _   -> "test"
+            PNG -> "stunts-cartography-map-tmp.png"
+            SVG -> "stunts-cartography-map-tmp.svg"
+            _   -> "stunts-cartography-map" --Nonsense
     fst . renderDia Cairo (CairoOptions outFile (Width renWidth) outType False) $
         --TODO: Restore the capability of tracing paths.
         (if Params.drawGridLines params then gridLines else mempty)
