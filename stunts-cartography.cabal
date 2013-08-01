@@ -29,9 +29,11 @@ Executable sc-trk-viewer
                     ,diagrams-core >= 0.6 && < 0.7
                     ,diagrams-lib >= 0.6 && < 0.7
                     ,diagrams-cairo >= 0.6 && < 0.7
-                    ,bytestring >= 0.10 && < 0.12
-                    ,array >= 0.4 && < 0.6
-                    ,transformers >= 0.3 && < 0.5
-                    ,directory >= 1.2 && < 1.4
-                    ,filepath >= 1.2 && < 1.4
+                    ,bytestring
+                    ,array
+                    ,transformers >= 0.3
+                    ,directory
+                    ,filepath
+
+  Ghc-Options:       -O
 

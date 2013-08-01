@@ -10,7 +10,7 @@ import Track (veryRawReadTrack, rawTrackToTileArray)
 import Utils
 import LapTrace
 import Composition
-import qualified Parameters as Params
+import qualified Parameters as Pm
 import Data.Ratio ((%))
 
 main = do
@@ -21,7 +21,7 @@ main = do
         baseMap =
             gridLines
             <>
-            runReader (renderMap tiles) (Params.defaultRenderingParameters)
+            runReader (renderMap tiles) (Pm.defaultRenderingParameters)
     trDat <- readFile "data/070zgut.dat"
     let lapTrace = readRawTrace trDat
         lapPath = pathFromTrace lapTrace

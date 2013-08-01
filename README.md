@@ -11,4 +11,4 @@ Power tools for track map rendering and analysis for the classic racing game
 
 * Executable: sc-trk-viewer
 * Instructions: launch it in a console window and navigate in a web browser to
-  http://0.0.0.0:10000 .
+  http://localhost:10000 .

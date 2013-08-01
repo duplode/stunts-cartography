@@ -13,7 +13,7 @@ import Graphics.UI.Threepenny.Core
 import Diagrams.Backend.Cairo (OutputType(..))
 
 import Output
-import qualified Parameters as Params
+import qualified Parameters as Pm
 
 main :: IO ()
 main = do
@@ -94,15 +94,15 @@ generateImageHandler outType button = \_ -> do
     pxPerTile <- selectedPixelsPerTile w
     (drawGrid, drawIxs) <- parseGridMode
         <$> selectedGridMode w
-    let params = Params.defaultRenderingParameters
-            { Params.roadWidth = roadW
-            , Params.bridgeHeight = bridgeH
-            , Params.bridgeRelativeWidth = bridgeRelW
-            , Params.bankingRelativeHeight = bankRelH
-            , Params.pixelsPerTile = pxPerTile
-            , Params.drawGridLines = drawGrid
-            , Params.drawIndices = drawIxs
-            , Params.outputType = outType
+    let params = Pm.defaultRenderingParameters
+            { Pm.roadWidth = roadW
+            , Pm.bridgeHeight = bridgeH
+            , Pm.bridgeRelativeWidth = bridgeRelW
+            , Pm.bankingRelativeHeight = bankRelH
+            , Pm.pixelsPerTile = pxPerTile
+            , Pm.drawGridLines = drawGrid
+            , Pm.drawIndices = drawIxs
+            , Pm.outputType = outType
             }
     trkExists <- doesFileExist trkPath
     mFileSize <- retrieveFileSize trkPath

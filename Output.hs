@@ -12,25 +12,25 @@ import Track (veryRawReadTrack, rawTrackToTileArray)
 import Utils
 import LapTrace
 import Composition
-import qualified Parameters as Params
+import qualified Parameters as Pm
 
-writePngOutput :: Params.RenderingParameters -> FilePath -> IO ()
+writePngOutput :: Pm.RenderingParameters -> FilePath -> IO ()
 writePngOutput params trkPath = do
     trkBS <- LB.readFile trkPath
     let rawTrk = veryRawReadTrack trkBS
         tilArr = rawTrackToTileArray rawTrk
         tiles = map snd $ assocs tilArr
-    let willRenderIndices = Params.drawIndices params
+    let willRenderIndices = Pm.drawIndices params
         renWidthInTiles = if willRenderIndices then 32 else 30
-        renWidth = renWidthInTiles * Params.pixelsPerTile params
-        outType = Params.outputType params
+        renWidth = renWidthInTiles * Pm.pixelsPerTile params
+        outType = Pm.outputType params
         outFile = case outType of
             PNG -> "stunts-cartography-map-tmp.png"
             SVG -> "stunts-cartography-map-tmp.svg"
             _   -> "stunts-cartography-map" --Nonsense
     fst . renderDia Cairo (CairoOptions outFile (Width renWidth) outType False) $
         --TODO: Restore the capability of tracing paths.
-        (if Params.drawGridLines params then gridLines else mempty)
+        (if Pm.drawGridLines params then gridLines else mempty)
         <>
         (if willRenderIndices then renderIndices else mempty)
         <>
