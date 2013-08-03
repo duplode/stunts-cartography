@@ -53,15 +53,16 @@ setup w = void $ do
             , UI.p #+ [string "Pixels (PNG) or points (SVG) per tile (8 - 64):"]
             , UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
                 # set UI.id_ "px-per-tile-input" # set value "32"
-            , UI.p #+ [string "Grid mode:"]
-            , UI.ul #+
-                [ UI.li #+ [string "0: None"]
-                , UI.li #+ [string "1: Lines"]
-                , UI.li #+ [string "2: Indices"]
-                , UI.li #+ [string "3: Both"]
+            , UI.p #+
+                [ string "Grid lines?"
+                , UI.input # set UI.type_ "checkbox" # set UI.name "grid-lines-chk"
+                    # set UI.id_ "grid-lines-chk" # set UI.checked_ True
                 ]
-            , UI.input # set UI.type_ "text" # set UI.name "grid-mode-input"
-                # set UI.id_ "grid-mode-input" # set value "3"
+            , UI.p #+
+                [ string "Grid indices?"
+                , UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
+                    # set UI.id_ "grid-indices-chk" # set UI.checked_ True
+                ]
             ]
         , UI.div #. "main-wrap" #+
             [ UI.img # set UI.id_ "track-map"]
@@ -92,8 +93,8 @@ generateImageHandler outType button = \_ -> do
     bridgeRelW <- selectedBridgeRelativeWidth w
     bankRelH <- selectedBankingRelativeHeight w
     pxPerTile <- selectedPixelsPerTile w
-    (drawGrid, drawIxs) <- parseGridMode
-        <$> selectedGridMode w
+    drawGrid <- selectedDrawGridLines w
+    drawIxs <- selectedDrawGridIndices w
     let params = Pm.defaultRenderingParameters
             { Pm.roadWidth = roadW
             , Pm.bridgeHeight = bridgeH
@@ -150,19 +151,15 @@ selectedPixelsPerTile :: Window -> IO Double
 selectedPixelsPerTile =
     selectedNumFromTextInput "px-per-tile-input" 8 32 64
 
-selectedGridMode :: Window -> IO Int
-selectedGridMode = do
-    selectedNumFromTextInput "grid-mode-input" 0 3 3
+selectedBoolFromCheckbox :: String -> Window -> IO Bool
+selectedBoolFromCheckbox elemId = \w ->
+    join $ get UI.checked . fromJust <$> getElementById w elemId
 
---fst: grid lines; snd: indices.
---TODO: Possibly refactor as a bit field.
-parseGridMode :: Int -> (Bool, Bool)
-parseGridMode n = case n of
-    0 -> (False, False)
-    1 -> (True, False)
-    2 -> (False, True)
-    3 -> (True, True)
-    _ -> (True, True)
+selectedDrawGridLines :: Window -> IO Bool
+selectedDrawGridLines = selectedBoolFromCheckbox "grid-lines-chk"
+
+selectedDrawGridIndices :: Window -> IO Bool
+selectedDrawGridIndices = selectedBoolFromCheckbox "grid-indices-chk"
 
 --Lifted from RWH chapter 9.
 retrieveFileSize :: FilePath -> IO (Maybe Integer)
