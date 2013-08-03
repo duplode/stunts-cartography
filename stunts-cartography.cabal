@@ -1,5 +1,5 @@
 Name:                stunts-cartography
-Version:             0.1.0.0
+Version:             0.1.0.1
 Description:         Power tools for creating Stunts track maps.
 License:             BSD3
 License-file:        LICENSE
@@ -25,7 +25,7 @@ Executable sc-trk-viewer
   Hs-Source-Dirs:   .
 
   Build-Depends:     base >= 4.6 && < 5
-                    ,threepenny-gui >= 0.1.0.1 && < 0.2
+                    ,threepenny-gui >= 0.2.0.1 && < 0.3
                     ,diagrams-core >= 0.6 && < 0.7
                     ,diagrams-lib >= 0.6 && < 0.7
                     ,diagrams-cairo >= 0.6 && < 0.7
