@@ -13,6 +13,7 @@ import Graphics.UI.Threepenny.Core
 import Diagrams.Backend.Cairo (OutputType(..))
 
 import Output
+import Track (Horizon(..))
 import qualified Parameters as Pm
 
 main :: IO ()
@@ -27,8 +28,8 @@ setup :: Window -> IO ()
 setup w = void $ do
     return w # set title "Stunts Cartography - Track Viewer"
     UI.addStyleSheet w "viewer.css"
-    getBody w #+
-        [ UI.div #. "left-bar" #+
+    getBody w # set UI.id_ "the-body" # set UI.class_ "blank-horizon" #+
+        [ UI.div # set UI.id_ "left-bar" #+
             [ UI.p #+ [string "Generate image:"]
             , mkButtonGo
             , mkButtonSVG
@@ -64,7 +65,7 @@ setup w = void $ do
                     # set UI.id_ "grid-indices-chk" # set UI.checked_ True
                 ]
             ]
-        , UI.div #. "main-wrap" #+
+        , UI.div # set UI.id_ "main-wrap" #+
             [ UI.img # set UI.id_ "track-map"]
         ]
 
@@ -109,12 +110,30 @@ generateImageHandler outType button = \_ -> do
     mFileSize <- retrieveFileSize trkPath
     let sizeIsCorrect = mFileSize == Just 1802
         proceedWithLoading = trkExists && sizeIsCorrect
-    when proceedWithLoading $ writePngOutput params trkPath
-    trackImage <- loadTrackImage outType w
-    (fromJust <$> getElementById w "track-map")
-        # set UI.src (if proceedWithLoading then trackImage else "")
-    --getBody w #+ [UI.p #. "message" #+ [string trkPath]]
+    if proceedWithLoading
+        then do
+            postRender <- writePngOutput params trkPath
+            applyHorizonClass (Pm.renderedTrackHorizon postRender) w
+            trackImage <- loadTrackImage outType w
+            (fromJust <$> getElementById w "track-map") # set UI.src trackImage
+        else do
+            runFunction w $ applyClassToBody "blank-horizon"
+            (fromJust <$> getElementById w "track-map") # set UI.src ""
     return ()
+
+applyHorizonClass :: Horizon -> Window -> IO ()
+applyHorizonClass horizon = \w -> do
+    let horizonClass = case horizon of
+            Desert   -> "desert-horizon"
+            Alpine   -> "alpine-horizon"
+            City     -> "city-horizon"
+            Country  -> "country-horizon"
+            Tropical -> "tropical-horizon"
+            _        -> "unknown-horizon"
+    runFunction w $ applyClassToBody horizonClass
+
+applyClassToBody :: String -> JSFunction ()
+applyClassToBody = ffi "document.body.className = %1;"
 
 loadTrackImage :: OutputType -> Window -> IO String
 loadTrackImage outType w = case outType of
@@ -171,58 +190,4 @@ retrieveFileSize path = handle nothingHandler $ do
     where
     nothingHandler :: IOError -> IO (Maybe Integer)
     nothingHandler = \_ -> return Nothing
-
---Test snippets
---Radio buttons for road width selection.
-            {-
-            , UI.p #+
-                [ UI.input # set UI.type_ "radio" # set UI.name "road-w"
-                    # set UI.value "standard" # set UI.id_ "road-w-standard"
-                    # set UI.checked True
-                    # registerCopyValueOnChange "road-w-copy"
-                , string "Standard (1/5)"
-                ]
-            , UI.p #+
-                [ UI.input # set UI.type_ "radio" # set UI.name "road-w"
-                    # set UI.value "wider" # set UI.id_ "road-w-wider"
-                    # registerCopyValueOnChange "road-w-copy"
-                , string "Wider (1/4)"
-                ]
-            , UI.p #+
-                [ UI.input # set UI.type_ "radio" # set UI.name "road-w"
-                    # set UI.value "wide" # set UI.id_ "road-w-wide"
-                    # registerCopyValueOnChange "road-w-copy"
-                , string "Wide (1/3)"
-                ]
-            , UI.input # set UI.type_ "hidden" # set UI.name "road-w-copy"
-                {- # set UI.value "standard" -} # set UI.id_ "road-w-copy"
-            -}
---(Failed) attempts to make use of the radiobuttons under Threepenny 0.1.0.1.
-{-
---There are no checks on whether the element exists.
-setValueForSomeId :: Window -> String -> String -> IO Element
-setValueForSomeId w val eid =
-    (fromJust <$> getElementById w eid) # set value val
-
---There are no checks on whether the element has a window.
-registerCopyValueOnChange :: String -> IO Element -> IO Element
-registerCopyValueOnChange destId el = do
-    el' <- el
-    on UI.click el' $ \_ -> do
-        w <- fromJust <$> getWindow el'
-        return w # set title "FOO!"
-        val <- get value el'
-        setValueForSomeId w val destId
-    el
-
-selectedRoadWidth :: Window -> IO Double
-selectedRoadWidth w = do
-    widthStr <- join $ get value . fromJust
-        <$> getElementById w "road-w-copy"
-    return $ case widthStr of
-        "standard" -> 1 / 5
-        "wider"    -> 1 / 4
-        "wide"     -> 1 / 3
-        _          -> 1 / 5
--}
 

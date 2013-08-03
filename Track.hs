@@ -7,6 +7,7 @@ module Track
     , ElementAttribute(..)
     , ElementSize(..)
     , TerrainType(..)
+    , Horizon(..)
     , Tile()
     , getTileOrientation
     , getTileChirality
@@ -22,6 +23,7 @@ module Track
 
     , veryRawReadTrack
     , rawTrackToTileArray
+    , horizonFromRawTrack
     ) where
 
 import Data.Maybe (fromJust)
@@ -911,3 +913,7 @@ rawTrackToTileArray trk = listArray ((0, 0), (29, 29)) tiles
         . takeWhile (not . LB.null . fst) . drop 1
         . iterate (LB.splitAt 30 . snd) $ (LB.empty, veryRawTerrain trk)
         -}
+
+-- |Retrieves the horizon of a raw track.
+horizonFromRawTrack :: VeryRawTrack -> Horizon
+horizonFromRawTrack = byteToHorizon . veryRawHorizon

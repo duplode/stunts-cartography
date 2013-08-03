@@ -8,16 +8,17 @@ import Diagrams.Prelude
 import Diagrams.Backend.Cairo
 import Diagrams.Backend.Cairo.Internal
 import Diagrams.Core
-import Track (veryRawReadTrack, rawTrackToTileArray)
+import Track (veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
 import Utils
 import LapTrace
 import Composition
 import qualified Parameters as Pm
 
-writePngOutput :: Pm.RenderingParameters -> FilePath -> IO ()
+writePngOutput :: Pm.RenderingParameters -> FilePath -> IO Pm.PostRenderInfo
 writePngOutput params trkPath = do
     trkBS <- LB.readFile trkPath
     let rawTrk = veryRawReadTrack trkBS
+        horizon = horizonFromRawTrack rawTrk
         tilArr = rawTrackToTileArray rawTrk
         tiles = map snd $ assocs tilArr
     let willRenderIndices = Pm.drawIndices params
@@ -28,6 +29,7 @@ writePngOutput params trkPath = do
             PNG -> "stunts-cartography-map-tmp.png"
             SVG -> "stunts-cartography-map-tmp.svg"
             _   -> "stunts-cartography-map" --Nonsense
+
     fst . renderDia Cairo (CairoOptions outFile (Width renWidth) outType False) $
         --TODO: Restore the capability of tracing paths.
         (if Pm.drawGridLines params then gridLines else mempty)
@@ -35,4 +37,6 @@ writePngOutput params trkPath = do
         (if willRenderIndices then renderIndices else mempty)
         <>
         runReader (renderMap tiles) params
+
+    return Pm.PostRenderInfo {Pm.renderedTrackHorizon = horizon}
 

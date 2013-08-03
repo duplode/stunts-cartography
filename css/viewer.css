@@ -1,13 +1,12 @@
 body {
   font-family: Arial,Helvetica,sans-serif;
-  background-color: #5dffff;
 }
 
 p, li {
   font-size: 87.5%;
 }
 
-div.left-bar {
+#left-bar {
   float: left;
   clear: left;
   width: 11em;
@@ -15,8 +14,36 @@ div.left-bar {
   padding: 0.5em 0.5em 0.5em 0.5em;
 }
 
-div.main-wrap {
+#main-wrap {
   float: none;
   clear: none;
   margin: 0 16em 0 14em;
+}
+
+.blank-horizon {
+  background-color: White;
+}
+
+.desert-horizon {
+  background-color: Moccasin;
+}
+
+.tropical-horizon {
+  background-color: MediumAquamarine;
+}
+
+.alpine-horizon {
+  background-color: LightCyan;
+}
+
+.city-horizon {
+  background-color: LightSteelBlue;
+}
+
+.country-horizon {
+  background-color: LightGoldenrodYellow;
+}
+
+.unknown-horizon {
+  background-color: Thistle;
 }

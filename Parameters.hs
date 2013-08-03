@@ -1,6 +1,7 @@
 module Parameters where
 
 import Diagrams.Backend.Cairo (OutputType(..))
+import Track (Horizon(..))
 
 data RenderingParameters = RenderingParameters
     { roadWidth :: Double
@@ -23,4 +24,8 @@ defaultRenderingParameters = RenderingParameters
     , drawGridLines = True
     , drawIndices = True
     , outputType = PNG
+    }
+
+data PostRenderInfo = PostRenderInfo
+    { renderedTrackHorizon :: Horizon
     }
