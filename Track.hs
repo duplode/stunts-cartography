@@ -36,7 +36,7 @@ import Utils
 --
 data VeryRawTrack = VeryRawTrack
     { veryRawElements :: LB.ByteString -- ^ Element values as raw byte string.
-    , veryRawScenery  :: Word8         -- ^ Scenery byte.
+    , veryRawHorizon  :: Word8         -- ^ Horizon byte.
     , veryRawTerrain  :: LB.ByteString -- ^ Terrain values as raw byte string.
     }
 
@@ -878,20 +878,20 @@ getTerrainType = terrainType . tileTerrain
 getTerrainOrientation :: Tile -> Orientation
 getTerrainOrientation = terrainOrientation . tileTerrain
 
--- |Abstract representation of the track scenery
-data Scenery = Desert
+-- |Abstract representation of the track horizon
+data Horizon = Desert
              | Tropical
              | Alpine
              | City
              | Country
-             | UnknownScenery
+             | UnknownHorizon
              deriving (Eq, Enum, Show)
 
--- |Obtains the scenery which corresponds to a byte value
-byteToScenery :: Word8 -> Scenery
-byteToScenery x
+-- |Obtains the horizon which corresponds to a byte value
+byteToHorizon :: Word8 -> Horizon
+byteToHorizon x
     | x < 5     = toEnum $ fromIntegral x
-    | otherwise = UnknownScenery
+    | otherwise = UnknownHorizon
 
 -- |Converts a raw track into an array. Indexing is done in the obvious way
 -- (Cartesian coordinates, origin at bottom left, zero-based).
