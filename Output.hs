@@ -6,7 +6,9 @@ module Output
 
 import Data.Array
 import Control.Monad.Trans.Reader
-import System.FilePath (takeBaseName)
+import Control.Exception (catch, SomeException)
+import System.Directory (getTemporaryDirectory)
+import System.FilePath (takeBaseName, (</>))
 import qualified OurByteString as LB
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo
@@ -40,10 +42,13 @@ writePngOutput params trackName trkBS = do
         renWidthInTiles = if willRenderIndices then 32 else 30
         renWidth = renWidthInTiles * Pm.pixelsPerTile params
         outType = Pm.outputType params
-        outFile = case outType of
-            PNG -> "stunts-cartography-map-tmp.png"
-            SVG -> "stunts-cartography-map-tmp.svg"
-            _   -> "stunts-cartography-map" --Nonsense
+        outRelPath = case outType of
+            PNG -> "stunts-cartography-map.png"
+            SVG -> "stunts-cartography-map.svg"
+            _   -> error "Unsupported output format."
+    tmpDir <- getTemporaryDirectory
+        `catch` ((\_ -> return ".") :: SomeException -> IO String)
+    let outFile = tmpDir </> outRelPath
 
     fst . renderDia Cairo (CairoOptions outFile (Width renWidth) outType False) $
         --TODO: Restore the capability of tracing paths.
@@ -57,5 +62,6 @@ writePngOutput params trackName trkBS = do
         { Pm.renderedTrackHorizon = horizon
         , Pm.trackName = trackName
         , Pm.trackData = trkBS
+        , Pm.outputPath = outFile
         }
 

@@ -35,4 +35,5 @@ data PostRenderInfo = PostRenderInfo
     { renderedTrackHorizon :: Horizon
     , trackName :: String
     , trackData :: LB.ByteString
+    , outputPath :: FilePath
     }

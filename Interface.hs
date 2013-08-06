@@ -2,6 +2,7 @@ module Main where
 
 import Control.Monad
 import Control.Applicative ((<$>))
+import Control.Exception (catch, SomeException)
 import Data.Maybe (fromJust, fromMaybe)
 import Text.Read (readMaybe)
 import System.Directory ( doesFileExist, doesDirectoryExist
@@ -127,8 +128,8 @@ generateImageHandler outType button = \_ -> do
                     ".RPL" -> writePngFromRpl
                     _      -> error "Unrecognized input extension."
             postRender <- pngWriter params trkPath
-            applyHorizonClass (Pm.renderedTrackHorizon postRender) w
-            trackImage <- loadTrackImage outType w
+            applyHorizonClass w $ Pm.renderedTrackHorizon postRender
+            trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
             trkUri <- loadTmpTrk w postRender
             (fromJust <$> getElementById w "track-map") # set UI.src trackImage
             runFunction w $ setSaveTrackLinkHref trkUri
@@ -149,18 +150,14 @@ unsetSaveTrackLinkHref =
 loadTmpTrk :: Window -> Pm.PostRenderInfo -> IO String
 loadTmpTrk w postRender = do
     tmpDir <- getTemporaryDirectory
-    tmpDirIsAvailable <- doesDirectoryExist tmpDir
-    if tmpDirIsAvailable
-        then do
-            let trkName = Pm.trackName postRender
-                tmpTrkPath = addExtension (tmpDir </> trkName) ".TRK"
-            LB.writeFile tmpTrkPath $ Pm.trackData postRender
-            loadFile w "application/octet-stream" tmpTrkPath
-        else return "#" -- TODO: Fail more noisily.
+        `catch` ((\_ -> return ".") :: SomeException -> IO String)
+    let trkName = Pm.trackName postRender
+        tmpTrkPath = addExtension (tmpDir </> trkName) ".TRK"
+    LB.writeFile tmpTrkPath $ Pm.trackData postRender
+    loadFile w "application/octet-stream" tmpTrkPath
 
-
-applyHorizonClass :: Horizon -> Window -> IO ()
-applyHorizonClass horizon = \w -> do
+applyHorizonClass :: Window -> Horizon -> IO ()
+applyHorizonClass w horizon = do
     let horizonClass = case horizon of
             Desert   -> "desert-horizon"
             Alpine   -> "alpine-horizon"
@@ -173,11 +170,11 @@ applyHorizonClass horizon = \w -> do
 applyClassToBody :: String -> JSFunction ()
 applyClassToBody = ffi "document.body.className = %1;"
 
-loadTrackImage :: OutputType -> Window -> IO String
-loadTrackImage outType w = case outType of
-    PNG -> loadFile w "image/png" "./stunts-cartography-map-tmp.png"
-    SVG -> loadFile w "image/svg+xml" "./stunts-cartography-map-tmp.svg"
-    _   -> loadFile w "image/png" "./stunts-cartography-map" --Nonsense
+loadTrackImage :: Window -> OutputType -> FilePath -> IO String
+loadTrackImage w outType outPath = case outType of
+    PNG -> loadFile w "image/png" outPath
+    SVG -> loadFile w "image/svg+xml" outPath
+    _   -> error "Unsupported output format."
 
 selectedNumFromTextInput :: (Num a, Read a, Ord a)
                          => String -> a -> a -> a
