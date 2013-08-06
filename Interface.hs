@@ -39,7 +39,7 @@ setup w = void $ do
             , UI.p #+ [string "Base path:"]
             , UI.input # set UI.type_ "text" # set UI.name "base-path-input"
                 # set UI.id_ "base-path-input" # set value ".."
-            , UI.p #+ [string ".TRK relative path:"]
+            , UI.p #+ [string ".TRK or .RPL relative path:"]
             , UI.input # set UI.type_ "text" # set UI.name "trk-input"
                 # set UI.id_ "trk-input"
             , UI.p #+
@@ -65,25 +65,29 @@ setup w = void $ do
                 [ string "Grid lines?"
                 , UI.input # set UI.type_ "checkbox" # set UI.name "grid-lines-chk"
                     # set UI.id_ "grid-lines-chk" # set UI.checked_ True
-                ]
-            , UI.p #+
-                [ string "Grid indices?"
+                , string " indices?"
                 , UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
                     # set UI.id_ "grid-indices-chk" # set UI.checked_ True
                 ]
             , UI.p #+ [string "Map bounds (0 - 29):"]
             , UI.p #+
-                [ string "x:"
-                , UI.input # set UI.type_ "text" # set UI.name "x-min-bound-input"
+                [ string "x from "
+                , UI.input # set UI.type_ "text"
+                    # set UI.name "x-min-bound-input" # set UI.size "2"
                     # set UI.id_ "x-min-bound-input" # set value "0"
-                , UI.input # set UI.type_ "text" # set UI.name "x-max-bound-input"
+                , string " to "
+                , UI.input # set UI.type_ "text"
+                    # set UI.name "x-max-bound-input" # set UI.size "2"
                     # set UI.id_ "x-max-bound-input" # set value "29"
                 ]
             , UI.p #+
-                [ string "y:"
-                , UI.input # set UI.type_ "text" # set UI.name "y-min-bound-input"
+                [ string "y from "
+                , UI.input # set UI.type_ "text"
+                    # set UI.name "y-min-bound-input" # set UI.size "2"
                     # set UI.id_ "y-min-bound-input" # set value "0"
-                , UI.input # set UI.type_ "text" # set UI.name "y-max-bound-input"
+                , string " to "
+                , UI.input # set UI.type_ "text" # set UI.size "2"
+                    # set UI.name "y-max-bound-input"
                     # set UI.id_ "y-max-bound-input" # set value "29"
                 ]
             ]
