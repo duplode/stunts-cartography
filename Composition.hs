@@ -1,16 +1,18 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 module Composition
     ( renderMap
-    , renderIndices
+    , renderIndicesIfRequired
     , gridLines
     ) where
 
 import Control.Monad (liftM)
+import Control.Monad.Trans.Reader (asks)
 import Diagrams.Prelude
 import Track
 import Pics
 import Utils
 import Palette (plainCl)
+import qualified Parameters as Pm
 
 renderTerrain tiles =
     let terrRows = beneath plainStripe .
@@ -30,9 +32,21 @@ renderMap tiles = do
     renderedElements <- renderElements tiles
     return $ (renderedElements <> renderedTerrain) # alignBL
 
-renderIndices =
-    cat unitX [yIndices, strutX 30, yIndices]
-    <> cat unitY [xIndices, strutY 30, xIndices]
+-- Only indices have to be deep-clipped here, as they are placed around, and
+-- not just above, the base map.
+renderIndices = do
+    boundedXIndices <- xIndices <$> asks Pm.xTileBounds
+    boundedYIndices <- yIndices <$> asks Pm.yTileBounds
+    (deltaX, deltaY) <- asks Pm.deltaTileBounds
+    return $
+        cat unitX [boundedYIndices, strutX deltaX, boundedYIndices]
+        <> cat unitY [boundedXIndices, strutY deltaY, boundedXIndices]
+
+renderIndicesIfRequired = do
+    required <- asks Pm.drawIndices
+    if required
+        then renderIndices
+        else return mempty
 
 gridLines =
     vcat' with { sep = 1 } (replicate 31 $ hrule 30) # alignBL
@@ -50,11 +64,11 @@ separateTilesBySize = unzip . map separate
         Large -> (blankTile, tl)
         _     -> (tl, blankTile)
 
-xIndices =
-    hcat $ map indexCell [0..29] # alignTL
+xIndices (xMin, xMax) =
+    hcat $ map indexCell [xMin..xMax] # alignTL
 
-yIndices =
-    cat unitY (map indexCell [0..29]) # alignBR
+yIndices (yMin, yMax) =
+    cat unitY (map indexCell [yMin..yMax]) # alignBR
 
 indexCell n =
     square 1 # lw 0

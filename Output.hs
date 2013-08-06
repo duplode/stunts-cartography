@@ -38,7 +38,8 @@ writePngOutput params trackName trkBS = do
         horizon = horizonFromRawTrack rawTrk
         tilArr = rawTrackToTileArray rawTrk
         tiles = map snd $ assocs tilArr
-    let renWidthInTiles = if Pm.drawIndices params then 32 else 30
+    let renWidthInTiles = (if Pm.drawIndices params then (2+) else id)
+            . fst $ Pm.deltaTileBounds params
         renWidth = renWidthInTiles * Pm.pixelsPerTile params
         outType = Pm.outputType params
         outRelPath = case outType of
@@ -61,8 +62,20 @@ writePngOutput params trackName trkBS = do
 
 -- wholeMapDiagram :: Pm.RenderingParameters -> [Tile] -> Pm.RenderingParameters "Dia"
 wholeMapDiagram params tiles =
-    (if Pm.drawGridLines params then gridLines else mempty)
+    let minBounds = Pm.minTileBounds params
+        (minX, minY) = minBounds
+        deltaBounds = Pm.deltaTileBounds params
+        (deltaX, deltaY) = deltaBounds
+        adjustPositionForClip = moveOriginBy (r2 minBounds # reflectX # reflectY)
+        clipRect :: Path R2
+        clipRect = unitSquare # scaleX deltaX # scaleY deltaY
+            # alignBL # adjustPositionForClip
+    in runReader renderIndicesIfRequired params # adjustPositionForClip
     <>
-    (if Pm.drawIndices params then renderIndices else mempty)
-    <>
-    runReader (renderMap tiles) params
+    (
+        (if Pm.drawGridLines params then gridLines else mempty)
+        <>
+        runReader (renderMap tiles) params
+    )
+    # clipBy clipRect
+    # withEnvelope clipRect

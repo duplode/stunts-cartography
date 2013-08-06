@@ -1,7 +1,7 @@
 module Main where
 
 import Control.Monad
-import Control.Applicative ((<$>))
+import Control.Applicative ((<$>), (<*>))
 import Control.Exception (catch, SomeException)
 import Data.Maybe (fromJust, fromMaybe)
 import Text.Read (readMaybe)
@@ -42,6 +42,10 @@ setup w = void $ do
             , UI.p #+ [string ".TRK relative path:"]
             , UI.input # set UI.type_ "text" # set UI.name "trk-input"
                 # set UI.id_ "trk-input"
+            , UI.p #+
+                [ UI.a # set UI.id_ "save-trk-link" # set UI.target "_blank" #+
+                    [string "Save displayed track as..."]
+                ]
             , UI.p #+ [string "Road width (0.1 - 0.5):"]
             , UI.input # set UI.type_ "text" # set UI.name "road-w-input"
                 # set UI.id_ "road-w-input" # set value "0.2"
@@ -67,9 +71,20 @@ setup w = void $ do
                 , UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
                     # set UI.id_ "grid-indices-chk" # set UI.checked_ True
                 ]
+            , UI.p #+ [string "Map bounds (0 - 29):"]
             , UI.p #+
-                [ UI.a # set UI.id_ "save-trk-link" # set UI.target "_blank" #+
-                    [string "Save displayed track as..."]
+                [ string "x:"
+                , UI.input # set UI.type_ "text" # set UI.name "x-min-bound-input"
+                    # set UI.id_ "x-min-bound-input" # set value "0"
+                , UI.input # set UI.type_ "text" # set UI.name "x-max-bound-input"
+                    # set UI.id_ "x-max-bound-input" # set value "29"
+                ]
+            , UI.p #+
+                [ string "y:"
+                , UI.input # set UI.type_ "text" # set UI.name "y-min-bound-input"
+                    # set UI.id_ "y-min-bound-input" # set value "0"
+                , UI.input # set UI.type_ "text" # set UI.name "y-max-bound-input"
+                    # set UI.id_ "y-max-bound-input" # set value "29"
                 ]
             ]
         , UI.div # set UI.id_ "main-wrap" #+
@@ -168,6 +183,8 @@ selectedRenderingParameters w outType = do
     pxPerTile <- selectedPixelsPerTile w
     drawGrid <- selectedDrawGridLines w
     drawIxs <- selectedDrawGridIndices w
+    xBounds <- selectedXTileBounds w
+    yBounds <- selectedYTileBounds w
     return Pm.defaultRenderingParameters
             { Pm.roadWidth = roadW
             , Pm.bridgeHeight = bridgeH
@@ -177,6 +194,8 @@ selectedRenderingParameters w outType = do
             , Pm.drawGridLines = drawGrid
             , Pm.drawIndices = drawIxs
             , Pm.outputType = outType
+            , Pm.xTileBounds = xBounds
+            , Pm.yTileBounds = yBounds
             }
 
 selectedNumFromTextInput :: (Num a, Read a, Ord a)
@@ -218,3 +237,15 @@ selectedDrawGridLines = selectedBoolFromCheckbox "grid-lines-chk"
 selectedDrawGridIndices :: Window -> IO Bool
 selectedDrawGridIndices = selectedBoolFromCheckbox "grid-indices-chk"
 
+selectedXTileBounds :: Window -> IO (Int, Int)
+selectedXTileBounds w = liftM ensureBoundOrder $ (,) <$>
+    (selectedNumFromTextInput "x-min-bound-input" 0 0 29 w)
+    <*> (selectedNumFromTextInput "x-max-bound-input" 0 29 29 w)
+
+selectedYTileBounds :: Window -> IO (Int, Int)
+selectedYTileBounds w = liftM ensureBoundOrder $ (,) <$>
+    (selectedNumFromTextInput "y-min-bound-input" 0 0 29 w)
+    <*> (selectedNumFromTextInput "y-max-bound-input" 0 29 29 w)
+
+ensureBoundOrder :: (Int, Int) -> (Int, Int)
+ensureBoundOrder bounds@(z, w) = if z > w then (w, z) else bounds

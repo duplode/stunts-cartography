@@ -14,9 +14,12 @@ data RenderingParameters = RenderingParameters
     , bridgeRelativeWidth :: Double
     , bankingRelativeHeight :: Double
 
-    , pixelsPerTile :: Double
     , drawGridLines :: Bool
     , drawIndices :: Bool
+    , xTileBounds :: (Int, Int)
+    , yTileBounds :: (Int, Int)
+
+    , pixelsPerTile :: Double
     , outputType :: OutputType
     }
 
@@ -29,7 +32,25 @@ defaultRenderingParameters = RenderingParameters
     , drawGridLines = True
     , drawIndices = True
     , outputType = PNG
+    , xTileBounds = (0, 29)
+    , yTileBounds = (0, 29)
     }
+
+minTileBounds :: (Num a) => RenderingParameters -> (a, a)
+minTileBounds params =
+    (fromIntegral . fst $ xTileBounds params, fromIntegral . fst $ yTileBounds params)
+
+maxTileBounds :: (Num a) => RenderingParameters -> (a, a)
+maxTileBounds params =
+    (fromIntegral . snd $ xTileBounds params, fromIntegral . snd $ yTileBounds params)
+
+-- The bounds are *tile* bounds. That means that a minBound of 0 and a maxBound
+-- of 0 include *one* tile, the zeroth tile.
+deltaTileBounds :: (Num a) => RenderingParameters -> (a, a)
+deltaTileBounds params =
+    let (xMin, xMax) = xTileBounds params
+        (yMin, yMax) = yTileBounds params
+    in (fromIntegral $ xMax - xMin + 1, fromIntegral $ yMax - yMin + 1)
 
 data PostRenderInfo = PostRenderInfo
     { renderedTrackHorizon :: Horizon
