@@ -96,23 +96,6 @@ generateImageHandler outType button = \_ -> do
     basePath <- join $ get value . fromJust
         <$> getElementById w "base-path-input"
     let trkPath = basePath </> trkRelPath
-    roadW <- selectedRoadWidth w
-    bridgeH <- selectedBridgeHeight w
-    bridgeRelW <- selectedBridgeRelativeWidth w
-    bankRelH <- selectedBankingRelativeHeight w
-    pxPerTile <- selectedPixelsPerTile w
-    drawGrid <- selectedDrawGridLines w
-    drawIxs <- selectedDrawGridIndices w
-    let params = Pm.defaultRenderingParameters
-            { Pm.roadWidth = roadW
-            , Pm.bridgeHeight = bridgeH
-            , Pm.bridgeRelativeWidth = bridgeRelW
-            , Pm.bankingRelativeHeight = bankRelH
-            , Pm.pixelsPerTile = pxPerTile
-            , Pm.drawGridLines = drawGrid
-            , Pm.drawIndices = drawIxs
-            , Pm.outputType = outType
-            }
     trkExists <- doesFileExist trkPath
     mFileSize <- retrieveFileSize trkPath
     let sizeIsCorrect = mFileSize == Just 1802
@@ -127,14 +110,13 @@ generateImageHandler outType button = \_ -> do
                     ".TRK" -> writePngFromTrk
                     ".RPL" -> writePngFromRpl
                     _      -> error "Unrecognized input extension."
+            params <- selectedRenderingParameters w outType
             postRender <- pngWriter params trkPath
             applyHorizonClass w $ Pm.renderedTrackHorizon postRender
             trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
             trkUri <- loadTmpTrk w postRender
             (fromJust <$> getElementById w "track-map") # set UI.src trackImage
-            setSaveTrackLinkHref w trkUri
-            {-runFunction w $ -}
-            return ()
+            setSaveTrackLinkHref w trkUri >> return ()
         else do
             applyClassToBody w "blank-horizon"
             (fromJust <$> getElementById w "track-map") # set UI.src ""
@@ -176,6 +158,26 @@ loadTrackImage w outType outPath = case outType of
     PNG -> loadFile w "image/png" outPath
     SVG -> loadFile w "image/svg+xml" outPath
     _   -> error "Unsupported output format."
+
+selectedRenderingParameters :: Window -> OutputType -> IO Pm.RenderingParameters
+selectedRenderingParameters w outType = do
+    roadW <- selectedRoadWidth w
+    bridgeH <- selectedBridgeHeight w
+    bridgeRelW <- selectedBridgeRelativeWidth w
+    bankRelH <- selectedBankingRelativeHeight w
+    pxPerTile <- selectedPixelsPerTile w
+    drawGrid <- selectedDrawGridLines w
+    drawIxs <- selectedDrawGridIndices w
+    return Pm.defaultRenderingParameters
+            { Pm.roadWidth = roadW
+            , Pm.bridgeHeight = bridgeH
+            , Pm.bridgeRelativeWidth = bridgeRelW
+            , Pm.bankingRelativeHeight = bankRelH
+            , Pm.pixelsPerTile = pxPerTile
+            , Pm.drawGridLines = drawGrid
+            , Pm.drawIndices = drawIxs
+            , Pm.outputType = outType
+            }
 
 selectedNumFromTextInput :: (Num a, Read a, Ord a)
                          => String -> a -> a -> a
