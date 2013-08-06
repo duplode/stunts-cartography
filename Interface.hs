@@ -4,14 +4,16 @@ import Control.Monad
 import Control.Applicative ((<$>))
 import Data.Maybe (fromJust, fromMaybe)
 import Text.Read (readMaybe)
-import System.Directory (doesFileExist)
-import System.FilePath ((</>), takeExtension)
+import System.Directory ( doesFileExist, doesDirectoryExist
+                        , getTemporaryDirectory)
+import System.FilePath ((</>), takeExtension, addExtension)
 import Data.Char (toUpper)
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
 import Diagrams.Backend.Cairo (OutputType(..))
 
 import Output
+import qualified OurByteString as LB
 import Track (Horizon(..))
 import qualified Parameters as Pm
 import Utils (retrieveFileSize)
@@ -63,6 +65,10 @@ setup w = void $ do
                 [ string "Grid indices?"
                 , UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
                     # set UI.id_ "grid-indices-chk" # set UI.checked_ True
+                ]
+            , UI.p #+
+                [ UI.a # set UI.id_ "save-trk-link" #+
+                        [string "Save displayed track as..."]
                 ]
             ]
         , UI.div # set UI.id_ "main-wrap" #+
@@ -123,11 +129,35 @@ generateImageHandler outType button = \_ -> do
             postRender <- pngWriter params trkPath
             applyHorizonClass (Pm.renderedTrackHorizon postRender) w
             trackImage <- loadTrackImage outType w
+            trkUri <- loadTmpTrk w postRender
             (fromJust <$> getElementById w "track-map") # set UI.src trackImage
+            runFunction w $ setSaveTrackLinkHref trkUri
         else do
             runFunction w $ applyClassToBody "blank-horizon"
             (fromJust <$> getElementById w "track-map") # set UI.src ""
+            runFunction w $ unsetSaveTrackLinkHref
     return ()
+
+setSaveTrackLinkHref :: String -> JSFunction ()
+setSaveTrackLinkHref =
+    ffi "document.getElementById('save-trk-link').href = %1;"
+
+unsetSaveTrackLinkHref :: JSFunction ()
+unsetSaveTrackLinkHref =
+    ffi "document.getElementById('save-trk-link').removeAttribute('href');"
+
+loadTmpTrk :: Window -> Pm.PostRenderInfo -> IO String
+loadTmpTrk w postRender = do
+    tmpDir <- getTemporaryDirectory
+    tmpDirIsAvailable <- doesDirectoryExist tmpDir
+    if tmpDirIsAvailable
+        then do
+            let trkName = Pm.trackName postRender
+                tmpTrkPath = addExtension (tmpDir </> trkName) ".TRK"
+            LB.writeFile tmpTrkPath $ Pm.trackData postRender
+            loadFile w "application/octet-stream" tmpTrkPath
+        else return "#" -- TODO: Fail more noisily.
+
 
 applyHorizonClass :: Horizon -> Window -> IO ()
 applyHorizonClass horizon = \w -> do

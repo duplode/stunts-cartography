@@ -2,6 +2,11 @@ module Parameters where
 
 import Diagrams.Backend.Cairo (OutputType(..))
 import Track (Horizon(..))
+import qualified OurByteString as LB
+
+-- Data types which shift information across the various layers of the
+-- rendering programs. It is probably a good idea to import it qualified, for
+-- the sake of clarity.
 
 data RenderingParameters = RenderingParameters
     { roadWidth :: Double
@@ -28,4 +33,6 @@ defaultRenderingParameters = RenderingParameters
 
 data PostRenderInfo = PostRenderInfo
     { renderedTrackHorizon :: Horizon
+    , trackName :: String
+    , trackData :: LB.ByteString
     }

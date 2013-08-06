@@ -6,6 +6,7 @@ module Output
 
 import Data.Array
 import Control.Monad.Trans.Reader
+import System.FilePath (takeBaseName)
 import qualified OurByteString as LB
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo
@@ -19,16 +20,18 @@ import Composition
 import qualified Parameters as Pm
 
 writePngFromTrk :: Pm.RenderingParameters -> FilePath -> IO Pm.PostRenderInfo
-writePngFromTrk params trkPath = LB.readFile trkPath >>= writePngOutput params
+writePngFromTrk params trkPath =
+    LB.readFile trkPath >>= writePngOutput params (takeBaseName trkPath)
 
 writePngFromRpl ::  Pm.RenderingParameters -> FilePath -> IO Pm.PostRenderInfo
 writePngFromRpl params rplPath = do
     rplData <- LB.readFile rplPath
-    let (_, trkData) = trkFromRplSimple rplData
-    writePngOutput params trkData
+    let (trkName, trkData) = trkFromRplSimple rplData
+    writePngOutput params trkName trkData
 
-writePngOutput :: Pm.RenderingParameters -> LB.ByteString -> IO Pm.PostRenderInfo
-writePngOutput params trkBS = do
+writePngOutput :: Pm.RenderingParameters -> String
+               -> LB.ByteString -> IO Pm.PostRenderInfo
+writePngOutput params trackName trkBS = do
     let rawTrk = veryRawReadTrack trkBS
         horizon = horizonFromRawTrack rawTrk
         tilArr = rawTrackToTileArray rawTrk
@@ -50,5 +53,9 @@ writePngOutput params trkBS = do
         <>
         runReader (renderMap tiles) params
 
-    return Pm.PostRenderInfo {Pm.renderedTrackHorizon = horizon}
+    return Pm.PostRenderInfo
+        { Pm.renderedTrackHorizon = horizon
+        , Pm.trackName = trackName
+        , Pm.trackData = trkBS
+        }
 
