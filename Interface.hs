@@ -132,16 +132,17 @@ generateImageHandler outType button = \_ -> do
             trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
             trkUri <- loadTmpTrk w postRender
             (fromJust <$> getElementById w "track-map") # set UI.src trackImage
-            runFunction w $ setSaveTrackLinkHref trkUri
+            setSaveTrackLinkHref w trkUri
+            {-runFunction w $ -}
+            return ()
         else do
-            runFunction w $ applyClassToBody "blank-horizon"
+            applyClassToBody w "blank-horizon"
             (fromJust <$> getElementById w "track-map") # set UI.src ""
             runFunction w $ unsetSaveTrackLinkHref
-    return ()
 
-setSaveTrackLinkHref :: String -> JSFunction ()
-setSaveTrackLinkHref =
-    ffi "document.getElementById('save-trk-link').href = %1;"
+setSaveTrackLinkHref :: Window -> String -> IO Element
+setSaveTrackLinkHref w uri =
+    (fromJust <$> getElementById w "save-trk-link") # set UI.href uri
 
 unsetSaveTrackLinkHref :: JSFunction ()
 unsetSaveTrackLinkHref =
@@ -165,10 +166,10 @@ applyHorizonClass w horizon = do
             Country  -> "country-horizon"
             Tropical -> "tropical-horizon"
             _        -> "unknown-horizon"
-    runFunction w $ applyClassToBody horizonClass
+    applyClassToBody w horizonClass
 
-applyClassToBody :: String -> JSFunction ()
-applyClassToBody = ffi "document.body.className = %1;"
+applyClassToBody :: Window -> String -> IO ()
+applyClassToBody w klass = getBody w # set UI.class_ klass >> return ()
 
 loadTrackImage :: Window -> OutputType -> FilePath -> IO String
 loadTrackImage w outType outPath = case outType of
