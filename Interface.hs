@@ -5,9 +5,8 @@ import Control.Applicative ((<$>))
 import Data.Maybe (fromJust, fromMaybe)
 import Text.Read (readMaybe)
 import System.Directory (doesFileExist)
-import System.FilePath ((</>))
-import Control.Exception (handle)
-import System.IO (IOMode(..), hClose, hFileSize, openFile)
+import System.FilePath ((</>), takeExtension)
+import Data.Char (toUpper)
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
 import Diagrams.Backend.Cairo (OutputType(..))
@@ -15,6 +14,7 @@ import Diagrams.Backend.Cairo (OutputType(..))
 import Output
 import Track (Horizon(..))
 import qualified Parameters as Pm
+import Utils (retrieveFileSize)
 
 main :: IO ()
 main = do
@@ -109,10 +109,18 @@ generateImageHandler outType button = \_ -> do
     trkExists <- doesFileExist trkPath
     mFileSize <- retrieveFileSize trkPath
     let sizeIsCorrect = mFileSize == Just 1802
-        proceedWithLoading = trkExists && sizeIsCorrect
+        fileExt = map toUpper $ takeExtension trkPath
+        proceedWithLoading = trkExists
+            && ((fileExt == ".TRK" && sizeIsCorrect)
+                || fileExt == ".RPL" -- No size checks at this point.
+                )
     if proceedWithLoading
         then do
-            postRender <- writePngOutput params trkPath
+            let pngWriter = case fileExt of
+                    ".TRK" -> writePngFromTrk
+                    ".RPL" -> writePngFromRpl
+                    _      -> error "Unrecognized input extension."
+            postRender <- pngWriter params trkPath
             applyHorizonClass (Pm.renderedTrackHorizon postRender) w
             trackImage <- loadTrackImage outType w
             (fromJust <$> getElementById w "track-map") # set UI.src trackImage
@@ -179,15 +187,4 @@ selectedDrawGridLines = selectedBoolFromCheckbox "grid-lines-chk"
 
 selectedDrawGridIndices :: Window -> IO Bool
 selectedDrawGridIndices = selectedBoolFromCheckbox "grid-indices-chk"
-
---Lifted from RWH chapter 9.
-retrieveFileSize :: FilePath -> IO (Maybe Integer)
-retrieveFileSize path = handle nothingHandler $ do
-    h <- openFile path ReadMode
-    size <- hFileSize h
-    hClose h
-    return (Just size)
-    where
-    nothingHandler :: IOError -> IO (Maybe Integer)
-    nothingHandler = \_ -> return Nothing
 

@@ -1,5 +1,8 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
-module Output where
+module Output
+    ( writePngFromTrk
+    , writePngFromRpl
+    ) where
 
 import Data.Array
 import Control.Monad.Trans.Reader
@@ -10,13 +13,22 @@ import Diagrams.Backend.Cairo.Internal
 import Diagrams.Core
 import Track (veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
 import Utils
+import Replay
 import LapTrace
 import Composition
 import qualified Parameters as Pm
 
-writePngOutput :: Pm.RenderingParameters -> FilePath -> IO Pm.PostRenderInfo
-writePngOutput params trkPath = do
-    trkBS <- LB.readFile trkPath
+writePngFromTrk :: Pm.RenderingParameters -> FilePath -> IO Pm.PostRenderInfo
+writePngFromTrk params trkPath = LB.readFile trkPath >>= writePngOutput params
+
+writePngFromRpl ::  Pm.RenderingParameters -> FilePath -> IO Pm.PostRenderInfo
+writePngFromRpl params rplPath = do
+    rplData <- LB.readFile rplPath
+    let (_, trkData) = trkFromRplSimple rplData
+    writePngOutput params trkData
+
+writePngOutput :: Pm.RenderingParameters -> LB.ByteString -> IO Pm.PostRenderInfo
+writePngOutput params trkBS = do
     let rawTrk = veryRawReadTrack trkBS
         horizon = horizonFromRawTrack rawTrk
         tilArr = rawTrackToTileArray rawTrk

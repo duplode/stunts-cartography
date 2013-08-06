@@ -1,10 +1,13 @@
 module Utils
     ( splitAtEvery30th
     , bsSplitAtEvery30th
+    , retrieveFileSize
     ) where
 
 import Data.List (groupBy, splitAt, unfoldr)
 import qualified OurByteString as LB
+import Control.Exception (handle)
+import System.IO (IOMode(..), hClose, hFileSize, openFile)
 
 splitAtEvery30th :: [a] -> [[a]]
 splitAtEvery30th = splitAtIterated 30
@@ -22,3 +25,15 @@ bsSplitAtIterated n = unfoldr $ \xs ->
     if LB.null xs
         then Nothing
         else Just $ LB.splitAt (fromIntegral n) xs
+
+--Lifted from RWH chapter 9.
+retrieveFileSize :: FilePath -> IO (Maybe Integer)
+retrieveFileSize path = handle nothingHandler $ do
+    h <- openFile path ReadMode
+    size <- hFileSize h
+    hClose h
+    return (Just size)
+    where
+    nothingHandler :: IOError -> IO (Maybe Integer)
+    nothingHandler = \_ -> return Nothing
+
