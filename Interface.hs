@@ -68,8 +68,8 @@ setup w = void $ do
                     # set UI.id_ "grid-indices-chk" # set UI.checked_ True
                 ]
             , UI.p #+
-                [ UI.a # set UI.id_ "save-trk-link" #+
-                        [string "Save displayed track as..."]
+                [ UI.a # set UI.id_ "save-trk-link" # set UI.target "_blank" #+
+                    [string "Save displayed track as..."]
                 ]
             ]
         , UI.div # set UI.id_ "main-wrap" #+
