@@ -128,19 +128,13 @@ baseElementPic c q sf et = do
             # atop (genericSquare flCl # scaleY roadW)
             # translateY bridgeH
 
-        -- Standard values: roadW 1 / 5, bridgeRelW = 3 / 2, bridgeH = 1 / 4;
-        -- roadW 1 / 4, bridgeRelW = 2 and bridgeH = 0.
-        --roadW = 1 / 4
         slalomRelW = 2 / 3
         pipeObstacleRelW = 1
         corkWallRelW = 1 / 2
         tunnelRelW = 2
         hwDivideRelW = 1
         highwayRelW = 2 + hwDivideRelW
-        --bridgeRelW = 2
-        --bridgeH = 0
         pillarW = 1 / 10
-        --bankRelH = 1 / 2
         pipeRelW = 5 / 3
         loopRelB = 1
         loopD = 1 / 2

@@ -36,6 +36,22 @@ defaultRenderingParameters = RenderingParameters
     , yTileBounds = (0, 29)
     }
 
+widerRoadRenderingParameters = defaultRenderingParameters
+    { roadWidth = 1 / 4
+    }
+
+slopedRampsRenderingParameters = defaultRenderingParameters
+    { bridgeRelativeWidth = 3 / 2
+    , bridgeHeight = 1 / 4
+    }
+
+classicRenderingParameters = defaultRenderingParameters
+    { roadWidth = 5 / 16
+    , bridgeHeight = 1 / 4
+    , bridgeRelativeWidth = 7 / 5
+    , bankingRelativeHeight = 2 / 5
+    }
+
 minTileBounds :: (Num a) => RenderingParameters -> (a, a)
 minTileBounds params =
     (fromIntegral . fst $ xTileBounds params, fromIntegral . fst $ yTileBounds params)
