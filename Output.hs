@@ -38,8 +38,7 @@ writePngOutput params trackName trkBS = do
         horizon = horizonFromRawTrack rawTrk
         tilArr = rawTrackToTileArray rawTrk
         tiles = map snd $ assocs tilArr
-    let willRenderIndices = Pm.drawIndices params
-        renWidthInTiles = if willRenderIndices then 32 else 30
+    let renWidthInTiles = if Pm.drawIndices params then 32 else 30
         renWidth = renWidthInTiles * Pm.pixelsPerTile params
         outType = Pm.outputType params
         outRelPath = case outType of
@@ -51,12 +50,7 @@ writePngOutput params trackName trkBS = do
     let outFile = tmpDir </> outRelPath
 
     fst . renderDia Cairo (CairoOptions outFile (Width renWidth) outType False) $
-        --TODO: Restore the capability of tracing paths.
-        (if Pm.drawGridLines params then gridLines else mempty)
-        <>
-        (if willRenderIndices then renderIndices else mempty)
-        <>
-        runReader (renderMap tiles) params
+        wholeMapDiagram params tiles
 
     return Pm.PostRenderInfo
         { Pm.renderedTrackHorizon = horizon
@@ -65,3 +59,10 @@ writePngOutput params trackName trkBS = do
         , Pm.outputPath = outFile
         }
 
+-- wholeMapDiagram :: Pm.RenderingParameters -> [Tile] -> Pm.RenderingParameters "Dia"
+wholeMapDiagram params tiles =
+    (if Pm.drawGridLines params then gridLines else mempty)
+    <>
+    (if Pm.drawIndices params then renderIndices else mempty)
+    <>
+    runReader (renderMap tiles) params
