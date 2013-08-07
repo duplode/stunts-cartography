@@ -136,9 +136,8 @@ baseElementPic c q sf et = do
         highwayRelW = 2 + hwDivideRelW
         pillarW = 1 / 10
         pipeRelW = 5 / 3
-        loopMaxHW = 7 / 16
-        loopRelB = min (13 / 16) (loopMaxHW / roadW - 1 / 2)
-        loopD = loopRelB / 2
+        loopMaxW = 7 / 8
+        loopRelW = 21 / 8
 
     return $ case et of
         Road ->
@@ -257,12 +256,15 @@ baseElementPic c q sf et = do
                 # lw (corkWallRelW * roadW) # lc warningCl)
             # scaleX 2
         Loop ->
-            let loopLeg = baseElementPicNoO env sf Road
-                    # shearY (loopRelB * roadW) `under` translationX (0.5)
+            let loopW = min (loopRelW * roadW) loopMaxW
+                loopB = (loopW - roadW) / 2
+                loopD = loopB / (2 * roadW)
+                loopLeg = baseElementPicNoO env sf Road
+                    # shearY loopB `under` translationX (0.5)
             in centerX (loopLeg ||| loopLeg # rotateBy (1/2))
             # atop (fromOffsets
                 [ r2 (loopD, 0)
-                , r2 (-2 * loopD, -2 * loopRelB * roadW)
+                , r2 (-2 * loopD, -2 * loopB)
                 , r2 (loopD, 0)]
                 # centerXY # lw roadW # lc meshCl)
         Chicane ->
