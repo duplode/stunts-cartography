@@ -37,13 +37,19 @@ setup w = void $ do
     UI.addStyleSheet w "viewer.css"
     getBody w # set UI.id_ "the-body" # set UI.class_ "blank-horizon" #+
         [ UI.div # set UI.id_ "left-bar" #+
-            [ UI.p #+ [string "Generate image:"]
-            , mkButtonGo
-            , mkButtonSVG
+            [ UI.p #+
+                [ mkButtonGo
+                , string " as "
+                , UI.select # set UI.name "output-format-select"
+                    # set UI.id_ "output-format-select" #+
+                    [ UI.option # set UI.selected True #+ [string "PNG"]
+                    , UI.option #+ [string "SVG"]
+                    ]
+                ]
             , UI.p #+ [string "Base path:"]
             , UI.input # set UI.type_ "text" # set UI.name "base-path-input"
                 # set UI.id_ "base-path-input" # set value ".."
-            , UI.p #+ [string ".TRK or .RPL relative path:"]
+            , UI.p #+ [string "TRK / RPL relative path:"]
             , UI.input # set UI.type_ "text" # set UI.name "trk-input"
                 # set UI.id_ "trk-input"
             , UI.p #+
@@ -58,33 +64,56 @@ setup w = void $ do
             , UI.p #+
                 [ UI.select # set UI.name "style-preset-select"
                     # set UI.id_ "style-preset-select" #+
-                    [ UI.option # set UI.selected True #+ [string "To scale (default)"]
+                    [ UI.option # set UI.selected True #+ [string "Default"]
                     , UI.option #+ [string "Wider track"]
                     , UI.option #+ [string "Sloping ramps"]
                     , UI.option #+ [string "Traditional"]
                     ]
                 , mkButtonApplyPreset
                 ]
-            , UI.p #+ [string "Road width (0.1 - 0.5):"]
-            , UI.input # set UI.type_ "text" # set UI.name "road-w-input"
-                # set UI.id_ "road-w-input" # set value "0.2"
-            , UI.p #+ [string "Bridge height (0 - 0.5):"]
-            , UI.input # set UI.type_ "text" # set UI.name "bridge-h-input"
-                # set UI.id_ "bridge-h-input" # set value "0"
-            , UI.p #+ [string "Bridge relative width (1 - 3):"]
-            , UI.input # set UI.type_ "text" # set UI.name "bridge-rel-w-input"
-                # set UI.id_ "bridge-rel-w-input" # set value "2"
-            , UI.p #+ [string "Banking relative height (0.25 - 1):"]
-            , UI.input # set UI.type_ "text" # set UI.name "bank-rel-h-input"
-                # set UI.id_ "bank-rel-h-input" # set value "0.5"
-            , UI.p #+ [string "Pixels (PNG) or points (SVG) per tile (8 - 64):"]
-            , UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
-                # set UI.id_ "px-per-tile-input" # set value "32"
+            , UI.p #+ [string "Road width:"]
             , UI.p #+
-                [ string "Grid lines?"
+                [ UI.input # set UI.type_ "text" # set UI.name "road-w-input"
+                    # set UI.id_ "road-w-input" # set UI.size "5"
+                    # set value "0.2"
+                , string " from 0.1 to 0.5"
+                ]
+            , UI.p #+ [string "Bridge height:"]
+            , UI.p #+
+                [ UI.input # set UI.type_ "text" # set UI.name "bridge-h-input"
+                    # set UI.id_ "bridge-h-input" # set UI.size "5"
+                    # set value "0"
+                , string " from 0 to 0.5"
+                ]
+            , UI.p #+ [string "Bridge relative width:"]
+            , UI.p #+
+                [ UI.input # set UI.type_ "text" # set UI.name "bridge-rel-w-input"
+                    # set UI.id_ "bridge-rel-w-input" # set UI.size "5"
+                    # set value "2"
+                , string " from 1 to 3"
+                ]
+            , UI.p #+ [string "Banking relative height:"]
+            , UI.p #+
+                [ UI.input # set UI.type_ "text" # set UI.name "bank-rel-h-input"
+                    # set UI.id_ "bank-rel-h-input" # set UI.size "5"
+                    # set value "0.5"
+                , string " from 0.25 to 1"
+                ]
+            , UI.p #+
+                [ string "Pixels per tile (PNG)"
+                , UI.br
+                , string "Points per tile (SVG):"]
+            , UI.p #+
+                [ UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
+                    # set UI.id_ "px-per-tile-input" # set UI.size "5"
+                    # set value "32"
+                , string " from 8 to 64"
+                ]
+            , UI.p #+
+                [ string "Grid?"
                 , UI.input # set UI.type_ "checkbox" # set UI.name "grid-lines-chk"
                     # set UI.id_ "grid-lines-chk" # set UI.checked_ True
-                , string " indices?"
+                , string " Indices?"
                 , UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
                     # set UI.id_ "grid-indices-chk" # set UI.checked_ True
                 ]
@@ -116,18 +145,12 @@ setup w = void $ do
 
 mkButtonGo :: IO Element
 mkButtonGo = do
-    button <- UI.button #. "button" #+ [string "PNG"]
-    on UI.click button $ generateImageHandler PNG button
+    button <- UI.button #. "go-button" #+ [string "Draw map"]
+    on UI.click button $ generateImageHandler button
     return button
 
-mkButtonSVG :: IO Element
-mkButtonSVG = do
-    button <- UI.button #. "button" #+ [string "SVG"]
-    on UI.click button $ generateImageHandler SVG button
-    return button
-
-generateImageHandler :: OutputType -> Element -> (a -> IO ())
-generateImageHandler outType button = \_ -> do
+generateImageHandler :: Element -> (a -> IO ())
+generateImageHandler button = \_ -> do
     w <- fromJust <$> getWindow button --TODO: ick
     trkRelPath <- join $ get value . fromJust
         <$> getElementById w "trk-input"
@@ -148,6 +171,7 @@ generateImageHandler outType button = \_ -> do
                     ".TRK" -> writePngFromTrk
                     ".RPL" -> writePngFromRpl
                     _      -> error "Unrecognized input extension."
+            outType <- selectedOutputFormat w
             params <- selectedRenderingParameters w outType
             postRender <- pngWriter params trkPath
             applyHorizonClass w $ Pm.renderedTrackHorizon postRender
@@ -234,9 +258,23 @@ selectedRenderingParameters w outType = do
             , Pm.yTileBounds = yBounds
             }
 
+selectedFromSelect :: (Int -> a) -> String -> Window -> IO a
+selectedFromSelect fSel selId = \w -> do
+    optionIx <- join $ liftM (fromMaybe 0) . get UI.selection . fromJust
+        <$> getElementById w selId
+    return $ fSel optionIx
+
+selectedOutputFormat :: Window -> IO OutputType
+selectedOutputFormat = selectedFromSelect fSel "output-format-select"
+    where
+    fSel = \n -> case n of
+        0 -> PNG
+        1 -> SVG
+        _ -> error "Unknown output format."
+
 mkButtonApplyPreset :: IO Element
 mkButtonApplyPreset = do
-    button <- UI.button #. "button" #+ [string "Apply"]
+    button <- UI.button #. "button" #+ [string "Set"]
     on UI.click button $ applyPresetHandler button
     return button
 
@@ -264,14 +302,14 @@ applyPresetHandler button = \_ -> do
 
 -- The order in the case statement matches that in the style-preset-select.
 selectedPresetRenderingParams :: Window -> IO Pm.RenderingParameters
-selectedPresetRenderingParams w = do
-    paramsSel <- join $ liftM (fromMaybe 0) . get UI.selection . fromJust
-        <$> getElementById w "style-preset-select"
-    return $ case paramsSel of
+selectedPresetRenderingParams = selectedFromSelect fSel "style-preset-select"
+    where
+    fSel = \n -> case n of
         0 -> Pm.defaultRenderingParameters
         1 -> Pm.widerRoadsRenderingParameters
         2 -> Pm.slopingRampsRenderingParameters
         3 -> Pm.classicRenderingParameters
+        _ -> error "Unknown preset."
 
 selectedNumFromTextInput :: (Num a, Read a, Ord a)
                          => String -> a -> a -> a
