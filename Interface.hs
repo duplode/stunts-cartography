@@ -166,7 +166,7 @@ loadTmpTrkBase :: (String -> String) -> (LB.ByteString -> LB.ByteString)
 loadTmpTrkBase fName fTrk w postRender = do
     tmpDir <- getTemporaryDirectory
         `catch` ((\_ -> return ".") :: SomeException -> IO String)
-    let trkName = fName $ Pm.trackName postRender
+    let trkName = "_" ++ fName (Pm.trackName postRender)
         tmpTrkPath = addExtension (tmpDir </> trkName) ".TRK"
     LB.writeFile tmpTrkPath . fTrk $ Pm.trackData postRender
     loadFile w "application/octet-stream" tmpTrkPath
@@ -176,7 +176,7 @@ loadTmpTrk = loadTmpTrkBase id id
 
 loadTmpTerrainTrk :: Window -> Pm.PostRenderInfo -> IO String
 loadTmpTerrainTrk =
-    loadTmpTrkBase (("T_" ++) . take 6) terrainTrkSimple
+    loadTmpTrkBase ((++ "-T") . take 6) terrainTrkSimple
 
 applyHorizonClass :: Window -> Horizon -> IO ()
 applyHorizonClass w horizon = do
