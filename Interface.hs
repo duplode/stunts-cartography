@@ -1,4 +1,6 @@
-module Main where
+module Main
+    ( main
+    ) where
 
 import Control.Monad
 import Control.Applicative ((<$>), (<*>))
@@ -18,6 +20,7 @@ import qualified OurByteString as LB
 import Track (Horizon(..))
 import qualified Parameters as Pm
 import Utils (retrieveFileSize)
+import Replay (terrainTrkSimple)
 
 main :: IO ()
 main = do
@@ -43,8 +46,12 @@ setup w = void $ do
             , UI.input # set UI.type_ "text" # set UI.name "trk-input"
                 # set UI.id_ "trk-input"
             , UI.p #+
-                [ UI.a # set UI.id_ "save-trk-link" # set UI.target "_blank" #+
-                    [string "Save displayed track as..."]
+                [ string "Save as: "
+                , UI.a # set UI.id_ "save-trk-link" # set UI.target "_blank" #+
+                    [string "track"]
+                , string " - "
+                , UI.a # set UI.id_ "save-terrain-link" # set UI.target "_blank" #+
+                    [string "terrain"]
                 ]
             , UI.p #+ [string "Road width (0.1 - 0.5):"]
             , UI.input # set UI.type_ "text" # set UI.name "road-w-input"
@@ -134,29 +141,42 @@ generateImageHandler outType button = \_ -> do
             applyHorizonClass w $ Pm.renderedTrackHorizon postRender
             trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
             trkUri <- loadTmpTrk w postRender
+            terrainUri <- loadTmpTerrainTrk w postRender
             (fromJust <$> getElementById w "track-map") # set UI.src trackImage
-            setSaveTrackLinkHref w trkUri >> return ()
+            setLinkHref w "save-trk-link" trkUri
+            setLinkHref w "save-terrain-link" terrainUri
+            return ()
         else do
             applyClassToBody w "blank-horizon"
             (fromJust <$> getElementById w "track-map") # set UI.src ""
-            runFunction w $ unsetSaveTrackLinkHref
+            runFunction w $ unsetSaveLinksHref
 
-setSaveTrackLinkHref :: Window -> String -> IO Element
-setSaveTrackLinkHref w uri =
-    (fromJust <$> getElementById w "save-trk-link") # set UI.href uri
+setLinkHref :: Window -> String -> String -> IO Element
+setLinkHref w linkId uri =
+    (fromJust <$> getElementById w linkId) # set UI.href uri
 
-unsetSaveTrackLinkHref :: JSFunction ()
-unsetSaveTrackLinkHref =
-    ffi "document.getElementById('save-trk-link').removeAttribute('href');"
+unsetSaveLinksHref :: JSFunction ()
+unsetSaveLinksHref = ffi $ unlines
+    [ "document.getElementById('save-trk-link').removeAttribute('href');"
+    , "document.getElementById('save-terrain-link').removeAttribute('href');"
+    ]
 
-loadTmpTrk :: Window -> Pm.PostRenderInfo -> IO String
-loadTmpTrk w postRender = do
+loadTmpTrkBase :: (String -> String) -> (LB.ByteString -> LB.ByteString)
+               -> Window -> Pm.PostRenderInfo -> IO String
+loadTmpTrkBase fName fTrk w postRender = do
     tmpDir <- getTemporaryDirectory
         `catch` ((\_ -> return ".") :: SomeException -> IO String)
-    let trkName = Pm.trackName postRender
+    let trkName = fName $ Pm.trackName postRender
         tmpTrkPath = addExtension (tmpDir </> trkName) ".TRK"
-    LB.writeFile tmpTrkPath $ Pm.trackData postRender
+    LB.writeFile tmpTrkPath . fTrk $ Pm.trackData postRender
     loadFile w "application/octet-stream" tmpTrkPath
+
+loadTmpTrk :: Window -> Pm.PostRenderInfo -> IO String
+loadTmpTrk = loadTmpTrkBase id id
+
+loadTmpTerrainTrk :: Window -> Pm.PostRenderInfo -> IO String
+loadTmpTerrainTrk =
+    loadTmpTrkBase (("T_" ++) . take 6) terrainTrkSimple
 
 applyHorizonClass :: Window -> Horizon -> IO ()
 applyHorizonClass w horizon = do
