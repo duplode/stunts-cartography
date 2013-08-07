@@ -149,7 +149,7 @@ baseElementPic c q sf et = do
             cornerArc (surfaceToColor sf) roadW 2
         StartFinish ->
             baseElementPicNoO env sf Road
-            # atop (eqTriangle (2 * roadW)
+            # atop (eqTriangle (1 / 2)
                 # fc signCl # rotateBy (-1/4))
         SlalomRoad ->
             let slalomBlock = square (slalomRelW * roadW) # scaleX 0.5
