@@ -7,6 +7,7 @@ import Control.Applicative ((<$>), (<*>))
 import Control.Exception (catch, SomeException)
 import Data.Maybe (fromJust, fromMaybe)
 import Text.Read (readMaybe)
+import Text.Printf (printf)
 import System.Directory ( doesFileExist, doesDirectoryExist
                         , getTemporaryDirectory)
 import System.FilePath ((</>), takeExtension, addExtension)
@@ -52,6 +53,17 @@ setup w = void $ do
                 , string " - "
                 , UI.a # set UI.id_ "save-terrain-link" # set UI.target "_blank" #+
                     [string "terrain"]
+                ]
+            , UI.p #+ [string "Style presets:"]
+            , UI.p #+
+                [ UI.select # set UI.name "style-preset-select"
+                    # set UI.id_ "style-preset-select" #+
+                    [ UI.option # set UI.selected True #+ [string "To scale (default)"]
+                    , UI.option #+ [string "Wider track"]
+                    , UI.option #+ [string "Sloping ramps"]
+                    , UI.option #+ [string "Traditional"]
+                    ]
+                , mkButtonApplyPreset
                 ]
             , UI.p #+ [string "Road width (0.1 - 0.5):"]
             , UI.input # set UI.type_ "text" # set UI.name "road-w-input"
@@ -221,6 +233,45 @@ selectedRenderingParameters w outType = do
             , Pm.xTileBounds = xBounds
             , Pm.yTileBounds = yBounds
             }
+
+mkButtonApplyPreset :: IO Element
+mkButtonApplyPreset = do
+    button <- UI.button #. "button" #+ [string "Apply"]
+    on UI.click button $ applyPresetHandler button
+    return button
+
+applyPresetHandler :: Element -> (a -> IO ())
+applyPresetHandler button = \_ -> do
+    w <- fromJust <$> getWindow button
+    preset <- selectedPresetRenderingParams w
+    let txtValues = map (printf "%.3f" . ($ preset)) txtFuncs
+    txtElems <- map return <$> getElementsById w txtElIds
+    sequence_ $ zipWith (set value) txtValues txtElems
+    where
+    txtFuncs :: [Pm.RenderingParameters -> Double]
+    txtFuncs = map (realToFrac .)
+        [ Pm.roadWidth
+        , Pm.bridgeHeight
+        , Pm.bridgeRelativeWidth
+        , Pm.bankingRelativeHeight
+        ]
+    txtElIds =
+        [ "road-w-input"
+        , "bridge-h-input"
+        , "bridge-rel-w-input"
+        , "bank-rel-h-input"
+        ]
+
+-- The order in the case statement matches that in the style-preset-select.
+selectedPresetRenderingParams :: Window -> IO Pm.RenderingParameters
+selectedPresetRenderingParams w = do
+    paramsSel <- join $ liftM (fromMaybe 0) . get UI.selection . fromJust
+        <$> getElementById w "style-preset-select"
+    return $ case paramsSel of
+        0 -> Pm.defaultRenderingParameters
+        1 -> Pm.widerRoadsRenderingParameters
+        2 -> Pm.slopingRampsRenderingParameters
+        3 -> Pm.classicRenderingParameters
 
 selectedNumFromTextInput :: (Num a, Read a, Ord a)
                          => String -> a -> a -> a

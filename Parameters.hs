@@ -36,11 +36,11 @@ defaultRenderingParameters = RenderingParameters
     , yTileBounds = (0, 29)
     }
 
-widerRoadRenderingParameters = defaultRenderingParameters
+widerRoadsRenderingParameters = defaultRenderingParameters
     { roadWidth = 1 / 4
     }
 
-slopedRampsRenderingParameters = defaultRenderingParameters
+slopingRampsRenderingParameters = defaultRenderingParameters
     { bridgeRelativeWidth = 3 / 2
     , bridgeHeight = 1 / 4
     }
