@@ -136,8 +136,8 @@ baseElementPic c q sf et = do
         highwayRelW = 2 + hwDivideRelW
         pillarW = 1 / 10
         pipeRelW = 5 / 3
-        loopRelB = 1
-        loopD = 1 / 2
+        loopRelB = 3 / 5
+        loopD = loopRelB / 2
 
     return $ case et of
         Road ->
@@ -398,7 +398,6 @@ baseElementPic c q sf et = do
             acura opponentCl
         _ -> mempty
 
-    where
 
 emptySquare = square 1 # lw (1/20)
 
