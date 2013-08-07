@@ -46,12 +46,18 @@ setup w = void $ do
                     , UI.option #+ [string "SVG"]
                     ]
                 ]
-            , UI.p #+ [string "Base path:"]
-            , UI.input # set UI.type_ "text" # set UI.name "base-path-input"
-                # set UI.id_ "base-path-input" # set value ".."
-            , UI.p #+ [string "TRK / RPL relative path:"]
-            , UI.input # set UI.type_ "text" # set UI.name "trk-input"
-                # set UI.id_ "trk-input"
+            , UI.p #+
+                [ string "Base path:"
+                , UI.br
+                , UI.input # set UI.type_ "text" # set UI.name "base-path-input"
+                    # set UI.id_ "base-path-input" # set value ".."
+                ]
+            , UI.p #+
+                [ string "TRK / RPL relative path:"
+                , UI.br
+                , UI.input # set UI.type_ "text" # set UI.name "trk-input"
+                    # set UI.id_ "trk-input"
+                ]
             , UI.p #+
                 [ string "Save as: "
                 , UI.a # set UI.id_ "save-trk-link" # set UI.target "_blank" #+
@@ -60,9 +66,10 @@ setup w = void $ do
                 , UI.a # set UI.id_ "save-terrain-link" # set UI.target "_blank" #+
                     [string "terrain"]
                 ]
-            , UI.p #+ [string "Style presets:"]
             , UI.p #+
-                [ UI.select # set UI.name "style-preset-select"
+                [ string "Style presets:"
+                , UI.br
+                , UI.select # set UI.name "style-preset-select"
                     # set UI.id_ "style-preset-select" #+
                     [ UI.option # set UI.selected True #+ [string "Default"]
                     , UI.option #+ [string "Wider track"]
@@ -71,36 +78,40 @@ setup w = void $ do
                     ]
                 , mkButtonApplyPreset
                 ]
-            , UI.p #+ [string "Road width:"]
             , UI.p #+
-                [ UI.input # set UI.type_ "text" # set UI.name "road-w-input"
+                [ string "Road width:"
+                , UI.br
+                , UI.input # set UI.type_ "text" # set UI.name "road-w-input"
                     # set UI.id_ "road-w-input" # set UI.size "5"
                 , string " from 0.1 to 0.5"
                 ]
-            , UI.p #+ [string "Bridge height:"]
             , UI.p #+
-                [ UI.input # set UI.type_ "text" # set UI.name "bridge-h-input"
+                [ string "Bridge height:"
+                , UI.br
+                , UI.input # set UI.type_ "text" # set UI.name "bridge-h-input"
                     # set UI.id_ "bridge-h-input" # set UI.size "5"
                 , string " from 0 to 0.5"
                 ]
-            , UI.p #+ [string "Bridge relative width:"]
             , UI.p #+
-                [ UI.input # set UI.type_ "text" # set UI.name "bridge-rel-w-input"
+                [ string "Bridge relative width:"
+                , UI.br
+                , UI.input # set UI.type_ "text" # set UI.name "bridge-rel-w-input"
                     # set UI.id_ "bridge-rel-w-input" # set UI.size "5"
                 , string " from 1 to 3"
                 ]
-            , UI.p #+ [string "Banking relative height:"]
             , UI.p #+
-                [ UI.input # set UI.type_ "text" # set UI.name "bank-rel-h-input"
+                [ string "Banking relative height:"
+                , UI.br
+                , UI.input # set UI.type_ "text" # set UI.name "bank-rel-h-input"
                     # set UI.id_ "bank-rel-h-input" # set UI.size "5"
                 , string " from 0.25 to 1"
                 ]
             , UI.p #+
                 [ string "Pixels per tile (PNG)"
                 , UI.br
-                , string "Points per tile (SVG):"]
-            , UI.p #+
-                [ UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
+                , string "Points per tile (SVG):"
+                , UI.br
+                , UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
                     # set UI.id_ "px-per-tile-input" # set UI.size "5"
                     # set value "32"
                 , string " from 8 to 64"
@@ -113,9 +124,10 @@ setup w = void $ do
                 , UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
                     # set UI.id_ "grid-indices-chk" # set UI.checked_ True
                 ]
-            , UI.p #+ [string "Map bounds (0 - 29):"]
             , UI.p #+
-                [ string "x from "
+                [ string "Map bounds (0 - 29):"
+                , UI.br
+                , string "x from "
                 , UI.input # set UI.type_ "text"
                     # set UI.name "x-min-bound-input" # set UI.size "2"
                     # set UI.id_ "x-min-bound-input" # set value "0"
@@ -123,9 +135,8 @@ setup w = void $ do
                 , UI.input # set UI.type_ "text"
                     # set UI.name "x-max-bound-input" # set UI.size "2"
                     # set UI.id_ "x-max-bound-input" # set value "29"
-                ]
-            , UI.p #+
-                [ string "y from "
+                , UI.br
+                , string "y from "
                 , UI.input # set UI.type_ "text"
                     # set UI.name "y-min-bound-input" # set UI.size "2"
                     # set UI.id_ "y-min-bound-input" # set value "0"
