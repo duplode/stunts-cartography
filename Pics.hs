@@ -181,9 +181,7 @@ baseElementPic c q sf et = do
                 # scaleY (1/2) # scaleX (roadW * hwDivideRelW)
                 # rotateBy (1/4) # lw 0 # fc highwayCl)
         ElevatedSpan ->
-            genericSquare bridgeCl # scaleY (roadW * bridgeRelW)
-            # atop (spanSegment bridgeMeshCl # opacity 0.75)
-            # translateY bridgeH
+            spanSegment bridgeMeshCl # opacity 0.75
         SpanOverRoad ->
             baseElementPicNoO env sf Road # rotateBy (1/4)
             # atop (baseElementPicNoO env sf ElevatedSpan)
