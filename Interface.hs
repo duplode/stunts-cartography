@@ -75,28 +75,24 @@ setup w = void $ do
             , UI.p #+
                 [ UI.input # set UI.type_ "text" # set UI.name "road-w-input"
                     # set UI.id_ "road-w-input" # set UI.size "5"
-                    # set value "0.2"
                 , string " from 0.1 to 0.5"
                 ]
             , UI.p #+ [string "Bridge height:"]
             , UI.p #+
                 [ UI.input # set UI.type_ "text" # set UI.name "bridge-h-input"
                     # set UI.id_ "bridge-h-input" # set UI.size "5"
-                    # set value "0"
                 , string " from 0 to 0.5"
                 ]
             , UI.p #+ [string "Bridge relative width:"]
             , UI.p #+
                 [ UI.input # set UI.type_ "text" # set UI.name "bridge-rel-w-input"
                     # set UI.id_ "bridge-rel-w-input" # set UI.size "5"
-                    # set value "2"
                 , string " from 1 to 3"
                 ]
             , UI.p #+ [string "Banking relative height:"]
             , UI.p #+
                 [ UI.input # set UI.type_ "text" # set UI.name "bank-rel-h-input"
                     # set UI.id_ "bank-rel-h-input" # set UI.size "5"
-                    # set value "0.5"
                 , string " from 0.25 to 1"
                 ]
             , UI.p #+
@@ -142,6 +138,7 @@ setup w = void $ do
         , UI.div # set UI.id_ "main-wrap" #+
             [ UI.img # set UI.id_ "track-map"]
         ]
+    fillDrawingRatiosFields w Pm.defaultRenderingParameters
 
 mkButtonGo :: IO Element
 mkButtonGo = do
@@ -282,7 +279,11 @@ applyPresetHandler :: Element -> (a -> IO ())
 applyPresetHandler button = \_ -> do
     w <- fromJust <$> getWindow button
     preset <- selectedPresetRenderingParams w
-    let txtValues = map (printf "%.3f" . ($ preset)) txtFuncs
+    fillDrawingRatiosFields w preset
+
+fillDrawingRatiosFields :: Window -> Pm.RenderingParameters -> IO ()
+fillDrawingRatiosFields w params = do
+    let txtValues = map (printf "%.3f" . ($ params)) txtFuncs
     txtElems <- map return <$> getElementsById w txtElIds
     sequence_ $ zipWith (set value) txtValues txtElems
     where
