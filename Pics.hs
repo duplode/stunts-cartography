@@ -136,7 +136,8 @@ baseElementPic c q sf et = do
         highwayRelW = 2 + hwDivideRelW
         pillarW = 1 / 10
         pipeRelW = 5 / 3
-        loopRelB = 3 / 5
+        loopMaxHW = 7 / 16
+        loopRelB = min (13 / 16) (loopMaxHW / roadW - 1 / 2)
         loopD = loopRelB / 2
 
     return $ case et of
