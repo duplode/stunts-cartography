@@ -46,10 +46,10 @@ slopingRampsRenderingParameters = defaultRenderingParameters
     }
 
 classicRenderingParameters = defaultRenderingParameters
-    { roadWidth = 2 / 5
+    { roadWidth = 1 / 3
     , bridgeHeight = 4 / 15
-    , bridgeRelativeWidth = 7 / 6
-    , bankingRelativeHeight = 1 / 3
+    , bridgeRelativeWidth = 7 / 5
+    , bankingRelativeHeight = 2 / 5
     }
 
 minTileBounds :: (Num a) => RenderingParameters -> (a, a)
