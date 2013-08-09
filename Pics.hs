@@ -128,10 +128,14 @@ baseElementPic c q sf et = do
             # atop (genericSquare flCl # scaleY roadW)
             # translateY bridgeH
 
+        sfMinW = 2 / 5
+        sfMaxW = 4 / 5
+        sfRelW = max (sfMinW / roadW) . min (sfMaxW / roadW) $ 2
         slalomRelW = 2 / 3
         pipeObstacleRelW = 1
         corkWallRelW = 1 / 2
-        tunnelRelW = 2
+        tunnelMaxW = 7 / 8
+        tunnelRelW = min 2 (tunnelMaxW / roadW)
         highwayMaxW = 13 / 15
         hwDivideRelW = 3 / 5
         highwayRelW = min (2 + hwDivideRelW) (highwayMaxW / roadW)
@@ -149,7 +153,7 @@ baseElementPic c q sf et = do
             cornerArc (surfaceToColor sf) roadW 2
         StartFinish ->
             baseElementPicNoO env sf Road
-            # atop (eqTriangle (1 / 2)
+            # atop (eqTriangle (sfRelW * roadW)
                 # fc signCl # rotateBy (-1/4))
         SlalomRoad ->
             let slalomBlock = square (slalomRelW * roadW) # scaleX 0.5
