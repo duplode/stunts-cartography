@@ -18,10 +18,9 @@ import Diagrams.Backend.Cairo (OutputType(..))
 
 import Output
 import qualified OurByteString as LB
-import Track (Horizon(..))
+import Track (Horizon(..), terrainTrkSimple)
 import qualified Parameters as Pm
 import Utils (retrieveFileSize)
-import Replay (terrainTrkSimple)
 
 main :: IO ()
 main = do

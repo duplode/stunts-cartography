@@ -1,6 +1,5 @@
 module Replay
     ( trkFromRplSimple
-    , terrainTrkSimple
     ) where
 
 import Control.Applicative ((<$>))
@@ -27,10 +26,6 @@ trkFromRplSimple fileData = (trackName, trackData)
     trackName = map (chr . fromIntegral) . LB.unpack
         . LB.takeWhile (/= 0) . LB.drop 0xD $ fileData
     trackData = LB.take 1802 . LB.drop trackOffset $ fileData
-
--- Again, no sanity checks.
-terrainTrkSimple :: LB.ByteString -> LB.ByteString
-terrainTrkSimple = LB.append (LB.pack $ replicate 0x384 0) . LB.drop 0x384
 
 detectRplFormat :: LB.ByteString -> ReplayFormat
 detectRplFormat fileData

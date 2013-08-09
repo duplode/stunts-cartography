@@ -24,6 +24,8 @@ module Track
     , veryRawReadTrack
     , rawTrackToTileArray
     , horizonFromRawTrack
+
+    , terrainTrkSimple
     ) where
 
 import Data.Maybe (fromJust)
@@ -917,3 +919,10 @@ rawTrackToTileArray trk = listArray ((0, 0), (29, 29)) tiles
 -- |Retrieves the horizon of a raw track.
 horizonFromRawTrack :: VeryRawTrack -> Horizon
 horizonFromRawTrack = byteToHorizon . veryRawHorizon
+
+
+-- |Extracts the terrain part of the unprocessed TRK bytestring.
+-- No sanity checks.
+terrainTrkSimple :: LB.ByteString -> LB.ByteString
+terrainTrkSimple = LB.append (LB.pack $ replicate 0x384 0) . LB.drop 0x384
+
