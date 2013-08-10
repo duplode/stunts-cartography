@@ -20,13 +20,19 @@ functional.
 * Starting it: launch it in a console window and navigate in a web browser to
   http://localhost:10000 .
 * To generate a track map, fill both path fields as appropriate (the base path
-  is prepended to the .TRK file path, so that relative paths can be used during
-  a session) and optionally change the rendering parameters. Then, click one of
-  the buttons at the top to generate PNG or SVG output.
-* Picking an inexistent file, or one with size different from 1802 bytes (the
+  is prepended to the TRK or RPL file path, so that relative paths can be used
+  during a session) and optionally change the rendering parameters. Then, click
+  one of the buttons at the top to generate PNG or SVG output.
+* Picking an inexistent file or a TRK with size different from 1802 bytes (the
   expected .TRK file size) will suspend the rendering. Invalid parameter
   values, or values out of the ranges presented at the interface, will be
   replaced by the respective default values.
+* Copies of both the track file and a bare terrain TRK are created as temporary
+  files, and can be saved elsewhere through the links on the side bar. That
+  allows for extracting tracks from replays. For that purpose, both replay
+  formats of Stunts are accepted.
+* To save the track map, right click the image and choose "Save image as...",
+  as it would be done in any regular page.
 * The interface background colour changes according to the horizon of the track
   being displayed.
 
