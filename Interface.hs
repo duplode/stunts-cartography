@@ -113,7 +113,7 @@ setup w = void $ do
                 , UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
                     # set UI.id_ "px-per-tile-input" # set UI.size "5"
                     # set value "32"
-                , string " from 8 to 64"
+                , string " from 8 to 128"
                 ]
             , UI.p #+
                 [ string "Grid?"
@@ -349,7 +349,7 @@ selectedBankingRelativeHeight = do
 
 selectedPixelsPerTile :: Window -> IO Double
 selectedPixelsPerTile =
-    selectedNumFromTextInput "px-per-tile-input" 8 32 64
+    selectedNumFromTextInput "px-per-tile-input" 8 32 128
 
 selectedBoolFromCheckbox :: String -> Window -> IO Bool
 selectedBoolFromCheckbox elemId = \w ->
