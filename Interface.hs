@@ -185,14 +185,20 @@ generateImageHandler button = \_ -> do
             trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
             trkUri <- loadTmpTrk w postRender
             terrainUri <- loadTmpTerrainTrk w postRender
+            runFunction w $ setTrackMapVisibility True
             (fromJust <$> getElementById w "track-map") # set UI.src trackImage
             setLinkHref w "save-trk-link" trkUri
             setLinkHref w "save-terrain-link" terrainUri
             return ()
         else do
             applyClassToBody w "blank-horizon"
-            (fromJust <$> getElementById w "track-map") # set UI.src ""
+            runFunction w $ setTrackMapVisibility False
             runFunction w $ unsetSaveLinksHref
+
+setTrackMapVisibility :: Bool -> JSFunction ()
+setTrackMapVisibility visible
+    | visible   = ffi "document.getElementById('track-map').style.display='block';"
+    | otherwise = ffi "document.getElementById('track-map').style.display='none';"
 
 setLinkHref :: Window -> String -> String -> IO Element
 setLinkHref w linkId uri =
