@@ -293,6 +293,7 @@ baseElementPic c q sf et = do
             square (1/8) # fc woodCl
         Palm ->
             let leaf = arc (1/8 :: Turn) (3/8 :: Turn)
+                    # closeLine # wrapTrail # pathFromTrail # stroke
                     # scale 0.25 # lc darkleafCl # fc leafCl
             in beside unitY
                 (square (2/3) # scaleX (1/8) # fc woodCl)
@@ -326,6 +327,7 @@ baseElementPic c q sf et = do
             # centerXY
         Barn ->
             let roofArc = wedge (1/2) (1/4 :: Turn) (5/12 :: Turn)
+                    # closeLine # wrapTrail # pathFromTrail # stroke
                     # centerY
                 diagLine = hrule (1/3) # rotateBy (1/8)
             in (
