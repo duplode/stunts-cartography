@@ -4,7 +4,6 @@ module Annotate
     , renderAnnotation
     ) where
 
--- It is proably a good idea to import this qualified.
 
 import Diagrams.Prelude
 import Track (Orientation(..))
@@ -28,7 +27,7 @@ renderAnnotation ann = case ann of
         # translate (r2 pos)
         -- TODO: Add caption
 
-    Line colour pos angle len
+    Seg colour pos angle len
         caption captAlign captAngle captSize
         ->
         fromSegments [ straight (r2 (len, 0) # rotate (Deg angle)) ]

@@ -136,7 +136,7 @@ rotateOrientation turns = toEnum . (+ turns) . fromEnum
 -- * L/r corks: clockwiseness around the track direction axis (so that the
 --   corks l/r in Stunts are sinistral/anticlockwise).
 --
--- * Loops: clockwiseness around the left-to-right axis as seen when
+-- * Loopings: clockwiseness around the left-to-right axis as seen when
 --   apporaching the loop (so that Stunts loops are dextral/clockwise).
 --
 -- * Slalom blocks: clockwiseness of a chicane placed just before the blocks
@@ -199,7 +199,7 @@ data ElementType = Blank
                  | BridgeRamp
                  | SolidRamp
                  | CorkUpDown
-                 | Loop
+                 | Looping
                  | CorkLeftRight
                  | Tunnel
                  | SlalomRoad
@@ -353,7 +353,7 @@ eTypeToProps et
     ramps = [ ElevatedRamp
             , BridgeRamp
             ]
-    lLins = [ Loop
+    lLins = [ Looping
             , CorkLeftRight
             ]
     trans = [ PipeTransition
@@ -449,8 +449,8 @@ corkUpDownDex = Element CorkUpDown Tarmac Dextral
 corkUpDownSin :: Orientation -> Element
 corkUpDownSin = Element CorkUpDown Tarmac Sinistral
 
-loop :: Orientation -> Element
-loop = Element Loop Tarmac Achiral
+looping :: Orientation -> Element
+looping = Element Looping Tarmac Achiral
 
 corkLeftRight :: Orientation -> Element
 corkLeftRight = Element CorkLeftRight Tarmac Achiral
@@ -654,8 +654,8 @@ byteToElement x = case x of
     0x3D -> chicaneSin Q1
     0x3E -> chicaneSin Q2
     0x3F -> chicaneDex Q1
-    0x40 -> loop Q2
-    0x41 -> loop Q1
+    0x40 -> looping Q2
+    0x41 -> looping Q1
     0x42 -> tunnel Q2
     0x43 -> tunnel Q1
     0x44 -> pipe Q2

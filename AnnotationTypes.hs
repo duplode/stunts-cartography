@@ -1,5 +1,7 @@
 module AnnotationTypes where
 
+-- It seems sensible to import this qualified if you need the raw constructors.
+
 import Diagrams.Prelude (Colour)
 
 data CaptionAlignment = E
@@ -12,6 +14,6 @@ data CaptionAlignment = E
 -- Maybe add a wrapper typeclass, or play with existentials to hide the fields.
 data Annotation = Car (Colour Double) (Double, Double) Double Double
                       String CaptionAlignment Double Double
-                | Line (Colour Double) (Double, Double) Double Double
+                | Seg (Colour Double) (Double, Double) Double Double
                       String CaptionAlignment Double Double
                 deriving (Read, Show)

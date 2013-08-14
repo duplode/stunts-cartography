@@ -8,6 +8,7 @@ module Pics
 import Control.Monad (liftM)
 import Control.Monad.Trans.Reader
 import Diagrams.Prelude
+import Diagrams.Coordinates ((&))
 import Track (Orientation(..), Chirality(..), rotateOrientation
              , ElementType(..), ElementSurface(..), ElementAttribute(..)
              , TerrainType(..)
@@ -19,7 +20,7 @@ import Palette
 import qualified Parameters as Pm
 
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
-rotateByOrient = rotateBy . CircleFrac . (/4) . fromIntegral . fromEnum
+rotateByOrient = rotateBy . Turn . (/4) . fromIntegral . fromEnum
 
 {-# INLINE corrSignumX #-}
 corrSignumX q = case q of
@@ -97,13 +98,13 @@ baseElementPic c q sf et = do
         alignWithRoadY = juxtapose unitY (hrule 1 # translateY (-roadW / 2))
 
         cornerArc cl w l =
-            arc (0 :: CircleFrac) (1/4 :: CircleFrac)
+            arc (0 :: Turn) (1/4 :: Turn)
             # alignBL # scale (l - 1/2) # moveOriginBy (r2 (l/2, l/2))
             # lw w # lc cl
 
         isoscelesTransition cl ratio =
             let sidePad = polygon with
-                    { polyType = PolySides [1/4 :: CircleFrac]
+                    { polyType = PolySides [1/4 :: Turn]
                                            [ roadW * (ratio - 1) / 2, 1 ]
                     , polyOrient = OrientV }
                     # lw 0 # fc cl # centerXY
@@ -261,7 +262,7 @@ baseElementPic c q sf et = do
                 # translate (r2 (-1/4, roadW / 2))
                 # lw (corkWallRelW * roadW) # lc warningCl)
             # scaleX 2
-        Loop ->
+        Looping ->
             let loopW = min (loopRelW * roadW) loopMaxW
                 loopB = (loopW - roadW) / 2
                 loopD = loopB / (2 * roadW)
@@ -291,7 +292,7 @@ baseElementPic c q sf et = do
             ===
             square (1/8) # fc woodCl
         Palm ->
-            let leaf = arc (1/8 :: CircleFrac) (3/8 :: CircleFrac)
+            let leaf = arc (1/8 :: Turn) (3/8 :: Turn)
                     # scale 0.25 # lc darkleafCl # fc leafCl
             in beside unitY
                 (square (2/3) # scaleX (1/8) # fc woodCl)
@@ -314,7 +315,7 @@ baseElementPic c q sf et = do
         Ship ->
             (
                 polygon with
-                    { polyType = PolySides [-1/4 :: CircleFrac, -1/8 :: CircleFrac]
+                    { polyType = PolySides [-1/4 :: Turn, -1/8 :: Turn]
                                            [ 1/4, 2/4, sqrt 2 * 1 / 4 ]
                     } # lw 0 # fc shipCl
                 ===
@@ -324,12 +325,12 @@ baseElementPic c q sf et = do
                 # centerX)
             # centerXY
         Barn ->
-            let roofArc = wedge (1/2) (1/4 :: CircleFrac) (5/12 :: CircleFrac)
+            let roofArc = wedge (1/2) (1/4 :: Turn) (5/12 :: Turn)
                     # centerY
                 diagLine = hrule (1/3) # rotateBy (1/8)
             in (
                 diagLine <> reflectY diagLine
-                <> arc' (1/6) (0 :: CircleFrac) (1 :: CircleFrac))
+                <> arc' (1/6) (0 :: Turn) (1 :: Turn))
             # translateX (1/20) # lw 0.025 # lc miscLightCl
             <> (
                 (reflectY roofArc <> roofArc) # scaleX 0.4
@@ -413,13 +414,13 @@ emptySquare = square 1 # lw (1/20)
 genericSquare cl = square 1 # lw 0 # fc cl
 
 diagonalTriangle cl = polygon with
-    { polyType = PolySides [-3/8 :: CircleFrac]
+    { polyType = PolySides [-3/8 :: Turn]
                            [ 1, sqrt 2 ]
     } # centerXY # lw 0 # fc cl
 
 rightTriangle cl h =
     polygon with
-        { polyType = PolySides [1/4 :: CircleFrac]
+        { polyType = PolySides [1/4 :: Turn]
                                [ h, 1 ]
         , polyOrient = OrientV }
     # alignB # centerX # reflectY # translateY (h / 2)
