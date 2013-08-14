@@ -3,6 +3,7 @@ module Pics
     ( getTerrainPic
     , getTilePic
     , acura
+    , acura'
     ) where
 
 import Control.Monad (liftM)
@@ -439,6 +440,9 @@ acura cl =
         , radiusBR = 1/10
         }
     # fc cl
+
+-- TODO: Further abstract the base size.
+acura' cl sz = acura cl # scale (2 * sz)
 
 --getTilePic :: Tile -> "Dia"
 getTilePic tile =

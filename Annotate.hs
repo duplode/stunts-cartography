@@ -9,7 +9,7 @@ import Diagrams.Prelude
 import Track (Orientation(..))
 import Data.Maybe (catMaybes)
 import Text.Read (readMaybe)
-import Pics (acura)
+import Pics (acura')
 import AnnotationTypes
 
 -- This will fail silently for now.
@@ -20,12 +20,14 @@ readAnnotationsMinimal = catMaybes . map readMaybe . lines
 renderAnnotation ann = case ann of
 
     Car colour pos angle size
-        caption captAlign captAngle captSize
+        caption captAlign captAngle captRelSize
         ->
-        acura colour # scale size
+        acura' colour 1
         # rotate (Deg angle)
+        # (flip $ beside (captAlignToDirection captAlign))
+            (renderCaption colour captAlign captAngle captRelSize caption)
+        # scale size
         # translate (r2 pos)
-        -- TODO: Add caption
 
     Seg colour pos angle len
         caption captAlign captAngle captSize
@@ -33,5 +35,20 @@ renderAnnotation ann = case ann of
         fromSegments [ straight (r2 (len, 0) # rotate (Deg angle)) ]
         # stroke
         # lw 0.25 # lc colour
+        # (flip $ beside (captAlignToDirection captAlign))
+            (renderCaption colour captAlign captAngle captSize caption)
         # translate (r2 pos)
-        -- TODO: Add caption
+
+renderCaption colour captAlign captAngle captSize caption =
+    text caption # scale captSize # rotate (Deg captAngle)
+    # fc colour
+    -- TODO: Changing the rectangle size doesn't seem to change padding.
+    <> rect captSize captSize # lw 0
+    # align (captAlignToDirection captAlign)
+
+captAlignToDirection :: CaptionAlignment -> R2
+captAlignToDirection x = case x of
+    E -> unitX
+    N -> unitY
+    W -> unit_X
+    S -> unit_Y
