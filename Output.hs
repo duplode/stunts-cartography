@@ -20,6 +20,7 @@ import Replay
 import LapTrace
 import Composition
 import qualified Parameters as Pm
+import Annotate (renderAnnotation)
 
 writePngFromTrk :: Pm.RenderingParameters -> FilePath -> IO Pm.PostRenderInfo
 writePngFromTrk params trkPath =
@@ -70,7 +71,10 @@ wholeMapDiagram params tiles =
         clipRect :: Path R2
         clipRect = unitSquare # scaleX deltaX # scaleY deltaY
             # alignBL # adjustPositionForClip
-    in runReader renderIndicesIfRequired params # adjustPositionForClip
+    in
+    (mconcat . map renderAnnotation $ Pm.annotationSpecs params)
+    <>
+    (runReader renderIndicesIfRequired params # adjustPositionForClip)
     <>
     (
         (if Pm.drawGridLines params then gridLines else mempty)

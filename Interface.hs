@@ -21,6 +21,7 @@ import qualified OurByteString as LB
 import Track (Horizon(..), terrainTrkSimple)
 import qualified Parameters as Pm
 import Utils (retrieveFileSize)
+import Annotate (Annotation, readAnnotationsMinimal)
 
 main :: IO ()
 main = do
@@ -144,6 +145,13 @@ setup w = void $ do
                     # set UI.name "y-max-bound-input"
                     # set UI.id_ "y-max-bound-input" # set value "29"
                 ]
+            , UI.p #+
+                [ string "Annotations:" -- TODO: Add help.
+                , UI.br
+                , UI.textarea # set UI.name "ann-input"
+                    # set UI.id_ "ann-input"
+                    # set UI.cols "25" # set UI.rows "5"
+                ]
             ]
         , UI.div # set UI.id_ "main-wrap" #+
             [ UI.img # set UI.id_ "track-map"]
@@ -258,6 +266,7 @@ selectedRenderingParameters w outType = do
     drawIxs <- selectedDrawGridIndices w
     xBounds <- selectedXTileBounds w
     yBounds <- selectedYTileBounds w
+    annSpecs <- selectedAnnotations w
     return Pm.defaultRenderingParameters
             { Pm.roadWidth = roadW
             , Pm.bridgeHeight = bridgeH
@@ -269,6 +278,7 @@ selectedRenderingParameters w outType = do
             , Pm.outputType = outType
             , Pm.xTileBounds = xBounds
             , Pm.yTileBounds = yBounds
+            , Pm.annotationSpecs = annSpecs
             }
 
 selectedFromSelect :: (Int -> a) -> String -> Window -> IO a
@@ -379,3 +389,9 @@ selectedYTileBounds w = liftM ensureBoundOrder $ (,) <$>
 
 ensureBoundOrder :: (Int, Int) -> (Int, Int)
 ensureBoundOrder bounds@(z, w) = if z > w then (w, z) else bounds
+
+selectedAnnotations :: Window -> IO [Annotation]
+selectedAnnotations w = do
+    annString <- join $ get value . fromJust
+        <$> getElementById w "ann-input"
+    return $ readAnnotationsMinimal annString

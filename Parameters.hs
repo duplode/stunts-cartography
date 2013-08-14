@@ -3,6 +3,7 @@ module Parameters where
 import Diagrams.Backend.Cairo (OutputType(..))
 import Track (Horizon(..))
 import qualified OurByteString as LB
+import AnnotationTypes (Annotation)
 
 -- Data types which shift information across the various layers of the
 -- rendering programs. It is probably a good idea to import it qualified, for
@@ -19,6 +20,8 @@ data RenderingParameters = RenderingParameters
     , xTileBounds :: (Int, Int)
     , yTileBounds :: (Int, Int)
 
+    , annotationSpecs :: [Annotation]
+
     , pixelsPerTile :: Double
     , outputType :: OutputType
     }
@@ -34,6 +37,7 @@ defaultRenderingParameters = RenderingParameters
     , outputType = PNG
     , xTileBounds = (0, 29)
     , yTileBounds = (0, 29)
+    , annotationSpecs = []
     }
 
 widerRoadsRenderingParameters = defaultRenderingParameters
