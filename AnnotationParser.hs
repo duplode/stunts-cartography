@@ -16,11 +16,13 @@ car :: Parsec String u Annotation
 car = do
     symbol "Car"
     pos <- xy
-    cl <- colour
-    skipMany $ char ' '
-    ang <- angle
-    sz <- size
-    return $ Car cl pos ang sz "foo" E 0 1
+    opt <- permute ((,,,) <$?> (yellow, colour)
+                          <|?> (0, skipMany (char ' ') >> angle)
+                          <|?> (0.5, size)
+                          <|?> ((E, 0.5, 0, yellow, ""), caption))
+    let (cl, ang, sz, capt) = opt
+    let (cpAl, cpSz, cpAng, _, cpTxt) = capt
+    return $ Car cl pos ang sz cpTxt cpAl cpAng cpSz
 
 xy :: Parsec String u (Double, Double)
 xy = do
@@ -30,6 +32,13 @@ xy = do
     y <- floatOrInteger
     return (x, y) -- Bounds?
 
+xyInt :: Parsec String u (Int, Int)
+xyInt = do
+    symbol "@"
+    x <- fromIntegral <$> integer
+    y <- fromIntegral <$> integer
+    return (x, y)
+
 angle :: Parsec String u Double
 angle = do
     symbol "^"
@@ -38,6 +47,7 @@ angle = do
 colour :: Parsec String u (Colour Double)
 colour = do
     symbol "#"
+    -- TODO: add triplet support (thankfully readColourName fails with fail).
     many1 alphaNum >>= readColourName
 
 size :: Parsec String u Double
@@ -45,16 +55,16 @@ size = do
     symbol "%"
     floatOrInteger
 
-caption :: Parsec String u (CaptionAlignment, Double, Double, String)
+caption :: Parsec String u
+               (CaptionAlignment, Double, Double, (Colour Double), String)
 caption = do
     txt <- stringLiteral
-    (al, sz, ang) <- braces $ do
-        al' <- alignment
-        sz' <- size
-        ang' <- angle
-        -- TODO: colour (?)
-        return (al', sz', ang')
-    return (al, sz, ang, txt)
+    (al, sz, ang, cl) <- option (E, 0.5, 0, yellow) . try . braces $
+        permute ((,,,) <$?> (E, alignment)
+                       <|?> (0.5, size)
+                       <|?> (0, angle)
+                       <|?> (yellow, colour))
+    return (al, sz, ang, cl, txt)
 
 alignment :: Parsec String u CaptionAlignment
 alignment = do
@@ -65,7 +75,7 @@ alignment = do
         <|> try (symbol "W")
         <|> symbol "S")
 
-floatOrInteger = try float <|> (fromIntegral <$> integer)
+floatOrInteger = try float <|> fromIntegral <$> integer
 
 lexer = P.makeTokenParser haskellDef
 
@@ -77,6 +87,7 @@ braces = P.braces lexer
 parens = P.parens lexer
 
 
-test = runP car () "Test" "Car @13 17.2 #red^ 45  %1 \"Friker\" { '  S ^90 %1}"
+test = runP car () "Test" "Car @13 17.2 #red^ 45  %1 \"Friker\" { '  S %1 ^ 90}"
+test2 = runP car () "Test" "Car @13 17.2"
 
 main = putStrLn $ show test
