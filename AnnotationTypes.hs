@@ -4,22 +4,18 @@ module AnnotationTypes where
 
 import Diagrams.Prelude (Colour)
 
-data CaptionAlignment = E
-                      | N
-                      | W
-                      | S
-                      deriving (Read, Show, Eq, Ord)
-
-data SplitDirection = H
-                    | V
-                    deriving (Read, Show, Eq, Ord)
+data CardinalDirection = E
+                       | N
+                       | W
+                       | S
+                       deriving (Read, Show, Eq, Ord)
 
 -- TODO: Do something to have better constructors.
 -- Maybe add a wrapper typeclass, or play with existentials to hide the fields.
 data Annotation = Car (Colour Double) (Double, Double) Double Double
-                      String CaptionAlignment Double Double
+                      String CardinalDirection Double Double
                 | Seg (Colour Double) (Double, Double) Double Double
-                      String CaptionAlignment Double Double
-                | Split (Colour Double) Int (Int, Int) SplitDirection Int
-                        CaptionAlignment
+                      String CardinalDirection Double Double
+                | Split (Colour Double) Int (Int, Int) CardinalDirection Int
+                        CardinalDirection
                 deriving (Read, Show)

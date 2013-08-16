@@ -65,7 +65,7 @@ splitSeg = do
                            <||> sizeInt
                            <|?> (Nothing, Just <$> alignment))
     let (pos, cl, splD, len, mCaptAl) = opt
-    let captAl = fromMaybe (if splD == H then E else N) mCaptAl
+    let captAl = fromMaybe splD mCaptAl
     return $ Split cl ix pos splD len captAl
 
 xy :: Parsec String u (Double, Double)
@@ -106,7 +106,7 @@ sizeInt = do
 
 -- On the Maybe (Colour Double): Nothing means "use a default from somewhere".
 caption :: Parsec String u
-               ( Maybe (Colour Double), Double, CaptionAlignment
+               ( Maybe (Colour Double), Double, CardinalDirection
                , Double, String )
 caption = do
     txt <- stringLiteral
@@ -117,21 +117,21 @@ caption = do
                        <|?> (Nothing, Just <$> colour))
     return (mCl, ang, al, sz, txt)
 
-alignment :: Parsec String u CaptionAlignment
-alignment = do
-    symbol "'"
+cardinalDir :: String -> Parsec String u CardinalDirection
+cardinalDir leading = do
+    symbol leading
     read <$> (
         try (symbol "E")
         <|> try (symbol "N")
         <|> try (symbol "W")
         <|> symbol "S")
 
-splitDir :: Parsec String u SplitDirection
-splitDir = do
-    symbol "!"
-    read <$> (
-        try (symbol "H")
-        <|> symbol "V")
+
+alignment :: Parsec String u CardinalDirection
+alignment = cardinalDir "'"
+
+splitDir :: Parsec String u CardinalDirection
+splitDir = cardinalDir "^"
 
 floatOrInteger = try float <|> fromIntegral <$> integer
 
@@ -153,13 +153,13 @@ test4 = "Car @13 17.2 ^ 45 %1 #slateblue \"Friker\" {  %1 ^ 90'  S} ; "
 test5 = "Blub"
 test6 = "Car @15.5 10.5 ^135 %0.5 #yellow \"foo\" {^0 %1 'N} ;\n\n"
     ++ "Car @16.5 10.5 ^160 %0.5 #magenta \"bar\" {^0 %1 'E};\n"
-    ++ "Split 1 @22 11 !V %5 #magenta 'N;\n"
-    ++ "Split 1 @22 \n    11 !V %5 #green 'N;\n"
-    ++ "Split 1 @22 11 !V %5 #aliceblue 'N"
-    ++ "Split 1 %5 #white @22 11 !V 'N;\n"
+    ++ "Split 1 @22 11 ^N %5 #magenta 'N;\n"
+    ++ "Split 1 @22 \n    11 ^N %5 #green 'N;\n"
+    ++ "Split 1 @22 11 ^N %5 #aliceblue 'N"
+    ++ "Split 1 %5 #white @22 11 ^N 'N;\n"
     ++ "Seg @16.5 10.5 ^160 %0.5 #magenta \"bar\" {^0 %1 'E};\n"
     ++ "Seg @16.5 10.5 ^160 %0.5 #red \"bar\" {^0 %1 'E}"
-test7 = "Split 1 @22 11 !V %5 #magenta 'N;"
+test7 = "Split 1 @22 11 ^N %5 #magenta 'N;"
 
 runTests = map parseAnnotations $
     [test1, test2, test3, test4, test5, test6, test7]
