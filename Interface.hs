@@ -21,7 +21,7 @@ import qualified OurByteString as LB
 import Track (Horizon(..), terrainTrkSimple)
 import qualified Parameters as Pm
 import Utils (retrieveFileSize)
-import Annotate (Annotation, readAnnotationsMinimal)
+import Annotate (Annotation, parseAnnotations)
 
 main :: IO ()
 main = do
@@ -394,4 +394,4 @@ selectedAnnotations :: Window -> IO [Annotation]
 selectedAnnotations w = do
     annString <- join $ get value . fromJust
         <$> getElementById w "ann-input"
-    return $ readAnnotationsMinimal annString
+    return $ parseAnnotations annString

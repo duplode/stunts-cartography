@@ -1,6 +1,6 @@
 module Annotate
     ( Annotation
-    , readAnnotationsMinimal
+    , parseAnnotations
     , renderAnnotation
     ) where
 
@@ -11,8 +11,12 @@ import Data.Maybe (catMaybes)
 import Text.Read (readMaybe)
 import Pics (acura')
 import AnnotationTypes
+import qualified AnnotationParser as Parser (parseAnnotations)
 
 -- This will fail silently for now.
+parseAnnotations :: String -> [Annotation]
+parseAnnotations = Parser.parseAnnotations
+
 readAnnotationsMinimal :: String -> [Annotation]
 readAnnotationsMinimal = catMaybes . map readMaybe . lines
 
