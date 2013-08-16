@@ -5,7 +5,7 @@ import qualified Text.Parsec.Token as P
 import Text.Parsec.Language (haskellDef)
 import Text.Parsec.Perm
 
-import Control.Applicative ((<$>))
+import Control.Applicative ((<$>), (<*))
 import Data.Maybe (fromMaybe)
 
 import AnnotationTypes
@@ -13,16 +13,31 @@ import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
 
+
+parseAnnotations :: String -> [Annotation]
+parseAnnotations input = either (const []) id $ runP annotations () "" input
+
+-- TODO: Add useful error messages.
+-- TODO: Collect errors (possibly by injecting a Writer).
+annotations :: Parsec String u [Annotation]
+annotations = whiteSpace >> annotation `manyTill` eof
+
+annotation :: Parsec String u Annotation
+annotation = (try car <|> try seg <|> splitSeg) <* annDelimiter
+
+annDelimiter :: Parsec String u ()
+annDelimiter = (try semi >> return ()) <|> eof
+
 car :: Parsec String u Annotation
 car = do
     symbol "Car"
     opt <- permute ((,,,,) <$$> xy
                            <|?> (yellow, colour)
-                           <|?> (0, skipMany (char ' ') >> angle)
+                           <|?> (0, angle)
                            <|?> (0.5, size)
-                           <|?> ((E, 0.5, 0, Nothing, ""), caption))
+                           <|?> ((Nothing, 0, E, 0.5, ""), caption))
     let (pos, cl, ang, sz, capt) = opt
-    let (cpAl, cpSz, cpAng, _, cpTxt) = capt -- TODO: don't ignore the colour.
+    let (_, cpAng, cpAl, cpSz, cpTxt) = capt -- TODO: don't ignore the colour.
     return $ Car cl pos ang sz cpTxt cpAl cpAng cpSz
 
 seg :: Parsec String u Annotation
@@ -30,11 +45,11 @@ seg = do
     symbol "Seg"
     opt <- permute ((,,,,) <$$> xy
                            <|?> (yellow, colour)
-                           <||> (skipMany (char ' ') >> angle)
+                           <||> angle
                            <||> size
-                           <|?> ((E, 0.5, 0, Nothing, ""), caption))
+                           <|?> ((Nothing, 0, E, 0.5, ""), caption))
     let (pos, cl, ang, len, capt) = opt
-    let (cpAl, cpSz, cpAng, _, cpTxt) = capt -- TODO: don't ignore the colour.
+    let (_, cpAng, cpAl, cpSz, cpTxt) = capt -- TODO: don't ignore the colour.
     return $ Seg cl pos ang len cpTxt cpAl cpAng cpSz
 
 splitSeg :: Parsec String u Annotation
@@ -74,7 +89,7 @@ colour :: Parsec String u (Colour Double)
 colour = do
     symbol "#"
     -- TODO: add triplet support (thankfully readColourName fails with fail).
-    many1 alphaNum >>= readColourName
+    many1 alphaNum >>= ((skipMany (char ' ') >>) . readColourName)
 
 size :: Parsec String u Double
 size = do
@@ -88,8 +103,8 @@ sizeInt = do
 
 -- On the Maybe (Colour Double): Nothing means "use a default from somewhere".
 caption :: Parsec String u
-               ( CaptionAlignment, Double, Double
-               , Maybe (Colour Double), String )
+               ( Maybe (Colour Double), Double, CaptionAlignment
+               , Double, String )
 caption = do
     txt <- stringLiteral
     (al, sz, ang, mCl) <- option (E, 0.5, 0, Nothing) . try . braces $
@@ -97,7 +112,7 @@ caption = do
                        <|?> (0.5, size)
                        <|?> (0, angle)
                        <|?> (Nothing, Just <$> colour))
-    return (al, sz, ang, mCl, txt)
+    return (mCl, ang, al, sz, txt)
 
 alignment :: Parsec String u CaptionAlignment
 alignment = do
@@ -125,8 +140,30 @@ stringLiteral = P.stringLiteral lexer
 symbol = P.symbol lexer
 braces = P.braces lexer
 parens = P.parens lexer
+semi = P.semi lexer
+whiteSpace = P.whiteSpace lexer
 
-test = runP car () "Test" "Car @13 17.2 #red^ 45  %1 \"Friker\" { '  S %1 ^ 90}"
-test2 = runP car () "Test" "Car @13 17.2"
+test1 = "Car @13 17.2 ^ 45 %1#red \"Friker\" { %1 ^ 90 '  S }"
+test2 = "Car @13 17.2; "
+test3 = "Car &13 17.2;"
+test4 = "Car @13 17.2 ^ 45 %1 #slateblue \"Friker\" {  %1 ^ 90'  S} ; "
+test5 = "Blub"
+test6 = "Car @15.5 10.5 ^135 %0.5 #yellow \"foo\" {^0 %1 'N} ;\n\n"
+    ++ "Car @16.5 10.5 ^160 %0.5 #magenta \"bar\" {^0 %1 'E};\n"
+    ++ "Split 1 @22 11 !V %5 #magenta 'N;\n"
+    ++ "Split 1 @22 11 !V %5 #green 'N;\n"
+    ++ "Split 1 @22 11 !V %5 #aliceblue 'N;\n"
+    ++ "Split 1 %5 #white @22 11 !V 'N;\n"
+    ++ "Seg @16.5 10.5 ^160 %0.5 #magenta \"bar\" {^0 %1 'E};\n"
+    ++ "Seg @16.5 10.5 ^160 %0.5 #red \"bar\" {^0 %1 'E}"
+test7 = "Split 1 @22 11 !V %5 #magenta 'N;"
 
-main = putStrLn $ show test
+runTests = map parseAnnotations $
+    [test1, test2, test3, test4, test5, test6, test7]
+
+eol :: Parsec String u String
+eol =    try (string "\n\r")
+     <|> try (string "\r\n")
+     <|> string "\n"
+     <|> string "\r"
+
