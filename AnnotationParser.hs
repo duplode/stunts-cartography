@@ -26,7 +26,10 @@ annotation :: Parsec String u Annotation
 annotation = (try car <|> try seg <|> splitSeg) <* annDelimiter
 
 annDelimiter :: Parsec String u ()
-annDelimiter = (try semi >> return ()) <|> eof
+annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
+
+detectAnnStart :: Parsec String u String
+detectAnnStart = choice . map (lookAhead . try . symbol) $ ["Car", "Seg", "Split"]
 
 car :: Parsec String u Annotation
 car = do
@@ -151,8 +154,8 @@ test5 = "Blub"
 test6 = "Car @15.5 10.5 ^135 %0.5 #yellow \"foo\" {^0 %1 'N} ;\n\n"
     ++ "Car @16.5 10.5 ^160 %0.5 #magenta \"bar\" {^0 %1 'E};\n"
     ++ "Split 1 @22 11 !V %5 #magenta 'N;\n"
-    ++ "Split 1 @22 11 !V %5 #green 'N;\n"
-    ++ "Split 1 @22 11 !V %5 #aliceblue 'N;\n"
+    ++ "Split 1 @22 \n    11 !V %5 #green 'N;\n"
+    ++ "Split 1 @22 11 !V %5 #aliceblue 'N"
     ++ "Split 1 %5 #white @22 11 !V 'N;\n"
     ++ "Seg @16.5 10.5 ^160 %0.5 #magenta \"bar\" {^0 %1 'E};\n"
     ++ "Seg @16.5 10.5 ^160 %0.5 #red \"bar\" {^0 %1 'E}"
