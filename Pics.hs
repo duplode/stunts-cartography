@@ -2,8 +2,6 @@
 module Pics
     ( getTerrainPic
     , getTilePic
-    , acura
-    , acura'
     ) where
 
 import Control.Monad (liftM)
@@ -19,6 +17,7 @@ import Track (Orientation(..), Chirality(..), rotateOrientation
              , isElemAttrOf )
 import Palette
 import qualified Parameters as Pm
+import MM (acura)
 
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
 rotateByOrient = rotateBy . Turn . (/4) . fromIntegral . fromEnum
@@ -428,21 +427,6 @@ rightTriangle cl h =
         , polyOrient = OrientV }
     # alignB # centerX # reflectY # translateY (h / 2)
     # lw 0 # fc cl
-
-acura cl =
-    (
-        rect (1/10) (1/4) # fc sunroofCl # lw 0
-        <> roundedRect (1/4) (1/4) (1/20) # fc windshieldCl)
-    # translateX (-1/32)
-    <>
-    roundedRect' (1/2) (3/10) with
-        { radiusTR = 1/10
-        , radiusBR = 1/10
-        }
-    # fc cl
-
--- TODO: Further abstract the base size.
-acura' cl sz = acura cl # scale (2 * sz)
 
 --getTilePic :: Tile -> "Dia"
 getTilePic tile =

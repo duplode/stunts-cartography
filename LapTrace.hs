@@ -9,7 +9,7 @@ module LapTrace
     ) where
 
 import Diagrams.Prelude
-import Pics (acura)
+import MM (acura)
 import Palette (signCl)
 
 scaleTrace :: [(Integer, Integer)] -> [(Double, Double)]

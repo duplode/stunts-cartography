@@ -9,7 +9,7 @@ import Diagrams.Prelude
 import Track (Orientation(..))
 import Data.Maybe (catMaybes)
 import Text.Read (readMaybe)
-import Pics (acura')
+import MM (acura')
 import AnnotationTypes
 import qualified AnnotationParser as Parser (parseAnnotations)
 
