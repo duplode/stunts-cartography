@@ -40,8 +40,8 @@ car = do
                            <|?> (0.5, size)
                            <|?> ((Nothing, 0, E, 0.5, ""), caption))
     let (pos, cl, ang, sz, capt) = opt
-    let (_, cpAng, cpAl, cpSz, cpTxt) = capt -- TODO: don't ignore the colour.
-    return $ Car cl pos ang sz cpTxt cpAl cpAng cpSz
+    let (mCpCl, cpAng, cpAl, cpSz, cpTxt) = capt
+    return $ Car cl pos ang sz cpTxt (fromMaybe cl mCpCl) cpAl cpAng cpSz
 
 seg :: Parsec String u Annotation
 seg = do
@@ -52,8 +52,8 @@ seg = do
                            <||> size
                            <|?> ((Nothing, 0, E, 0.5, ""), caption))
     let (pos, cl, ang, len, capt) = opt
-    let (_, cpAng, cpAl, cpSz, cpTxt) = capt -- TODO: don't ignore the colour.
-    return $ Seg cl pos ang len cpTxt cpAl cpAng cpSz
+    let (mCpCl, cpAng, cpAl, cpSz, cpTxt) = capt
+    return $ Seg cl pos ang len cpTxt (fromMaybe cl mCpCl) cpAl cpAng cpSz
 
 splitSeg :: Parsec String u Annotation
 splitSeg = do

@@ -24,30 +24,30 @@ readAnnotationsMinimal = catMaybes . map readMaybe . lines
 renderAnnotation ann = case ann of
 
     Car colour pos angle size
-        caption captAlign captAngle captRelSize
+        caption captColour captAlign captAngle captRelSize
         ->
         acura' colour 1
         # rotate (Deg angle)
         # (flip $ beside (cardinalDirToR2 captAlign))
-            (renderCaption colour captAlign captAngle captRelSize caption)
+            (renderCaption captColour captAlign captAngle captRelSize caption)
         # scale size
         # translate (r2 pos)
 
     Seg colour pos angle len
-        caption captAlign captAngle captSize
+        caption captColour captAlign captAngle captSize
         ->
         fromSegments [ straight (r2 (len, 0) # rotate (Deg angle)) ]
         # stroke
         # lw 0.25 # lc colour
         # (flip $ beside (cardinalDirToR2 captAlign))
-            (renderCaption colour captAlign captAngle captSize caption)
+            (renderCaption captColour captAlign captAngle captSize caption)
         # translate (r2 pos)
 
     Split colour ix (tileLX, tileBY) splitDir len captAlign
         -> renderAnnotation $
         Seg colour (fromIntegral tileLX, fromIntegral tileBY)
             (cardinalDirToAngle splitDir) (fromIntegral len)
-            (show ix) captAlign 0 0.5
+            (show ix) colour captAlign 0 0.5
 
 renderCaption colour captAlign captAngle captSize caption =
     text caption # scale captSize # rotate (Deg captAngle)
