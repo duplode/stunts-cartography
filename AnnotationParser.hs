@@ -1,4 +1,8 @@
-module AnnotationParser where
+module AnnotationParser
+    ( parseAnnotations
+    , annotations
+    , pAnnotation
+    ) where
 
 import Text.Parsec
 import qualified Text.Parsec.Token as P
@@ -8,7 +12,7 @@ import Text.Parsec.Perm
 import Control.Applicative ((<$>), (<*))
 import Data.Maybe (fromMaybe)
 
-import AnnotationTypes
+import Annotate
 import Data.Colour
 import Data.Colour.Names
 import Data.Colour.SRGB
@@ -20,10 +24,12 @@ parseAnnotations input = either (const []) id $ runP annotations () "" input
 -- TODO: Add useful error messages.
 -- TODO: Collect errors (possibly by injecting a Writer).
 annotations :: Parsec String u [Annotation]
-annotations = whiteSpace >> annotation `manyTill` eof
+annotations = whiteSpace >> pAnnotation `manyTill` eof
 
-annotation :: Parsec String u Annotation
-annotation = (try car <|> try seg <|> splitSeg) <* annDelimiter
+pAnnotation :: Parsec String u Annotation
+pAnnotation = (try (annotation <$> car)
+    <|> try (annotation <$> seg)
+    <|> try (annotation <$> splitSeg)) <* annDelimiter
 
 annDelimiter :: Parsec String u ()
 annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
@@ -31,7 +37,7 @@ annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
 detectAnnStart :: Parsec String u String
 detectAnnStart = choice . map (lookAhead . try . symbol) $ ["Car", "Seg", "Split"]
 
-car :: Parsec String u Annotation
+car :: Parsec String u CarAnnotation
 car = do
     symbol "Car"
     opt <- permute ((,,,,) <$$> xy
@@ -41,9 +47,19 @@ car = do
                            <|?> ((Nothing, 0, E, 0.5, ""), caption))
     let (pos, cl, ang, sz, capt) = opt
     let (mCpCl, cpAng, cpAl, cpSz, cpTxt) = capt
-    return $ Car cl pos ang sz cpTxt (fromMaybe cl mCpCl) cpAl cpAng cpSz
+    return $ CarAnnotation
+        { carAnnColour = cl
+        , carAnnPosition = pos
+        , carAnnAngle = ang
+        , carAnnSize = sz
+        , carAnnCaption = cpTxt
+        , carAnnCaptColour = fromMaybe cl mCpCl
+        , carAnnCaptAlignment = cpAl
+        , carAnnCaptAngle = cpAng
+        , carAnnCaptSize = cpSz
+        }
 
-seg :: Parsec String u Annotation
+seg :: Parsec String u SegAnnotation
 seg = do
     symbol "Seg"
     opt <- permute ((,,,,) <$$> xy
@@ -53,9 +69,19 @@ seg = do
                            <|?> ((Nothing, 0, E, 0.5, ""), caption))
     let (pos, cl, ang, len, capt) = opt
     let (mCpCl, cpAng, cpAl, cpSz, cpTxt) = capt
-    return $ Seg cl pos ang len cpTxt (fromMaybe cl mCpCl) cpAl cpAng cpSz
+    return $ SegAnnotation
+        { segAnnColour = cl
+        , segAnnPosition = pos
+        , segAnnAngle = ang
+        , segAnnLength = len
+        , segAnnCaption = cpTxt
+        , segAnnCaptColour = fromMaybe cl mCpCl
+        , segAnnCaptAlignment = cpAl
+        , segAnnCaptAngle = cpAng
+        , segAnnCaptSize = cpSz
+        }
 
-splitSeg :: Parsec String u Annotation
+splitSeg :: Parsec String u SplitAnnotation
 splitSeg = do
     symbol "Split"
     ix <- fromIntegral <$> integer
@@ -66,7 +92,14 @@ splitSeg = do
                            <|?> (Nothing, Just <$> alignment))
     let (pos, cl, splD, len, mCaptAl) = opt
     let captAl = fromMaybe splD mCaptAl
-    return $ Split cl ix pos splD len captAl
+    return $ SplitAnnotation
+        { splAnnColour = cl
+        , splAnnIndex = ix
+        , splAnnPosition = pos
+        , splAnnDirection = splD
+        , splAnnLength = len
+        , splAnnCaptAlignment = fromMaybe splD mCaptAl
+        }
 
 xy :: Parsec String u (Double, Double)
 xy = do

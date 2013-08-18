@@ -21,7 +21,8 @@ import qualified OurByteString as LB
 import Track (Horizon(..), terrainTrkSimple)
 import qualified Parameters as Pm
 import Utils (retrieveFileSize)
-import Annotate (Annotation, parseAnnotations)
+import Annotate (Annotation)
+import AnnotationParser (parseAnnotations)
 
 main :: IO ()
 main = do

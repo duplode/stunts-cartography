@@ -1,53 +1,108 @@
-module Annotate
-    ( Annotation
-    , parseAnnotations
-    , renderAnnotation
-    ) where
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE Rank2Types #-}
+module Annotate where
 
+-- It seems sensible to import this qualified if you need the raw constructors.
 
 import Diagrams.Prelude
-import Track (Orientation(..))
-import Data.Maybe (catMaybes)
-import Text.Read (readMaybe)
-import MM (acura')
-import AnnotationTypes
-import qualified AnnotationParser as Parser (parseAnnotations)
+import qualified Diagrams.TwoD.Text as TwoDT (Text)
+import MM
 
--- This will fail silently for now.
-parseAnnotations :: String -> [Annotation]
-parseAnnotations = Parser.parseAnnotations
+data CardinalDirection = E
+                       | N
+                       | W
+                       | S
+                       deriving (Read, Show, Eq, Ord)
 
-readAnnotationsMinimal :: String -> [Annotation]
-readAnnotationsMinimal = catMaybes . map readMaybe . lines
+data Annotation
+    = Annotation
+    { renderAnnotation :: (Renderable (Path R2) b , Renderable TwoDT.Text b)
+                       => Diagram b R2
+    }
 
--- renderAnnotation :: Annotation -> "Dia"
-renderAnnotation ann = case ann of
+class IsAnnotation a where
+    annotation :: a -> Annotation
 
-    Car colour pos angle size
-        caption captColour captAlign captAngle captRelSize
-        ->
-        acura' colour 1
-        # rotate (Deg angle)
-        # (flip $ beside (cardinalDirToR2 captAlign))
-            (renderCaption captColour captAlign captAngle captRelSize caption)
-        # scale size
-        # translate (r2 pos)
+data CarAnnotation
+     = CarAnnotation
+     { carAnnColour :: Colour Double
+     , carAnnPosition :: (Double, Double)
+     , carAnnAngle :: Double
+     , carAnnSize :: Double
+     , carAnnCaption :: String
+     , carAnnCaptColour :: Colour Double
+     , carAnnCaptAlignment :: CardinalDirection
+     , carAnnCaptAngle :: Double
+     , carAnnCaptSize :: Double
+     } deriving (Show)
 
-    Seg colour pos angle len
-        caption captColour captAlign captAngle captSize
-        ->
-        fromSegments [ straight (r2 (len, 0) # rotate (Deg angle)) ]
-        # stroke
-        # lw 0.25 # lc colour
-        # (flip $ beside (cardinalDirToR2 captAlign))
-            (renderCaption captColour captAlign captAngle captSize caption)
-        # translate (r2 pos)
+data SegAnnotation
+     = SegAnnotation
+     { segAnnColour :: Colour Double
+     , segAnnPosition :: (Double, Double)
+     , segAnnAngle :: Double
+     , segAnnLength :: Double
+     , segAnnCaption :: String
+     , segAnnCaptColour :: Colour Double
+     , segAnnCaptAlignment :: CardinalDirection
+     , segAnnCaptAngle :: Double
+     , segAnnCaptSize :: Double
+     } deriving (Show)
 
-    Split colour ix (tileLX, tileBY) splitDir len captAlign
-        -> renderAnnotation $
-        Seg colour (fromIntegral tileLX, fromIntegral tileBY)
-            (cardinalDirToAngle splitDir) (fromIntegral len)
-            (show ix) colour captAlign 0 0.5
+data SplitAnnotation
+     = SplitAnnotation
+     { splAnnColour :: Colour Double
+     , splAnnPosition :: (Int, Int)
+     , splAnnDirection :: CardinalDirection
+     , splAnnLength :: Int
+     , splAnnIndex :: Int
+     , splAnnCaptAlignment :: CardinalDirection
+     } deriving (Show)
+
+instance IsAnnotation CarAnnotation where
+    annotation ann = Annotation
+        { renderAnnotation =
+            acura' (carAnnColour ann) 1
+            # rotate (Deg $ carAnnAngle ann)
+            # (flip $ beside (cardinalDirToR2 $ carAnnCaptAlignment ann))
+                (renderCaption
+                    (carAnnCaptColour ann) (carAnnCaptAlignment ann)
+                    (carAnnCaptAngle ann) (carAnnCaptSize ann)
+                    (carAnnCaption ann))
+            # scale (carAnnSize ann)
+            # translate (r2 $ carAnnPosition ann)
+        }
+
+instance IsAnnotation SegAnnotation where
+    annotation ann = Annotation
+        { renderAnnotation =
+            fromSegments
+                [ straight (r2 (segAnnLength ann, 0)
+                # rotate (Deg $ segAnnAngle ann)) ]
+            # stroke
+            # lw 0.25 # lc (segAnnColour ann)
+            # (flip $ beside (cardinalDirToR2 $ segAnnCaptAlignment ann))
+                (renderCaption
+                    (segAnnCaptColour ann) (segAnnCaptAlignment ann)
+                    (segAnnCaptAngle ann) (segAnnCaptSize ann)
+                    (segAnnCaption ann))
+            # translate (r2 $ segAnnPosition ann)
+        }
+
+instance IsAnnotation SplitAnnotation where
+    annotation ann = annotation $ SegAnnotation
+        { segAnnColour = splAnnColour ann
+        , segAnnPosition =
+              let (x, y) = splAnnPosition ann
+              in (fromIntegral x, fromIntegral y)
+        , segAnnAngle = cardinalDirToAngle $ splAnnDirection ann
+        , segAnnLength = fromIntegral $ splAnnLength ann
+        , segAnnCaption = show $ splAnnIndex ann
+        , segAnnCaptColour = splAnnColour ann
+        , segAnnCaptAlignment = splAnnCaptAlignment ann
+        , segAnnCaptAngle = 0
+        , segAnnCaptSize = 0.5
+        }
 
 renderCaption colour captAlign captAngle captSize caption =
     text caption # scale captSize # rotate (Deg captAngle)
