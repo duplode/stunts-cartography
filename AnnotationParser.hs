@@ -125,7 +125,7 @@ colour :: Parsec String u (Colour Double)
 colour = do
     symbol "#"
     -- TODO: add triplet support (thankfully readColourName fails with fail).
-    many1 alphaNum >>= ((skipMany (char ' ') >>) . readColourName)
+    many1 alphaNum >>= ((skipMany space >>) . readColourName)
 
 size :: Parsec String u Double
 size = do
