@@ -5,7 +5,7 @@ module Output
     ) where
 
 import Data.Array
-import Control.Monad.Reader
+import Control.Monad.RWS hiding ((<>))
 import Control.Exception (catch, SomeException)
 import System.Directory (getTemporaryDirectory)
 import System.FilePath (takeBaseName, (</>))
@@ -20,8 +20,10 @@ import Replay
 import Composition
 import qualified Parameters as Pm
 import Annotate (renderAnnotation)
+import CartoM
 import Types
 
+-- TODO: We probably should convert these write functions into CartoT IO.
 writePngFromTrk :: Pm.RenderingParameters -> FilePath -> IO Pm.PostRenderInfo
 writePngFromTrk params trkPath =
     LB.readFile trkPath >>= writePngOutput params (takeBaseName trkPath)
@@ -51,8 +53,11 @@ writePngOutput params trackName trkBS = do
         `catch` ((\_ -> return ".") :: SomeException -> IO String)
     let outFile = tmpDir </> outRelPath
 
+    let st = Pm.initialRenderingState -- TODO: Actually load it from somewhere.
+        -- TODO: Actually use the extra data.
+        (wholeMap,_,_) = runRWS (wholeMapDiagram tiles) params st
     fst . renderDia Cairo (CairoOptions outFile (Width renWidth) outType False) $
-        wholeMapDiagram params tiles
+        wholeMap
 
     return Pm.PostRenderInfo
         { Pm.renderedTrackHorizon = horizon
@@ -61,8 +66,9 @@ writePngOutput params trackName trkBS = do
         , Pm.outputPath = outFile
         }
 
-wholeMapDiagram :: Pm.RenderingParameters -> [Tile] -> Diagram BEDia R2
-wholeMapDiagram params tiles =
+wholeMapDiagram :: [Tile] -> CartoM (Diagram BEDia R2)
+wholeMapDiagram tiles = do
+    params <- ask
     let minBounds = Pm.minTileBounds params
         (minX, minY) = minBounds
         deltaBounds = Pm.deltaTileBounds params
@@ -71,15 +77,17 @@ wholeMapDiagram params tiles =
         clipRect :: Path R2
         clipRect = unitSquare # scaleX deltaX # scaleY deltaY
             # alignBL # adjustPositionForClip
-    in
-    (mconcat . map renderAnnotation $ Pm.annotationSpecs params)
-    <>
-    (runReader renderIndicesIfRequired params # adjustPositionForClip)
-    <>
-    (
-        (if Pm.drawGridLines params then gridLines else mempty)
+    wholeMap <- renderMap tiles
+    indices <- renderIndicesIfRequired
+    return $
+        (mconcat . map renderAnnotation $ Pm.annotationSpecs params)
         <>
-        runReader (renderMap tiles) params
-    )
-    # clipBy clipRect
-    # withEnvelope clipRect
+        (indices # adjustPositionForClip)
+        <>
+        (
+            (if Pm.drawGridLines params then gridLines else mempty)
+            <>
+            wholeMap
+        )
+        # clipBy clipRect
+        # withEnvelope clipRect

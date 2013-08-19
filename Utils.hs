@@ -2,6 +2,9 @@ module Utils
     ( splitAtEvery30th
     , bsSplitAtEvery30th
     , retrieveFileSize
+    , fst3
+    , snd3
+    , thd3
     ) where
 
 import Data.List (groupBy, splitAt, unfoldr)
@@ -37,3 +40,11 @@ retrieveFileSize path = handle nothingHandler $ do
     nothingHandler :: IOError -> IO (Maybe Integer)
     nothingHandler = \_ -> return Nothing
 
+fst3 :: (a, b, c) -> a
+fst3 (x,_,_) = x
+
+snd3 :: (a, b, c) -> b
+snd3 (_,x,_) = x
+
+thd3 :: (a, b, c) -> c
+thd3 (_,_,x) = x

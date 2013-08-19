@@ -2,6 +2,7 @@ module Track
     ( Orientation(..)
     , Chirality(..)
     , rotateOrientation
+    , Element(..)
     , ElementType(..)
     , ElementSurface(..)
     , ElementAttribute(..)
@@ -147,7 +148,7 @@ rotateOrientation turns = toEnum . (+ turns) . fromEnum
 data Chirality = Achiral
                | Dextral
                | Sinistral
-               deriving (Eq, Enum, Show)
+               deriving (Eq, Enum, Show, Ord)
 
 -- |Inverts a chirality value.
 --
@@ -177,7 +178,7 @@ data Connectivity = Isolate      -- ^ Blank tiles and scenery. n x n shape.
 data ElementSurface = Tarmac
                     | Dirt
                     | Ice
-                    deriving (Eq, Enum, Show)
+                    deriving (Eq, Enum, Show, Ord)
 
 -- | Abstract size of a track element.
 data ElementSize = Small -- ^ 1 x 1
@@ -233,7 +234,7 @@ data ElementType = Blank
                  | FillerQ3
                  | FillerQ4
                  | UnknownElement
-                 deriving (Eq, Enum, Show)
+                 deriving (Eq, Enum, Show, Ord)
 
 -- |Types of terrain element, without reference to orientation, chirality,
 -- connectivity or surface.
@@ -245,7 +246,7 @@ data TerrainType = Plain
                  | OuterAngledSlope
                  | InnerAngledSlope
                  | UnknownTerrain
-                 deriving (Eq, Enum, Show)
+                 deriving (Eq, Enum, Show, Ord)
 
 -- |A track element, with the necessary data to reconstruct all its traits.
 data Element = Element
@@ -254,7 +255,7 @@ data Element = Element
     , elementChirality   :: Chirality
     , elementOrientation :: Orientation
     }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Ord)
 
 -- |Extra metadata about elements.
 data ElementAttribute = Elevated

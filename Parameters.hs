@@ -1,13 +1,19 @@
 module Parameters where
 
+import Data.Map (Map)
+import qualified Data.Map as M
+import Diagrams.Prelude
 import Diagrams.Backend.Cairo (OutputType(..))
-import Track (Horizon(..))
+import Track (Horizon(..), Element)
 import qualified OurByteString as LB
 import Annotate (Annotation)
+import Types (BEDia)
 
 -- Data types which shift information across the various layers of the
 -- rendering programs. It is probably a good idea to import it qualified, for
 -- the sake of clarity.
+
+-- Static environment.
 
 data RenderingParameters = RenderingParameters
     { roadWidth :: Double
@@ -72,9 +78,22 @@ deltaTileBounds params =
         (yMin, yMax) = yTileBounds params
     in (fromIntegral $ xMax - xMin + 1, fromIntegral $ yMax - yMin + 1)
 
+-- Extra output from the rendering.
+
 data PostRenderInfo = PostRenderInfo
     { renderedTrackHorizon :: Horizon
     , trackName :: String
     , trackData :: LB.ByteString
     , outputPath :: FilePath
+    }
+
+-- Rendering state
+
+data RenderingState = RenderingState
+    { elementCache :: Map Element (Diagram BEDia R2)
+    }
+
+initialRenderingState :: RenderingState
+initialRenderingState = RenderingState
+    { elementCache = M.empty
     }
