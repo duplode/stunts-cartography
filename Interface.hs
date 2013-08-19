@@ -160,9 +160,12 @@ setup w = void $ do
             ]
         , UI.div # set UI.id_ "main-wrap" #+
             [ UI.img # set UI.id_ "track-map"
-            , UI.p #+ [string "Log:"]
-            , UI.textarea # set UI.id_ "log-text"
-                # set UI.cols "72" # set UI.rows "6"
+            , UI.p #+
+                [ string "Log:"
+                , UI.br
+                , UI.textarea # set UI.id_ "log-text"
+                    # set UI.cols "72" # set UI.rows "6"
+                ]
             ]
         ]
     fillDrawingRatiosFields w Pm.defaultRenderingParameters
@@ -170,11 +173,12 @@ setup w = void $ do
 clearLog :: Window -> IO Element
 clearLog w = set value "" $ fromJust <$> getElementById w "log-text"
 
-appendLineToLog :: Window -> String -> IO Element
+appendLineToLog :: Window -> String -> IO ()
 appendLineToLog w msg = do
     logEl <- fromJust <$> getElementById w "log-text"
     msgs <- get value logEl
     set value (msgs ++ msg ++ "\r\n") $ return logEl
+    return ()
 
 formatTiming :: Double -> String
 formatTiming = printf "Total rendering time: %0.4f seconds."
@@ -204,10 +208,10 @@ generateImageHandler button = \_ -> do
     mFileSize <- retrieveFileSize trkPath
     let sizeIsCorrect = mFileSize == Just 1802
         fileExt = map toUpper $ takeExtension trkPath
-        proceedWithLoading = trkExists
-            && ((fileExt == ".TRK" && sizeIsCorrect)
-                || fileExt == ".RPL" -- No size checks at this point.
-                )
+        extIsKnown = fileExt == ".TRK" || fileExt == ".RPL"
+        -- No size checks for .RPL at this point.
+        badTRKSize = fileExt == ".TRK" && not sizeIsCorrect
+        proceedWithLoading = trkExists && extIsKnown && not badTRKSize
     if proceedWithLoading
         then do
             let pngWriter = case fileExt of
@@ -241,6 +245,14 @@ generateImageHandler button = \_ -> do
             setLinkHref w "save-terrain-link" terrainUri
             return ()
         else do
+            unless (extIsKnown || not trkExists) $
+                appendLineToLog w
+                    "Bad file extension (should be .TRK or .RPL, in upper or lower case)."
+            unless trkExists $
+                appendLineToLog w "File does not exist."
+            when (badTRKSize && trkExists) $
+                appendLineToLog w "Bad file size (.TRK files must have 1802 bytes)."
+
             applyClassToBody w "blank-horizon"
             runFunction w $ setTrackMapVisibility False
             runFunction w $ unsetSaveLinksHref
