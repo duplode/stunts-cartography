@@ -7,7 +7,8 @@ module Composition
     ) where
 
 import Control.Monad (liftM)
-import Control.Monad.Reader (asks)
+import Control.Monad.RWS hiding ((<>))
+import qualified Data.Map as M (lookup, insert)
 import Diagrams.Prelude
 import Track
 import Pics
@@ -27,11 +28,22 @@ renderTerrain tiles =
 renderElements :: [Tile] -> CartoM (Diagram BEDia R2)
 renderElements tiles = do
     let makeElementRows ts = (catTiles <$>)
-            `liftM` sequence (sequence . map getTilePic <$> splitAtEvery30th ts)
+            `liftM` sequence (sequence . map getCachedElemPic <$> splitAtEvery30th ts)
         (seTiles, leTiles) = separateTilesBySize tiles
     smallElementRows <- makeElementRows seTiles
     largeElementRows <- makeElementRows leTiles
     return $ catRows smallElementRows <> catRows largeElementRows
+
+getCachedElemPic :: Tile -> CartoM (Diagram BEDia R2)
+getCachedElemPic tile = do
+    let el = tileElement tile
+    mDia <- M.lookup el <$> gets Pm.elementCache
+    case mDia of
+        Just dia -> return dia
+        Nothing -> do
+            newDia <- getTilePic tile
+            modify $ Pm.insertIntoElementCache el newDia
+            return newDia
 
 renderMap :: [Tile] -> CartoM (Diagram BEDia R2)
 renderMap tiles = do

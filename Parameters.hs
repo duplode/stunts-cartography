@@ -97,3 +97,10 @@ initialRenderingState :: RenderingState
 initialRenderingState = RenderingState
     { elementCache = M.empty
     }
+
+clearElementCache :: RenderingState -> RenderingState
+clearElementCache st = st{ elementCache = M.empty }
+
+insertIntoElementCache :: Element -> Diagram BEDia R2
+                       -> RenderingState -> RenderingState
+insertIntoElementCache el dia st = st{ elementCache = M.insert el dia $ elementCache st }

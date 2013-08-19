@@ -9,7 +9,7 @@ module Track
     , ElementSize(..)
     , TerrainType(..)
     , Horizon(..)
-    , Tile()
+    , Tile(..)
     , getTileOrientation
     , getTileChirality
     , getTileSize
