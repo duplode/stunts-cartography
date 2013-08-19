@@ -3,8 +3,11 @@ module Main
     ) where
 
 import Control.Monad
+import qualified Control.Monad.RWS as RWS
 import Control.Applicative ((<$>), (<*>))
 import Control.Exception (catch, SomeException)
+import System.IO.Unsafe (unsafePerformIO)
+import Data.IORef
 import Data.Maybe (fromJust, fromMaybe)
 import Text.Read (readMaybe)
 import Text.Printf (printf)
@@ -176,6 +179,11 @@ appendLineToLog w msg = do
 formatTiming :: Double -> String
 formatTiming = printf "Total rendering time: %0.4f seconds."
 
+-- TODO: Yuck.
+currentRenderingState :: IORef Pm.RenderingState
+{-# NOINLINE currentRenderingState #-}
+currentRenderingState = unsafePerformIO $ newIORef Pm.initialRenderingState
+
 mkButtonGo :: IO Element
 mkButtonGo = do
     button <- UI.button #. "go-button" #+ [string "Draw map"]
@@ -184,7 +192,7 @@ mkButtonGo = do
 
 generateImageHandler :: Element -> (a -> IO ())
 generateImageHandler button = \_ -> do
-    w <- fromJust <$> getWindow button --TODO: ick
+    w <- fromJust <$> getWindow button
     clearLog w
     trkRelPath <- join $ get value . fromJust
         <$> getElementById w "trk-input"
@@ -207,11 +215,15 @@ generateImageHandler button = \_ -> do
                     _      -> error "Unrecognized input extension."
             outType <- selectedOutputFormat w
             params <- selectedRenderingParameters w outType
+            st <- readIORef currentRenderingState
             startTime <- getCPUTime
-            postRender <- pngWriter params trkPath
+            -- TODO: Actually use the Writer output.
+            (postRender,st',_) <- RWS.runRWST (pngWriter trkPath) params st
             endTime <- getCPUTime
             let deltaTime = fromIntegral (endTime - startTime) / 10^12
             appendLineToLog w $ formatTiming deltaTime
+            atomicWriteIORef currentRenderingState st'
+
             applyHorizonClass w $ Pm.renderedTrackHorizon postRender
             trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
             trkUri <- loadTmpTrk w postRender

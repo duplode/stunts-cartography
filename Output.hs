@@ -5,6 +5,7 @@ module Output
     ) where
 
 import Data.Array
+import Control.Monad.Identity (runIdentity)
 import Control.Monad.RWS hiding ((<>))
 import Control.Exception (catch, SomeException)
 import System.Directory (getTemporaryDirectory)
@@ -24,19 +25,21 @@ import CartoM
 import Types
 
 -- TODO: We probably should convert these write functions into CartoT IO.
-writePngFromTrk :: Pm.RenderingParameters -> FilePath -> IO Pm.PostRenderInfo
-writePngFromTrk params trkPath =
-    LB.readFile trkPath >>= writePngOutput params (takeBaseName trkPath)
+writePngFromTrk :: FilePath -> CartoT IO Pm.PostRenderInfo
+writePngFromTrk trkPath =
+    liftIO (LB.readFile trkPath)
+        >>= writePngOutput (takeBaseName trkPath)
 
-writePngFromRpl ::  Pm.RenderingParameters -> FilePath -> IO Pm.PostRenderInfo
-writePngFromRpl params rplPath = do
-    rplData <- LB.readFile rplPath
+writePngFromRpl :: FilePath -> CartoT IO Pm.PostRenderInfo
+writePngFromRpl rplPath = do
+    rplData <- liftIO $ LB.readFile rplPath
     let (trkName, trkData) = trkFromRplSimple rplData
-    writePngOutput params trkName trkData
+    writePngOutput trkName trkData
 
-writePngOutput :: Pm.RenderingParameters -> String
-               -> LB.ByteString -> IO Pm.PostRenderInfo
-writePngOutput params trackName trkBS = do
+writePngOutput :: String -> LB.ByteString -> CartoT IO Pm.PostRenderInfo
+writePngOutput trackName trkBS = do
+    params <- ask
+    st <- get
     let rawTrk = veryRawReadTrack trkBS
         horizon = horizonFromRawTrack rawTrk
         tilArr = rawTrackToTileArray rawTrk
@@ -49,15 +52,13 @@ writePngOutput params trackName trkBS = do
             PNG -> "stunts-cartography-map.png"
             SVG -> "stunts-cartography-map.svg"
             _   -> error "Unsupported output format."
-    tmpDir <- getTemporaryDirectory
+    tmpDir <- liftIO $ getTemporaryDirectory
         `catch` ((\_ -> return ".") :: SomeException -> IO String)
     let outFile = tmpDir </> outRelPath
 
-    let st = Pm.initialRenderingState -- TODO: Actually load it from somewhere.
-        -- TODO: Actually use the extra data.
-        (wholeMap,_,_) = runRWS (wholeMapDiagram tiles) params st
-    fst . renderDia Cairo (CairoOptions outFile (Width renWidth) outType False) $
-        wholeMap
+    wholeMap <- wholeMapDiagram tiles
+    liftIO . fst $ renderDia Cairo
+        (CairoOptions outFile (Width renWidth) outType False) wholeMap
 
     return Pm.PostRenderInfo
         { Pm.renderedTrackHorizon = horizon
@@ -66,8 +67,9 @@ writePngOutput params trackName trkBS = do
         , Pm.outputPath = outFile
         }
 
-wholeMapDiagram :: [Tile] -> CartoM (Diagram BEDia R2)
-wholeMapDiagram tiles = do
+-- TODO: Generalize the CartoM computations in Composition and below.
+wholeMapDiagram :: (Monad m) => [Tile] -> CartoT m (Diagram BEDia R2)
+wholeMapDiagram tiles = mapRWST (return . runIdentity) $ do
     params <- ask
     let minBounds = Pm.minTileBounds params
         (minX, minY) = minBounds
