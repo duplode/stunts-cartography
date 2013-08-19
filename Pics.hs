@@ -6,7 +6,7 @@ module Pics
     ) where
 
 import Control.Monad (liftM)
-import Control.Monad.Trans.Reader
+import Control.Monad.Reader
 import Diagrams.Prelude
 import Diagrams.Coordinates ((&))
 import Track (Orientation(..), Chirality(..), rotateOrientation

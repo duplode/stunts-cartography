@@ -6,8 +6,8 @@ module Types where
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo (Cairo)
 import qualified Diagrams.TwoD.Text as TwoDT (Text)
-import Control.Monad.Trans.Reader
-import Data.Functor.Identity
+import Control.Monad.Reader
+import Control.Monad.Identity
 import qualified Parameters as Pm
 
 -- CartoT, the Cartography monad transformer.

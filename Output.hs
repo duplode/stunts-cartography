@@ -5,7 +5,7 @@ module Output
     ) where
 
 import Data.Array
-import Control.Monad.Trans.Reader
+import Control.Monad.Reader
 import Control.Exception (catch, SomeException)
 import System.Directory (getTemporaryDirectory)
 import System.FilePath (takeBaseName, (</>))
@@ -17,7 +17,6 @@ import Diagrams.Core
 import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
 import Utils
 import Replay
-import LapTrace
 import Composition
 import qualified Parameters as Pm
 import Annotate (renderAnnotation)

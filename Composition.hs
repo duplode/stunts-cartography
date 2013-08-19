@@ -7,7 +7,7 @@ module Composition
     ) where
 
 import Control.Monad (liftM)
-import Control.Monad.Trans.Reader (asks)
+import Control.Monad.Reader (asks)
 import Diagrams.Prelude
 import Track
 import Pics
