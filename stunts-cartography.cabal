@@ -24,6 +24,9 @@ Executable sc-trk-viewer
                     ,Replay
                     ,Types
                     ,CartoM
+                    ,Annotate
+                    ,AnnotationParser
+                    ,MM
   Hs-Source-Dirs:   .
 
   Build-Depends:     base >= 4.6 && < 5
