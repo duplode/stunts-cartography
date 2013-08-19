@@ -180,9 +180,10 @@ formatTiming :: Double -> String
 formatTiming = printf "Total rendering time: %0.4f seconds."
 
 -- TODO: Yuck.
-currentRenderingState :: IORef Pm.RenderingState
+currentRenderingState :: IORef (Pm.RenderingParameters, Pm.RenderingState)
 {-# NOINLINE currentRenderingState #-}
-currentRenderingState = unsafePerformIO $ newIORef Pm.initialRenderingState
+currentRenderingState = unsafePerformIO $ newIORef
+    (Pm.defaultRenderingParameters, Pm.initialRenderingState)
 
 mkButtonGo :: IO Element
 mkButtonGo = do
@@ -215,14 +216,20 @@ generateImageHandler button = \_ -> do
                     _      -> error "Unrecognized input extension."
             outType <- selectedOutputFormat w
             params <- selectedRenderingParameters w outType
-            st <- readIORef currentRenderingState
+            (oldParams, st) <- readIORef currentRenderingState
+            st' <- if params `Pm.elementStyleIsDifferent` oldParams
+                then do
+                    let s' = Pm.clearElementCache st
+                    atomicModifyIORef' currentRenderingState (\(p, _) ->
+                        ((p, s'), s'))
+                else return st
             startTime <- getCPUTime
             -- TODO: Actually use the Writer output.
-            (postRender,st',_) <- RWS.runRWST (pngWriter trkPath) params st
+            (postRender,st'',_) <- RWS.runRWST (pngWriter trkPath) params st'
             endTime <- getCPUTime
             let deltaTime = fromIntegral (endTime - startTime) / 10^12
             appendLineToLog w $ formatTiming deltaTime
-            atomicWriteIORef currentRenderingState st'
+            atomicWriteIORef currentRenderingState (params, st'')
 
             applyHorizonClass w $ Pm.renderedTrackHorizon postRender
             trackImage <- loadTrackImage w outType $ Pm.outputPath postRender

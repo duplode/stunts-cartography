@@ -1,5 +1,6 @@
 module Parameters where
 
+import Data.Function (on)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Diagrams.Prelude
@@ -77,6 +78,13 @@ deltaTileBounds params =
     let (xMin, xMax) = xTileBounds params
         (yMin, yMax) = yTileBounds params
     in (fromIntegral $ xMax - xMin + 1, fromIntegral $ yMax - yMin + 1)
+
+elementStyleIsDifferent :: RenderingParameters -> RenderingParameters -> Bool
+elementStyleIsDifferent p1 p2 =
+    (((/=) `on` roadWidth) p1 p2)
+    || (((/=) `on` bridgeHeight) p1 p2)
+    || (((/=) `on` bridgeRelativeWidth) p1 p2)
+    || (((/=) `on` bankingRelativeHeight) p1 p2)
 
 -- Extra output from the rendering.
 
