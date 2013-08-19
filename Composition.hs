@@ -14,7 +14,8 @@ import Pics
 import Utils
 import Palette (plainCl)
 import qualified Parameters as Pm
-import Types
+import CartoM
+import Types (BEDia)
 
 renderTerrain :: (Monoid m, Semigroup m, TrailLike (QDiagram b R2 m))
               => [Tile] -> QDiagram b R2 m

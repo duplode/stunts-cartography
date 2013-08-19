@@ -23,6 +23,7 @@ Executable sc-trk-viewer
                     ,Utils
                     ,Replay
                     ,Types
+                    ,CartoM
   Hs-Source-Dirs:   .
 
   Build-Depends:     base >= 4.6 && < 5

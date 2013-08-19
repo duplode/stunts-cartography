@@ -6,15 +6,6 @@ module Types where
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo (Cairo)
 import qualified Diagrams.TwoD.Text as TwoDT (Text)
-import Control.Monad.Reader
-import Control.Monad.Identity
-import qualified Parameters as Pm
-
--- CartoT, the Cartography monad transformer.
-type CartoT m = ReaderT Pm.RenderingParameters m
-
--- CartoM, the Cartography monad.
-type CartoM = CartoT Identity
 
 -- The default diagrams backend.
 type BEDia = Cairo

@@ -19,7 +19,8 @@ import Track (Orientation(..), Chirality(..), rotateOrientation
 import Palette
 import qualified Parameters as Pm
 import MM (acura)
-import Types
+import CartoM
+import Types (BEDia)
 
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
 rotateByOrient = rotateBy . Turn . (/4) . fromIntegral . fromEnum

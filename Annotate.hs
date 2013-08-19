@@ -5,7 +5,7 @@ module Annotate where
 -- It seems sensible to import this qualified if you need the raw constructors.
 
 import Diagrams.Prelude
-import qualified Diagrams.TwoD.Text as TwoDT (Text)
+import Types (BEDia)
 import MM
 
 data CardinalDirection = E
@@ -16,8 +16,7 @@ data CardinalDirection = E
 
 data Annotation
     = Annotation
-    { renderAnnotation :: (Renderable (Path R2) b , Renderable TwoDT.Text b)
-                       => Diagram b R2
+    { renderAnnotation :: Diagram BEDia R2
     }
 
 class IsAnnotation a where
