@@ -33,6 +33,7 @@ Executable sc-trk-viewer
                     ,diagrams-cairo >= 0.7 && < 0.8
                     ,parsec >= 3.1.3 && < 3.2
                     ,colour
+                    ,containers
                     ,bytestring
                     ,array
                     ,mtl
