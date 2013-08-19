@@ -4,7 +4,7 @@ import Data.Map (Map)
 import qualified Data.Map as M
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo (OutputType(..))
-import Track (Horizon(..), Element)
+import Track (Horizon(..), Element, Terrain)
 import qualified OurByteString as LB
 import Annotate (Annotation)
 import Types (BEDia)
@@ -91,16 +91,25 @@ data PostRenderInfo = PostRenderInfo
 
 data RenderingState = RenderingState
     { elementCache :: Map Element (Diagram BEDia R2)
+    , terrainCache :: Map Terrain (Diagram BEDia R2)
     }
 
 initialRenderingState :: RenderingState
 initialRenderingState = RenderingState
     { elementCache = M.empty
+    , terrainCache = M.empty
     }
 
 clearElementCache :: RenderingState -> RenderingState
 clearElementCache st = st{ elementCache = M.empty }
 
+clearTerrainCache :: RenderingState -> RenderingState
+clearTerrainCache st = st{ terrainCache = M.empty }
+
 insertIntoElementCache :: Element -> Diagram BEDia R2
                        -> RenderingState -> RenderingState
 insertIntoElementCache el dia st = st{ elementCache = M.insert el dia $ elementCache st }
+
+insertIntoTerrainCache :: Terrain -> Diagram BEDia R2
+                       -> RenderingState -> RenderingState
+insertIntoTerrainCache te dia st = st{ terrainCache = M.insert te dia $ terrainCache st }

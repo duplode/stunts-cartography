@@ -18,17 +18,21 @@ import qualified Parameters as Pm
 import CartoM
 import Types (BEDia)
 
-renderTerrain :: (Monoid m, Semigroup m, TrailLike (QDiagram b R2 m))
-              => [Tile] -> QDiagram b R2 m
+renderTerrain :: [Tile] -> CartoM (Diagram BEDia R2)
 renderTerrain tiles =
-    let terrRows = beneath plainStripe .
-            catTiles <$> (map getTerrainPic <$> splitAtEvery30th tiles)
-    in catRows terrRows
+    let terrRows = map (beneath plainStripe . catTiles)
+            `liftM` mapM (mapM getCachedTerrPic) (splitAtEvery30th tiles)
+    in catRows <$> terrRows
+{-
+renderTerrain :: [Tile] -> CartoM (Diagram BEDia R2)
+renderTerrain tiles = do
+    let tileRows = splitAtEvery30th tiles
+-}
 
 renderElements :: [Tile] -> CartoM (Diagram BEDia R2)
 renderElements tiles = do
-    let makeElementRows ts = (catTiles <$>)
-            `liftM` sequence (sequence . map getCachedElemPic <$> splitAtEvery30th ts)
+    let makeElementRows ts = map catTiles
+            `liftM` mapM (mapM getCachedElemPic) (splitAtEvery30th ts)
         (seTiles, leTiles) = separateTilesBySize tiles
     smallElementRows <- makeElementRows seTiles
     largeElementRows <- makeElementRows leTiles
@@ -45,9 +49,20 @@ getCachedElemPic tile = do
             modify $ Pm.insertIntoElementCache el newDia
             return newDia
 
+getCachedTerrPic :: Tile -> CartoM (Diagram BEDia R2)
+getCachedTerrPic tile = do
+    let te = tileTerrain tile
+    mDia <- M.lookup te <$> gets Pm.terrainCache
+    case mDia of
+        Just dia -> return dia
+        Nothing -> do
+            let newDia = getTerrainPic tile
+            modify $ Pm.insertIntoTerrainCache te newDia
+            return newDia
+
 renderMap :: [Tile] -> CartoM (Diagram BEDia R2)
 renderMap tiles = do
-    let renderedTerrain = renderTerrain tiles
+    renderedTerrain <- renderTerrain tiles
     renderedElements <- renderElements tiles
     return $ (renderedElements <> renderedTerrain) # alignBL
 

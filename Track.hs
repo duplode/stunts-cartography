@@ -7,6 +7,7 @@ module Track
     , ElementSurface(..)
     , ElementAttribute(..)
     , ElementSize(..)
+    , Terrain(..)
     , TerrainType(..)
     , Horizon(..)
     , Tile(..)
@@ -784,7 +785,7 @@ data Terrain = Terrain
     { terrainType        :: TerrainType
     , terrainOrientation :: Orientation
     }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Ord)
 
 -- TODO: Incorporate terrain connectivity.
 
