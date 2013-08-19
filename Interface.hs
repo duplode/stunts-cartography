@@ -11,6 +11,7 @@ import Text.Printf (printf)
 import System.Directory ( doesFileExist, doesDirectoryExist
                         , getTemporaryDirectory)
 import System.FilePath ((</>), takeExtension, addExtension)
+import System.CPUTime
 import Data.Char (toUpper)
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
@@ -155,9 +156,25 @@ setup w = void $ do
                 ]
             ]
         , UI.div # set UI.id_ "main-wrap" #+
-            [ UI.img # set UI.id_ "track-map"]
+            [ UI.img # set UI.id_ "track-map"
+            , UI.p #+ [string "Log:"]
+            , UI.textarea # set UI.id_ "log-text"
+                # set UI.cols "72" # set UI.rows "6"
+            ]
         ]
     fillDrawingRatiosFields w Pm.defaultRenderingParameters
+
+clearLog :: Window -> IO Element
+clearLog w = set value "" $ fromJust <$> getElementById w "log-text"
+
+appendLineToLog :: Window -> String -> IO Element
+appendLineToLog w msg = do
+    logEl <- fromJust <$> getElementById w "log-text"
+    msgs <- get value logEl
+    set value (msgs ++ msg ++ "\r\n") $ return logEl
+
+formatTiming :: Double -> String
+formatTiming = printf "Total rendering time: %0.4f seconds."
 
 mkButtonGo :: IO Element
 mkButtonGo = do
@@ -168,6 +185,7 @@ mkButtonGo = do
 generateImageHandler :: Element -> (a -> IO ())
 generateImageHandler button = \_ -> do
     w <- fromJust <$> getWindow button --TODO: ick
+    clearLog w
     trkRelPath <- join $ get value . fromJust
         <$> getElementById w "trk-input"
     basePath <- join $ get value . fromJust
@@ -189,7 +207,11 @@ generateImageHandler button = \_ -> do
                     _      -> error "Unrecognized input extension."
             outType <- selectedOutputFormat w
             params <- selectedRenderingParameters w outType
+            startTime <- getCPUTime
             postRender <- pngWriter params trkPath
+            endTime <- getCPUTime
+            let deltaTime = fromIntegral (endTime - startTime) / 10^12
+            appendLineToLog w $ formatTiming deltaTime
             applyHorizonClass w $ Pm.renderedTrackHorizon postRender
             trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
             trkUri <- loadTmpTrk w postRender
