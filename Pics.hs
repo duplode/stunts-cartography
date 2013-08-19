@@ -1,4 +1,5 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Pics
     ( getTerrainPic
     , getTilePic
@@ -18,6 +19,7 @@ import Track (Orientation(..), Chirality(..), rotateOrientation
 import Palette
 import qualified Parameters as Pm
 import MM (acura)
+import Types
 
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
 rotateByOrient = rotateBy . Turn . (/4) . fromIntegral . fromEnum
@@ -42,7 +44,8 @@ reflectByChirality c = case c of
     Sinistral -> reflectY
     _ -> id
 
---baseTerrainPic :: TerrainType -> "Dia"
+baseTerrainPic :: (Monoid m, Semigroup m, TrailLike (QDiagram b R2 m))
+               => TerrainType -> QDiagram b R2 m
 baseTerrainPic tt = case tt of
     Plain ->
         mempty
@@ -64,19 +67,28 @@ baseTerrainPic tt = case tt of
     _ ->
         genericSquare chasmCl
 
---getTerrainPic :: Tile -> "Dia"
+getTerrainPic :: (Monoid m, Semigroup m, TrailLike (QDiagram b R2 m))
+              => Tile -> QDiagram b R2 m
 getTerrainPic tile =
     baseTerrainPic (getTerrainType tile)
     # rotateByOrient (getTerrainOrientation tile)
 
+
+baseElementPicNoC :: Pm.RenderingParameters
+                  -> Orientation -> ElementSurface -> ElementType
+                  -> Diagram BEDia R2
 baseElementPicNoC env q sf et = runReader (baseElementPic Dextral q sf et) env
 
+baseElementPicNoO :: Pm.RenderingParameters
+                  -> ElementSurface -> ElementType
+                  -> Diagram BEDia R2
 baseElementPicNoO env = baseElementPicNoC env Q1
 
 -- Note that baseElementPic would work without recieving chiralities or
 -- orientations weren't it for the "vertical" offset in the bridge graphics.
-
---baseElementPic :: Chirality -> Orientation -> Surface -> ElementType -> "Dia"
+baseElementPic :: Chirality -> Orientation
+               -> ElementSurface -> ElementType
+               -> CartoM (Diagram BEDia R2)
 baseElementPic c q sf et = do
     env <- ask
     roadW <- asks Pm.roadWidth
@@ -293,7 +305,7 @@ baseElementPic c q sf et = do
             square (1/8) # fc woodCl
         Palm ->
             let leaf = arc (1/8 :: Turn) (3/8 :: Turn)
-                    # closeLine # wrapTrail # pathFromTrail # stroke
+                    # closeLine # strokeLoop
                     # scale 0.25 # lc darkleafCl # fc leafCl
             in beside unitY
                 (square (2/3) # scaleX (1/8) # fc woodCl)
@@ -327,7 +339,7 @@ baseElementPic c q sf et = do
             # centerXY
         Barn ->
             let roofArc = wedge (1/2) (1/4 :: Turn) (5/12 :: Turn)
-                    # closeLine # wrapTrail # pathFromTrail # stroke
+                    # closeLine # strokeLoop
                     # centerY
                 diagLine = hrule (1/3) # rotateBy (1/8)
             in (
@@ -383,12 +395,12 @@ baseElementPic c q sf et = do
                 # alignL)
             # centerXY
         Joe's ->
-            (
-                (
+            let neonSign = text "Joe's" # scale (1/6) # fc neonCl
+                    <> rect (1/2) (1/4)
+                    # lw 0 # fc miscDarkCl
+            in (
                     (
-                        text "Joe's" # scale (1/6) # fc neonCl
-                        <> rect (1/2) (1/4)
-                        # lw 0 # fc miscDarkCl)
+                    neonSign
                     ===
                     vrule (1/4)
                     # lw 0.1 # lc miscDarkCl # lineCap LineCapSquare)
@@ -428,7 +440,7 @@ rightTriangle cl h =
     # alignB # centerX # reflectY # translateY (h / 2)
     # lw 0 # fc cl
 
---getTilePic :: Tile -> "Dia"
+getTilePic :: Tile -> CartoM (Diagram BEDia R2)
 getTilePic tile =
     let c = getTileChirality tile
         q = getTileOrientation tile

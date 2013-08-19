@@ -1,4 +1,5 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Composition
     ( renderMap
     , renderIndicesIfRequired
@@ -13,12 +14,16 @@ import Pics
 import Utils
 import Palette (plainCl)
 import qualified Parameters as Pm
+import Types
 
+renderTerrain :: (Monoid m, Semigroup m, TrailLike (QDiagram b R2 m))
+              => [Tile] -> QDiagram b R2 m
 renderTerrain tiles =
     let terrRows = beneath plainStripe .
             catTiles <$> (map getTerrainPic <$> splitAtEvery30th tiles)
     in catRows terrRows
 
+renderElements :: [Tile] -> CartoM (Diagram BEDia R2)
 renderElements tiles = do
     let makeElementRows ts = (catTiles <$>)
             `liftM` sequence (sequence . map getTilePic <$> splitAtEvery30th ts)
@@ -27,6 +32,7 @@ renderElements tiles = do
     largeElementRows <- makeElementRows leTiles
     return $ catRows smallElementRows <> catRows largeElementRows
 
+renderMap :: [Tile] -> CartoM (Diagram BEDia R2)
 renderMap tiles = do
     let renderedTerrain = renderTerrain tiles
     renderedElements <- renderElements tiles
@@ -42,12 +48,15 @@ renderIndices = do
         cat unitX [boundedYIndices, strutX deltaX, boundedYIndices]
         <> cat unitY [boundedXIndices, strutY deltaY, boundedXIndices]
 
+renderIndicesIfRequired :: CartoM (Diagram BEDia R2)
 renderIndicesIfRequired = do
     required <- asks Pm.drawIndices
     if required
         then renderIndices
         else return mempty
 
+gridLines :: (Monoid m, Semigroup m, TrailLike (QDiagram BEDia R2 m))
+          => QDiagram BEDia R2 m
 gridLines =
     vcat' with { sep = 1 } (replicate 31 $ hrule 30) # alignBL
     <> hcat' with { sep = 1 } (replicate 31 $ vrule 30) # alignBL

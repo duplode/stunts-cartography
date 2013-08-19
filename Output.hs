@@ -14,13 +14,14 @@ import Diagrams.Prelude
 import Diagrams.Backend.Cairo
 import Diagrams.Backend.Cairo.Internal
 import Diagrams.Core
-import Track (veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
+import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
 import Utils
 import Replay
 import LapTrace
 import Composition
 import qualified Parameters as Pm
 import Annotate (renderAnnotation)
+import Types
 
 writePngFromTrk :: Pm.RenderingParameters -> FilePath -> IO Pm.PostRenderInfo
 writePngFromTrk params trkPath =
@@ -61,7 +62,7 @@ writePngOutput params trackName trkBS = do
         , Pm.outputPath = outFile
         }
 
--- wholeMapDiagram :: Pm.RenderingParameters -> [Tile] -> Pm.RenderingParameters "Dia"
+wholeMapDiagram :: Pm.RenderingParameters -> [Tile] -> Diagram BEDia R2
 wholeMapDiagram params tiles =
     let minBounds = Pm.minTileBounds params
         (minX, minY) = minBounds
