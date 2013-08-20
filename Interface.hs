@@ -14,7 +14,6 @@ import Text.Printf (printf)
 import System.Directory ( doesFileExist, doesDirectoryExist
                         , getTemporaryDirectory)
 import System.FilePath ((</>), takeExtension, addExtension)
-import System.CPUTime
 import Data.Char (toUpper)
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
@@ -27,6 +26,7 @@ import qualified Parameters as Pm
 import Utils (retrieveFileSize)
 import Annotate (Annotation)
 import AnnotationParser (parseAnnotations)
+import CartoM
 
 main :: IO ()
 main = do
@@ -180,14 +180,11 @@ appendLineToLog w msg = do
     set value (msgs ++ msg ++ "\r\n") $ return logEl
     return ()
 
-formatTiming :: Double -> String
-formatTiming = printf "Total rendering time: %0.4f seconds."
-
 -- TODO: Yuck.
-currentRenderingState :: IORef (Pm.RenderingParameters, Pm.RenderingState)
+currentRenderingState :: IORef (Pm.RenderingElemStyle, Pm.RenderingState)
 {-# NOINLINE currentRenderingState #-}
 currentRenderingState = unsafePerformIO $ newIORef
-    (Pm.defaultRenderingParameters, Pm.initialRenderingState)
+    (Pm.toElemStyle Pm.defaultRenderingParameters, Pm.initialRenderingState)
 
 mkButtonGo :: IO Element
 mkButtonGo = do
@@ -214,27 +211,38 @@ generateImageHandler button = \_ -> do
         proceedWithLoading = trkExists && extIsKnown && not badTRKSize
     if proceedWithLoading
         then do
+            -- Decide on input / output formats as well as (most) parameters.
             let pngWriter = case fileExt of
                     ".TRK" -> writePngFromTrk
                     ".RPL" -> writePngFromRpl
                     _      -> error "Unrecognized input extension."
             outType <- selectedOutputFormat w
             params <- selectedRenderingParameters w outType
-            (oldParams, st) <- readIORef currentRenderingState
-            st' <- if params `Pm.elementStyleIsDifferent` oldParams
+
+            -- Clear the element cache if the relevant parameters changed.
+            (oldElemStyle, st) <- readIORef currentRenderingState
+            let newElemStyle = Pm.toElemStyle params
+            st' <- if newElemStyle /= oldElemStyle
                 then do
                     let s' = Pm.clearElementCache st
-                    atomicModifyIORef' currentRenderingState (\(p, _) ->
-                        ((p, s'), s'))
+                    atomicModifyIORef' currentRenderingState (\(es, _) ->
+                        ((es, s'), s'))
                 else return st
-            startTime <- getCPUTime
-            -- TODO: Actually use the Writer output.
-            (postRender,st'',_) <- RWS.runRWST (pngWriter trkPath) params st'
-            endTime <- getCPUTime
-            let deltaTime = fromIntegral (endTime - startTime) / 10^12
-            appendLineToLog w $ formatTiming deltaTime
-            atomicWriteIORef currentRenderingState (params, st'')
 
+            -- Parse annotations and render the map.
+            let goCarto :: CartoT IO Pm.PostRenderInfo
+                goCarto = do
+                anns <- selectedAnnotations w
+                postRender <- RWS.local (\p -> p{ Pm.annotationSpecs = anns}) $
+                    pngWriter trkPath
+                return postRender
+            (postRender,st'',logW) <- RWS.runRWST goCarto params st'
+
+            -- Update the mutable state and the log.
+            atomicWriteIORef currentRenderingState (newElemStyle, st'')
+            appendLineToLog w $ Pm.logToList logW
+
+            -- Update the UI.
             applyHorizonClass w $ Pm.renderedTrackHorizon postRender
             trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
             trkUri <- loadTmpTrk w postRender
@@ -309,6 +317,7 @@ loadTrackImage w outType outPath = case outType of
     SVG -> loadFile w "image/svg+xml" outPath
     _   -> error "Unsupported output format."
 
+-- Note that the annotations are parsed in a separate step.
 selectedRenderingParameters :: Window -> OutputType -> IO Pm.RenderingParameters
 selectedRenderingParameters w outType = do
     roadW <- selectedRoadWidth w
@@ -320,7 +329,6 @@ selectedRenderingParameters w outType = do
     drawIxs <- selectedDrawGridIndices w
     xBounds <- selectedXTileBounds w
     yBounds <- selectedYTileBounds w
-    annSpecs <- selectedAnnotations w
     return Pm.defaultRenderingParameters
             { Pm.roadWidth = roadW
             , Pm.bridgeHeight = bridgeH
@@ -332,8 +340,12 @@ selectedRenderingParameters w outType = do
             , Pm.outputType = outType
             , Pm.xTileBounds = xBounds
             , Pm.yTileBounds = yBounds
-            , Pm.annotationSpecs = annSpecs
             }
+
+selectedAnnotations :: Window -> CartoT IO [Annotation]
+selectedAnnotations w = do
+    annInput <- RWS.liftIO $ selectedAnnotationsInput w
+    parseAnnotations annInput
 
 selectedFromSelect :: (Int -> a) -> String -> Window -> IO a
 selectedFromSelect fSel selId = \w -> do
@@ -444,8 +456,6 @@ selectedYTileBounds w = liftM ensureBoundOrder $ (,) <$>
 ensureBoundOrder :: (Int, Int) -> (Int, Int)
 ensureBoundOrder bounds@(z, w) = if z > w then (w, z) else bounds
 
-selectedAnnotations :: Window -> IO [Annotation]
-selectedAnnotations w = do
-    annString <- join $ get value . fromJust
-        <$> getElementById w "ann-input"
-    return $ parseAnnotations annString
+selectedAnnotationsInput :: Window -> IO String
+selectedAnnotationsInput w = do
+    join $ get value . fromJust <$> getElementById w "ann-input"

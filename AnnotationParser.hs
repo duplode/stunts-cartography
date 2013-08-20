@@ -14,30 +14,36 @@ import Data.Maybe (fromMaybe)
 
 import Annotate
 import Data.Colour
-import Data.Colour.Names
-import Data.Colour.SRGB
+import Data.Colour.Names (readColourName, yellow)
+import CartoM
+import Control.Monad.RWS (tell)
+import qualified Parameters as Pm
 
+-- Note that the combinators in Text.Parsec.Perm have types built around
+-- Parsec and not ParsecT.
+parseAnnotations :: (Monad m) => String -> CartoT m [Annotation]
+parseAnnotations input = do
+    let result = runP annotations () "" input
+    case result of
+        Left err   -> do
+            tell . Pm.logFromList $
+                "Error in defining the annotations "
+            tell . Pm.logFromList . show $ err
+            tell . Pm.logFromList $ "\r\n"
+            return []
+        Right anns -> return anns
 
-parseAnnotations :: String -> [Annotation]
-parseAnnotations input = either (const []) id $ runP annotations () "" input
-
--- TODO: Add useful error messages.
--- TODO: Collect errors (possibly by injecting a Writer).
-annotations :: Parsec String u [Annotation]
+-- TODO: Add better error messages.
 annotations = whiteSpace >> pAnnotation `manyTill` eof
 
-pAnnotation :: Parsec String u Annotation
 pAnnotation = (try (annotation <$> car)
     <|> try (annotation <$> seg)
     <|> try (annotation <$> splitSeg)) <* annDelimiter
 
-annDelimiter :: Parsec String u ()
 annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
 
-detectAnnStart :: Parsec String u String
 detectAnnStart = choice . map (lookAhead . try . symbol) $ ["Car", "Seg", "Split"]
 
-car :: Parsec String u CarAnnotation
 car = do
     symbol "Car"
     opt <- permute ((,,,,) <$$> xy
@@ -59,7 +65,6 @@ car = do
         , carAnnCaptSize = cpSz
         }
 
-seg :: Parsec String u SegAnnotation
 seg = do
     symbol "Seg"
     opt <- permute ((,,,,) <$$> xy
@@ -81,7 +86,6 @@ seg = do
         , segAnnCaptSize = cpSz
         }
 
-splitSeg :: Parsec String u SplitAnnotation
 splitSeg = do
     symbol "Split"
     ix <- fromIntegral <$> integer
@@ -101,7 +105,6 @@ splitSeg = do
         , splAnnCaptAlignment = fromMaybe splD mCaptAl
         }
 
-xy :: Parsec String u (Double, Double)
 xy = do
     symbol "@"
     x <- floatOrInteger
@@ -109,30 +112,26 @@ xy = do
     y <- floatOrInteger
     return (x, y) -- TODO: bounds?
 
-xyInt :: Parsec String u (Int, Int)
 xyInt = do
     symbol "@"
     x <- fromIntegral <$> integer
     y <- fromIntegral <$> integer
     return (x, y)
 
-angle :: Parsec String u Double
 angle = do
     symbol "^"
     floatOrInteger
 
-colour :: Parsec String u (Colour Double)
+-- TODO: add triplet support (see Data.Colour.SRGB)
+-- It is convenient that readColourName fails with fail.
 colour = do
     symbol "#"
-    -- TODO: add triplet support (thankfully readColourName fails with fail).
     many1 alphaNum >>= ((skipMany space >>) . readColourName)
 
-size :: Parsec String u Double
 size = do
     symbol "%"
     floatOrInteger
 
-sizeInt :: Parsec String u Int
 sizeInt = do
     symbol "%"
     fromIntegral <$> integer
@@ -160,10 +159,8 @@ cardinalDir leading = do
         <|> symbol "S")
 
 
-alignment :: Parsec String u CardinalDirection
 alignment = cardinalDir "'"
 
-splitDir :: Parsec String u CardinalDirection
 splitDir = cardinalDir "^"
 
 floatOrInteger = try float <|> fromIntegral <$> integer
@@ -194,12 +191,7 @@ test6 = "Car @15.5 10.5 ^135 %0.5 #yellow \"foo\" {^0 %1 'N} ;\n\n"
     ++ "Seg @16.5 10.5 ^160 %0.5 #red \"bar\" {^0 %1 'E}"
 test7 = "Split 1 @22 11 ^N %5 #magenta 'N;"
 
-runTests = map parseAnnotations $
+runTests :: CartoM [[Annotation]]
+runTests = mapM parseAnnotations $
     [test1, test2, test3, test4, test5, test6, test7]
-
-eol :: Parsec String u String
-eol =    try (string "\n\r")
-     <|> try (string "\r\n")
-     <|> string "\n"
-     <|> string "\r"
 

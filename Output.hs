@@ -10,6 +10,8 @@ import Control.Monad.RWS hiding ((<>))
 import Control.Exception (catch, SomeException)
 import System.Directory (getTemporaryDirectory)
 import System.FilePath (takeBaseName, (</>))
+import System.CPUTime
+import Text.Printf (printf)
 import qualified OurByteString as LB
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo
@@ -56,9 +58,15 @@ writePngOutput trackName trkBS = do
         `catch` ((\_ -> return ".") :: SomeException -> IO String)
     let outFile = tmpDir </> outRelPath
 
+    startTime <- liftIO getCPUTime
     wholeMap <- wholeMapDiagram tiles
     liftIO . fst $ renderDia Cairo
         (CairoOptions outFile (Width renWidth) outType False) wholeMap
+    endTime <- liftIO getCPUTime
+
+    let fullDeltaTime = fromIntegral (endTime - startTime) / 10^9 :: Double
+    tell . Pm.logFromList $
+        printf "Rendering time (core + output writing): %0.0fms.\r\n" fullDeltaTime
 
     return Pm.PostRenderInfo
         { Pm.renderedTrackHorizon = horizon
@@ -67,7 +75,7 @@ writePngOutput trackName trkBS = do
         , Pm.outputPath = outFile
         }
 
--- TODO: Generalize the CartoM computations in Composition and below.
+-- TODO: Possibly generalize the CartoM computations in Composition and below.
 wholeMapDiagram :: (Monad m) => [Tile] -> CartoT m (Diagram BEDia R2)
 wholeMapDiagram tiles = mapRWST (return . runIdentity) $ do
     params <- ask
@@ -93,3 +101,4 @@ wholeMapDiagram tiles = mapRWST (return . runIdentity) $ do
         )
         # clipBy clipRect
         # withEnvelope clipRect
+

@@ -3,6 +3,9 @@ module Parameters where
 import Data.Function (on)
 import Data.Map (Map)
 import qualified Data.Map as M
+import Data.Sequence (Seq, (><))
+import qualified Data.Sequence as Seq
+import qualified Data.Foldable as Fold
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo (OutputType(..))
 import Track (Horizon(..), Element, Terrain)
@@ -79,12 +82,14 @@ deltaTileBounds params =
         (yMin, yMax) = yTileBounds params
     in (fromIntegral $ xMax - xMin + 1, fromIntegral $ yMax - yMin + 1)
 
-elementStyleIsDifferent :: RenderingParameters -> RenderingParameters -> Bool
-elementStyleIsDifferent p1 p2 =
-    (((/=) `on` roadWidth) p1 p2)
-    || (((/=) `on` bridgeHeight) p1 p2)
-    || (((/=) `on` bridgeRelativeWidth) p1 p2)
-    || (((/=) `on` bankingRelativeHeight) p1 p2)
+-- Opaque type for tracking changes in the interface.
+newtype RenderingElemStyle = RenderingElemStyle (Double, Double, Double, Double)
+    deriving (Eq)
+
+toElemStyle :: RenderingParameters -> RenderingElemStyle
+toElemStyle params = RenderingElemStyle
+    ( roadWidth params, bridgeHeight params
+    , bridgeRelativeWidth params, bankingRelativeHeight params)
 
 -- Extra output from the rendering.
 
@@ -95,7 +100,7 @@ data PostRenderInfo = PostRenderInfo
     , outputPath :: FilePath
     }
 
--- Rendering state
+-- Rendering state.
 
 data RenderingState = RenderingState
     { elementCache :: Map Element (Diagram BEDia R2)
@@ -121,3 +126,17 @@ insertIntoElementCache el dia st = st{ elementCache = M.insert el dia $ elementC
 insertIntoTerrainCache :: Terrain -> Diagram BEDia R2
                        -> RenderingState -> RenderingState
 insertIntoTerrainCache te dia st = st{ terrainCache = M.insert te dia $ terrainCache st }
+
+-- Opaque Writer type.
+
+newtype RenderingLog = RenderingLog { unRenderingLog :: Seq Char }
+
+instance Monoid RenderingLog where
+    mempty = RenderingLog Seq.empty
+    x `mappend` y = RenderingLog $ (unRenderingLog x) >< (unRenderingLog y)
+
+logFromList :: String -> RenderingLog
+logFromList = RenderingLog . Seq.fromList
+
+logToList :: RenderingLog -> String
+logToList = Fold.toList . unRenderingLog
