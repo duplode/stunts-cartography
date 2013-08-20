@@ -222,12 +222,9 @@ generateImageHandler button = \_ -> do
             -- Clear the element cache if the relevant parameters changed.
             (oldElemStyle, st) <- readIORef currentRenderingState
             let newElemStyle = Pm.toElemStyle params
-            st' <- if newElemStyle /= oldElemStyle
-                then do
-                    let s' = Pm.clearElementCache st
-                    atomicModifyIORef' currentRenderingState (\(es, _) ->
-                        ((es, s'), s'))
-                else return st
+                st' = if newElemStyle /= oldElemStyle
+                    then Pm.clearElementCache st
+                    else st
 
             -- Parse annotations and render the map.
             let goCarto :: CartoT IO Pm.PostRenderInfo
