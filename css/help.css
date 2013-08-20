@@ -1,0 +1,25 @@
+.anns-fixed {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.anns-mandatory {
+  background-color: Yellow;
+}
+
+table {
+  text-align: left;
+}
+
+th, td {
+  padding: 0.25em 0.5em
+}
+
+caption {
+  font-style: italic;
+  text-align: left
+}
+
+code {
+  font-size: 120%;
+}

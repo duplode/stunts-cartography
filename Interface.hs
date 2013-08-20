@@ -151,7 +151,10 @@ setup w = void $ do
                     # set UI.id_ "y-max-bound-input" # set value "29"
                 ]
             , UI.p #+
-                [ string "Annotations:" -- TODO: Add help.
+                [ string "Annotations - "
+                , UI.a # set UI.text "help"
+                    # set UI.href "/static/annotations-help.html"
+                    # set UI.target "_blank"
                 , UI.br
                 , UI.textarea # set UI.name "ann-input"
                     # set UI.id_ "ann-input"

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+<title>Annotations Help - Stunts Cartography</title>
+<meta charset="UTF-8" />
+<link rel="stylesheet" type="text/css" href="/static/css/help.css" />
+</head>
+
+<body>
+<h1>Annotations</h1>
+
+<p>Annotations to a track map are specified by text commands inserted into the
+annotations text area of the viewer. A particular set of commands might look
+like this:</p>
+<pre>
+Car @15.5 10 ^105 #aliceblue "Alan Rotoi" {'S %1}
+Split 1 @11 14 ^S %3 'N
+</pre>
+<p>There are currently three types of annotations available: <code>Car</code>,
+<code>Seg</code> and <code>Split</code>. These keywords inform the program the
+following values should be taken as styling options of an annotation of the
+corresponding kind. Most of the options are identified by leading symbols
+(<code>@</code>, <code>^</code> etc.), which have roughly equivalent meanings
+for the different annotations. In most cases, the options can be omitted (thus
+being replaced by sensible defaults) and reordered freely. The syntax is quite
+liberal about whitespace and linebreaks.</p> <p>The syntax and meaning of the
+fields for each sort of annotation is described below. Mandatory fields are
+<code><span class="anns-mandatory">highlighted</span></code>; fields whose
+position can not be changed are <code><span
+class="anns-fixed">underlined</span></code>.</p>
+
+<h2><code>Car</code></h2>
+
+<code><span class="anns-fixed anns-mandatory">Car</span>
+ <span class="anns-mandatory">@15.5 10</span>
+ ^45 %0.5 #orange
+ "Mark Nailwood" { #yellow ^0 %0.5 'N }</code>
+
+<p><code>Car</code> adds a car annotation, similar to the one used for the
+0x02/0x03 ghost car track elements.</p>
+
+<table>
+  <tr>
+    <th>Syntax</th><th>Option</th><th>Notes</th>
+  </tr>
+  <tr>
+    <td>@</td><td>Position</td>
+    <td>Position of the car, in tile units with <code>@0 0</code> being the
+      southwestern (i.e. lower left) corner of the map. To center the car in,
+      say, the tile (15, 23) as displayed by the grid indices of the map, use
+      <code>@15.5 23.5</code></td>
+  </tr>
+  <tr>
+    <td>^</td><td>Angle</td>
+    <td>Angle in degrees of the direction the car points to, starting from east
+      and growing counterclockwise (as per the usual convention in maths).</td>
+  </tr>
+  <tr>
+    <td>%</td><td>Size</td>
+    <td>Length of the car relative to tile size. The default value, 0.5, is the
+      same used for the ghost car track elements.</td>
+  </tr>
+  <tr>
+    <td>#</td><td>Colour</td>
+    <td>Colour of the body of the car. The colour name must be one of the 147
+      listed <a href=
+        "http://hackage.haskell.org/packages/archive/colour/2.3.3/doc/html/Data-Colour-Names.html">
+        here</a>, and should be typed as shown there (lower case, no spaces).</td>
+  </tr>
+  <tr>
+    <td>"..." { }</td><td>Caption</td>
+    <td>Text to be used as a caption, drawn beside the car. Within the (optional)
+      curly braces styling options for the caption can be set.</td>
+  </tr>
+</table>
+
+<table>
+  <caption>Caption options within the <code>{ }</code></caption>
+  <tr>
+    <th>Syntax</th><th>Option</th><th>Notes</th>
+  </tr>
+  <tr>
+    <td>#</td><td>Colour</td>
+    <td>Colour of the caption text. All observations done just above apply here.
+        </td>
+  </tr>
+  <tr>
+    <td>^</td><td>Angle</td>
+    <td>Angle in degrees of the direction the text goes.
+      </td>
+  </tr>
+  <tr>
+    <td>%</td><td>Size</td>
+    <td>Font size, relative to the tile size.
+      </td>
+  </tr>
+  <tr>
+    <td>'</td><td>Caption and car alignment</td>
+    <td>Alignment of the caption in relation to the car. The value must be one
+      of <code>E</code>, <code>N</code>, <code>W</code> and <code>S</code>
+      (which stand for the four cardinal directions).
+      </td>
+  </tr>
+</table>
+
+<h2><code>Seg</code></h2>
+
+<code><span class="anns-fixed anns-mandatory">Seg</span>
+ <span class="anns-mandatory">@17.5 10.25</span>
+ <span class="anns-mandatory">^90</span>
+ <span class="anns-mandatory">%3.5</span>
+ #orange "Start of braking zone" { #orange ^30 %0.5 'N }</code>
+
+<p><code>Seg</code> adds a line segment over the map.</p>
+
+<table>
+  <tr>
+    <th>Syntax</th><th>Option</th><th>Notes</th>
+  </tr>
+  <tr>
+    <td>@</td><td>Position</td>
+    <td>Position of one of the ends of the segment.</td>
+  </tr>
+  <tr>
+    <td>^</td><td>Angle</td>
+    <td>Angle in degrees of the direction of the segment, starting from the
+      coordinates defined by <code>@</code>.</td>
+  </tr>
+  <tr>
+    <td>%</td><td>Length</td>
+    <td>Length of the segment, in tiles.</td>
+  </tr>
+</table>
+
+<p>Other options work as described for <code>Car</code> above.
+
+<h2><code>Split</code></h2>
+
+<code><span class="anns-fixed anns-mandatory">Split</span>
+ <span class="anns-fixed anns-mandatory">1</span>
+ <span class="anns-mandatory">@22 14</span>
+ <span class="anns-mandatory">^E</span>
+ <span class="anns-mandatory">%5</span>
+ #yellow 'W</code>
+
+<p><code>Split</code> adds a split / section marker, drawn as a segment with
+specialised properties.</p>
+
+<table>
+  <tr>
+    <th>Syntax</th><th>Option</th><th>Notes</th>
+  </tr>
+  <tr>
+    <td>An integer</td><td>Section number</td>
+    <td>Number of the track section. Drawn as an identifying caption beside the
+      split line. Must be an integer.</td>
+  </tr>
+  <tr>
+    <td>@</td><td>Position</td>
+    <td>Coordinates of the tile where the split line begins. The values must be
+      integer. The actual starting point of the line is southwestern corner of
+      the tile.</td>
+  </tr>
+  <tr>
+    <td>^</td><td>Split direction</td>
+    <td>Direction of the split line. One of <code>E</code>, <code>N</code>,
+      <code>W</code> and <code>S</code>.</td>
+  </tr>
+  <tr>
+    <td>%</td><td>Length</td>
+    <td>Length of the split line, in tiles. The value must be integer.</td>
+  </tr>
+  <tr>
+    <td>#</td><td>Colour</td>
+    <td>Colour of the both the split line and its caption.</td>
+  </tr>
+  <tr>
+    <td>'</td><td>Caption and split alignment</td>
+    <td>Alignment of the caption in relation to the split line. Must be one
+      of <code>E</code>, <code>N</code>, <code>W</code> and <code>S</code>.
+      </td>
+  </tr>
+</table>
+
+</body>
+
+</html>
