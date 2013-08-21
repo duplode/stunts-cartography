@@ -50,7 +50,7 @@ car = do
                            <|?> (yellow, colour)
                            <|?> (0, angle)
                            <|?> (0.5, size)
-                           <|?> ((Nothing, 0, E, 0.5, ""), caption))
+                           <|?> ((Nothing, 0, E, 0.75, ""), caption))
     let (pos, cl, ang, sz, capt) = opt
     let (mCpCl, cpAng, cpAl, cpSz, cpTxt) = capt
     return $ CarAnnotation
@@ -71,7 +71,7 @@ seg = do
                            <|?> (yellow, colour)
                            <||> angle
                            <||> size
-                           <|?> ((Nothing, 0, E, 0.5, ""), caption))
+                           <|?> ((Nothing, 0, E, 0.75, ""), caption))
     let (pos, cl, ang, len, capt) = opt
     let (mCpCl, cpAng, cpAl, cpSz, cpTxt) = capt
     return $ SegAnnotation

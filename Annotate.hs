@@ -62,12 +62,13 @@ instance IsAnnotation CarAnnotation where
     annotation ann = Annotation
         { renderAnnotation =
             acura' (carAnnColour ann) 1
-            # rotate (Deg $ carAnnAngle ann)
             # (flip $ beside (cardinalDirToR2 $ carAnnCaptAlignment ann))
                 (renderCaption
                     (carAnnCaptColour ann) (carAnnCaptAlignment ann)
-                    (carAnnCaptAngle ann) (carAnnCaptSize ann)
-                    (carAnnCaption ann))
+                    (carAnnCaptAngle ann - carAnnAngle ann) (carAnnCaptSize ann)
+                    (carAnnCaption ann)
+                )
+            # rotate (Deg $ carAnnAngle ann)
             # scale (carAnnSize ann)
             # translate (r2 $ carAnnPosition ann)
         }
@@ -103,12 +104,18 @@ instance IsAnnotation SplitAnnotation where
         , segAnnCaptSize = 0.5
         }
 
+-- TODO: Deal with complications with caption alignment of oblique Segs.
 renderCaption colour captAlign captAngle captSize caption =
-    text caption # scale captSize # rotate (Deg captAngle)
-    # fc colour
+    let dirAlign = - cardinalDirToR2 captAlign
+        adjustAlignments (x, y) = ((x + 1) / 2, (y + 1) / 2)
+        (xAlign, yAlign) = adjustAlignments $ unr2 dirAlign
+    in (
+        alignedText xAlign yAlign caption
+        # scale captSize # rotate (Deg captAngle) # fc colour
     -- TODO: Changing the rectangle size doesn't seem to change padding.
-    <> rect captSize captSize # lw 0
-    # align (cardinalDirToR2 captAlign)
+        <> rect captSize captSize # lw 0
+    )
+    # align dirAlign
 
 cardinalDirToR2 :: CardinalDirection -> R2
 cardinalDirToR2 x = case x of
