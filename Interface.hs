@@ -15,6 +15,7 @@ import System.Directory ( doesFileExist, doesDirectoryExist
                         , getTemporaryDirectory)
 import System.FilePath ((</>), takeExtension, addExtension)
 import Data.Char (toUpper)
+
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
 import Diagrams.Backend.Cairo (OutputType(..))
@@ -38,117 +39,164 @@ main = do
 
 setup :: Window -> IO ()
 setup w = void $ do
+
+    -- Prolegomena.
+
     return w # set title "Stunts Cartography - Track Viewer"
     UI.addStyleSheet w "viewer.css"
+
+    -- Bindings for interesting HTML elements.
+
+    btnGo <- do
+        button <- UI.button #. "go-button" #+ [string "Draw map"]
+        on UI.click button $ generateImageHandler button
+        return button
+
+    selOutput <-
+        UI.select # set UI.name "output-format-select"
+            # set UI.id_ "output-format-select" #+
+                [ UI.option # set UI.selected True #+ [string "PNG"]
+                , UI.option #+ [string "SVG"]
+                ]
+
+    itxBasePath <-
+        UI.input # set UI.type_ "text" # set UI.name "base-path-input"
+            # set UI.id_ "base-path-input" # set value ".."
+    itxTrkPath <-
+        UI.input # set UI.type_ "text" # set UI.name "trk-input"
+            # set UI.id_ "trk-input"
+
+    lnkTrk <-
+        UI.a # set UI.id_ "save-trk-link" # set UI.target "_blank" #+
+            [string "track"]
+    lnkTerrTrk <-
+        UI.a # set UI.id_ "save-terrain-link" # set UI.target "_blank" #+
+            [string "terrain"]
+
+    selPreset <-
+        UI.select # set UI.name "style-preset-select"
+            # set UI.id_ "style-preset-select" #+
+                [ UI.option # set UI.selected True #+ [string "Default"]
+                , UI.option #+ [string "Wider track"]
+                , UI.option #+ [string "Sloping ramps"]
+                , UI.option #+ [string "Traditional"]
+                ]
+
+    btnPreset <- do
+        button <- UI.button #. "button" #+ [string "Set"]
+        on UI.click button $ applyPresetHandler button
+        return button
+
+    itxRoadW <-
+        UI.input # set UI.type_ "text" # set UI.name "road-w-input"
+            # set UI.id_ "road-w-input" # set UI.size "5"
+
+    itxBridgeH <-
+        UI.input # set UI.type_ "text" # set UI.name "bridge-h-input"
+            # set UI.id_ "bridge-h-input" # set UI.size "5"
+
+    itxBridgeRelW <-
+        UI.input # set UI.type_ "text" # set UI.name "bridge-rel-w-input"
+            # set UI.id_ "bridge-rel-w-input" # set UI.size "5"
+
+    itxBankingRelH <-
+        UI.input # set UI.type_ "text" # set UI.name "bank-rel-h-input"
+            # set UI.id_ "bank-rel-h-input" # set UI.size "5"
+
+    strPxPtPerTile <- string "Pixels per tile (PNG)"
+    itxPxPtPerTile <-
+        UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
+            # set UI.id_ "px-per-tile-input" # set UI.size "5"
+            # set value "32"
+
+    chkDrawGrid <-
+        UI.input # set UI.type_ "checkbox" # set UI.name "grid-lines-chk"
+            # set UI.id_ "grid-lines-chk" # set UI.checked_ True
+    chkDrawIndices <-
+        UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
+            # set UI.id_ "grid-indices-chk" # set UI.checked_ True
+
+    itxBMinX <-
+        UI.input # set UI.type_ "text"
+            # set UI.name "x-min-bound-input" # set UI.size "2"
+            # set UI.id_ "x-min-bound-input" # set value "0"
+    itxBMaxX <-
+        UI.input # set UI.type_ "text"
+            # set UI.name "x-max-bound-input" # set UI.size "2"
+            # set UI.id_ "x-max-bound-input" # set value "29"
+    itxBMinY <-
+        UI.input # set UI.type_ "text"
+            # set UI.name "y-min-bound-input" # set UI.size "2"
+            # set UI.id_ "y-min-bound-input" # set value "0"
+    itxBMaxY <-
+        UI.input # set UI.type_ "text" # set UI.size "2"
+            # set UI.name "y-max-bound-input"
+            # set UI.id_ "y-max-bound-input" # set value "29"
+
+    txaAnns <-
+        UI.textarea # set UI.name "ann-input"
+            # set UI.id_ "ann-input"
+            # set UI.cols "25" # set UI.rows "5"
+
+    imgMap <- UI.img # set UI.id_ "track-map"
+
+    txaLog <-
+        UI.textarea # set UI.id_ "log-text"
+            # set UI.cols "72" # set UI.rows "6"
+
+    -- Assembling the interface HTML.
+
     getBody w # set UI.id_ "the-body" # set UI.class_ "blank-horizon" #+
         [ UI.div # set UI.id_ "left-bar" #+
             [ UI.p #+
-                [ mkButtonGo
-                , string " as "
-                , UI.select # set UI.name "output-format-select"
-                    # set UI.id_ "output-format-select" #+
-                    [ UI.option # set UI.selected True #+ [string "PNG"]
-                    , UI.option #+ [string "SVG"]
-                    ]
+                [ element btnGo, string " as ", element selOutput ]
+            , UI.p #+
+                [ string "Base path:", UI.br
+                , element itxBasePath
                 ]
             , UI.p #+
-                [ string "Base path:"
-                , UI.br
-                , UI.input # set UI.type_ "text" # set UI.name "base-path-input"
-                    # set UI.id_ "base-path-input" # set value ".."
+                [ string "TRK / RPL relative path:", UI.br
+                , element itxTrkPath
                 ]
             , UI.p #+
-                [ string "TRK / RPL relative path:"
-                , UI.br
-                , UI.input # set UI.type_ "text" # set UI.name "trk-input"
-                    # set UI.id_ "trk-input"
+                [ string "Save as: ", element lnkTrk
+                , string " - ", element lnkTerrTrk
                 ]
             , UI.p #+
-                [ string "Save as: "
-                , UI.a # set UI.id_ "save-trk-link" # set UI.target "_blank" #+
-                    [string "track"]
-                , string " - "
-                , UI.a # set UI.id_ "save-terrain-link" # set UI.target "_blank" #+
-                    [string "terrain"]
+                [ string "Style presets:", UI.br
+                , element selPreset, element btnPreset
                 ]
             , UI.p #+
-                [ string "Style presets:"
-                , UI.br
-                , UI.select # set UI.name "style-preset-select"
-                    # set UI.id_ "style-preset-select" #+
-                    [ UI.option # set UI.selected True #+ [string "Default"]
-                    , UI.option #+ [string "Wider track"]
-                    , UI.option #+ [string "Sloping ramps"]
-                    , UI.option #+ [string "Traditional"]
-                    ]
-                , mkButtonApplyPreset
+                [ string "Road width:", UI.br
+                , element itxRoadW, string " from 0.1 to 0.5"
                 ]
             , UI.p #+
-                [ string "Road width:"
-                , UI.br
-                , UI.input # set UI.type_ "text" # set UI.name "road-w-input"
-                    # set UI.id_ "road-w-input" # set UI.size "5"
-                , string " from 0.1 to 0.5"
+                [ string "Bridge height:", UI.br
+                , element itxBridgeH, string " from 0 to 0.5"
                 ]
             , UI.p #+
-                [ string "Bridge height:"
-                , UI.br
-                , UI.input # set UI.type_ "text" # set UI.name "bridge-h-input"
-                    # set UI.id_ "bridge-h-input" # set UI.size "5"
-                , string " from 0 to 0.5"
+                [ string "Bridge relative width:", UI.br
+                , element itxBridgeRelW, string " from 1 to 3"
                 ]
             , UI.p #+
-                [ string "Bridge relative width:"
-                , UI.br
-                , UI.input # set UI.type_ "text" # set UI.name "bridge-rel-w-input"
-                    # set UI.id_ "bridge-rel-w-input" # set UI.size "5"
-                , string " from 1 to 3"
+                [ string "Banking relative height:", UI.br
+                , element itxBankingRelH, string " from 0.25 to 1"
                 ]
             , UI.p #+
-                [ string "Banking relative height:"
-                , UI.br
-                , UI.input # set UI.type_ "text" # set UI.name "bank-rel-h-input"
-                    # set UI.id_ "bank-rel-h-input" # set UI.size "5"
-                , string " from 0.25 to 1"
+                [ element strPxPtPerTile, UI.br
+                , string "Points per tile (SVG):", UI.br
+                , element itxPxPtPerTile, string " from 8 to 128"
                 ]
             , UI.p #+
-                [ string "Pixels per tile (PNG)"
-                , UI.br
-                , string "Points per tile (SVG):"
-                , UI.br
-                , UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
-                    # set UI.id_ "px-per-tile-input" # set UI.size "5"
-                    # set value "32"
-                , string " from 8 to 128"
+                [ string "Grid?", element chkDrawGrid
+                , string " Indices?", element chkDrawIndices
                 ]
             , UI.p #+
-                [ string "Grid?"
-                , UI.input # set UI.type_ "checkbox" # set UI.name "grid-lines-chk"
-                    # set UI.id_ "grid-lines-chk" # set UI.checked_ True
-                , string " Indices?"
-                , UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
-                    # set UI.id_ "grid-indices-chk" # set UI.checked_ True
-                ]
-            , UI.p #+
-                [ string "Map bounds (0 - 29):"
-                , UI.br
-                , string "x from "
-                , UI.input # set UI.type_ "text"
-                    # set UI.name "x-min-bound-input" # set UI.size "2"
-                    # set UI.id_ "x-min-bound-input" # set value "0"
-                , string " to "
-                , UI.input # set UI.type_ "text"
-                    # set UI.name "x-max-bound-input" # set UI.size "2"
-                    # set UI.id_ "x-max-bound-input" # set value "29"
-                , UI.br
-                , string "y from "
-                , UI.input # set UI.type_ "text"
-                    # set UI.name "y-min-bound-input" # set UI.size "2"
-                    # set UI.id_ "y-min-bound-input" # set value "0"
-                , string " to "
-                , UI.input # set UI.type_ "text" # set UI.size "2"
-                    # set UI.name "y-max-bound-input"
-                    # set UI.id_ "y-max-bound-input" # set value "29"
+                [ string "Map bounds (0 - 29):", UI.br
+                , string "x from ", element itxBMinX
+                , string " to ", element itxBMaxX, UI.br
+                , string "y from ", element itxBMinY
+                , string " to ", element itxBMaxY
                 ]
             , UI.p #+
                 [ string "Annotations - "
@@ -156,21 +204,20 @@ setup w = void $ do
                     # set UI.href "/static/annotations-help.html"
                     # set UI.target "_blank"
                 , UI.br
-                , UI.textarea # set UI.name "ann-input"
-                    # set UI.id_ "ann-input"
-                    # set UI.cols "25" # set UI.rows "5"
+                , element txaAnns
                 ]
             ]
         , UI.div # set UI.id_ "main-wrap" #+
-            [ UI.img # set UI.id_ "track-map"
+            [ element imgMap
             , UI.p #+
-                [ string "Log:"
-                , UI.br
-                , UI.textarea # set UI.id_ "log-text"
-                    # set UI.cols "72" # set UI.rows "6"
+                [ string "Log:", UI.br
+                , element txaLog
                 ]
             ]
         ]
+
+    -- Initializing fields.
+
     fillDrawingRatiosFields w Pm.defaultRenderingParameters
 
 clearLog :: Window -> IO Element
@@ -188,12 +235,6 @@ currentRenderingState :: IORef (Pm.RenderingElemStyle, Pm.RenderingState)
 {-# NOINLINE currentRenderingState #-}
 currentRenderingState = unsafePerformIO $ newIORef
     (Pm.toElemStyle Pm.defaultRenderingParameters, Pm.initialRenderingState)
-
-mkButtonGo :: IO Element
-mkButtonGo = do
-    button <- UI.button #. "go-button" #+ [string "Draw map"]
-    on UI.click button $ generateImageHandler button
-    return button
 
 generateImageHandler :: Element -> (a -> IO ())
 generateImageHandler button = \_ -> do
@@ -360,12 +401,6 @@ selectedOutputFormat = selectedFromSelect fSel "output-format-select"
         0 -> PNG
         1 -> SVG
         _ -> error "Unknown output format."
-
-mkButtonApplyPreset :: IO Element
-mkButtonApplyPreset = do
-    button <- UI.button #. "button" #+ [string "Set"]
-    on UI.click button $ applyPresetHandler button
-    return button
 
 applyPresetHandler :: Element -> (a -> IO ())
 applyPresetHandler button = \_ -> do
