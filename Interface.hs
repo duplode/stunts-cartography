@@ -5,10 +5,7 @@ module Main
 
 import Control.Monad
 import qualified Control.Monad.RWS as RWS
-import Control.Applicative ((<$>), (<*>))
 import Control.Exception (catch, SomeException)
-import System.IO.Unsafe (unsafePerformIO)
-import Data.IORef
 import Data.Maybe (fromJust, fromMaybe)
 import Text.Read (readMaybe)
 import Text.Printf (printf)
@@ -50,10 +47,7 @@ setup w = void $ do
 
     -- Bindings for interesting HTML elements.
 
-    btnGo <- do
-        button <- UI.button #. "go-button" #+ [string "Draw map"]
-        on UI.click button $ generateImageHandler button
-        return button
+    btnGo <- UI.button #. "go-button" #+ [string "Draw map"]
 
     selOutput <-
         UI.select # set UI.name "output-format-select"
@@ -222,24 +216,146 @@ setup w = void $ do
 
     fillDrawingRatiosFields w Pm.defaultRenderingParameters
 
-    -- reactive-banana network.
+    -- The main action proper.
+
+    let runRenderMap :: Pm.RenderingElemStyle
+                     -> Pm.RenderingParameters -> Pm.RenderingState
+                     -> IO (Pm.RenderingElemStyle, Pm.RenderingState)
+        runRenderMap oldElemStyle params st = do
+
+            let  newElemStyle = Pm.toElemStyle params
+
+            clearLog w
+
+            trkRelPath <- join $ get value . fromJust
+                <$> getElementById w "trk-input"
+            basePath <- join $ get value . fromJust
+                <$> getElementById w "base-path-input"
+            let trkPath = basePath </> trkRelPath
+            trkExists <- doesFileExist trkPath
+            mFileSize <- retrieveFileSize trkPath
+            let sizeIsCorrect = mFileSize == Just 1802
+                fileExt = map toUpper $ takeExtension trkPath
+                extIsKnown = fileExt == ".TRK" || fileExt == ".RPL"
+                -- No size checks for .RPL at this point.
+                badTRKSize = fileExt == ".TRK" && not sizeIsCorrect
+                proceedWithLoading = trkExists && extIsKnown && not badTRKSize
+
+            if proceedWithLoading
+                then do
+                    -- Decide on input format.
+                    let pngWriter = case fileExt of
+                            ".TRK" -> writePngFromTrk
+                            ".RPL" -> writePngFromRpl
+                            _      -> error "Unrecognized input extension."
+
+                    -- Clear the element cache if the relevant parameters changed.
+                    -- TODO: We might consider doing this in the event network.
+                    let st' = if newElemStyle /= oldElemStyle
+                            then Pm.clearElementCache st
+                            else st
+
+                    -- Parse annotations and render the map.
+                    let goCarto :: CartoT IO Pm.PostRenderInfo
+                        goCarto = do
+                        anns <- selectedAnnotations w
+                        postRender <- RWS.local (\p -> p{ Pm.annotationSpecs = anns}) $
+                            pngWriter trkPath
+                        return postRender
+                    (postRender,st'',logW) <- RWS.runRWST goCarto params st'
+
+                    -- Update the log.
+                    appendLineToLog w $ Pm.logToList logW
+
+                    -- Update the UI.
+                    applyHorizonClass w $ Pm.renderedTrackHorizon postRender
+                    let outType = Pm.outputType params
+                    trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
+                    trkUri <- loadTmpTrk w postRender
+                    terrainUri <- loadTmpTerrainTrk w postRender
+                    runFunction w $ setTrackMapVisibility True
+                    (fromJust <$> getElementById w "track-map") # set UI.src trackImage
+                    setLinkHref w "save-trk-link" trkUri
+                    setLinkHref w "save-terrain-link" terrainUri
+
+                    -- TODO: newElemStyle is known right at the beginning.
+                    -- Maybe we don't even need to return it, as long as it is
+                    -- generated and then consumed in the event network at the
+                    -- right time.
+                    return (newElemStyle, st'')
+                else do
+                    unless (extIsKnown || not trkExists) $
+                        appendLineToLog w
+                            "Bad file extension (should be .TRK or .RPL, in upper or lower case)."
+                    unless trkExists $
+                        appendLineToLog w "File does not exist."
+                    when (badTRKSize && trkExists) $
+                        appendLineToLog w "Bad file size (.TRK files must have 1802 bytes)."
+
+                    applyClassToBody w "blank-horizon"
+                    runFunction w $ setTrackMapVisibility False
+                    runFunction w $ unsetSaveLinksHref
+
+                    return (newElemStyle, st)
+
+    -- The event network.
 
     let networkDescription :: forall t. Frameworks t => Moment t ()
         networkDescription = do
 
+            -- Output type and tile resolution caption
+
             eOutputSel <- eventSelection selOutput
+            let eOutType = intToOutputType . fromMaybe (-1) <$> eOutputSel
+                bOutType = PNG `stepper` eOutType
 
             let ePxPtText =
                     let toPxPtText x =
-                            if x == 1
-                                then "Points per tile:" -- SVG
-                                else "Pixels per tile:" -- PNG
-                    in toPxPtText . fromMaybe 0 <$> eOutputSel
+                            case x of
+                                SVG -> "Points per tile:"
+                                _   -> "Pixels per tile:" -- PNG
+                    in toPxPtText <$> eOutType
 
             reactimate $
-                (\capt -> void $ element strPxPtPerTile # set UI.text capt) <$> ePxPtText
+                (\capt -> void $ element strPxPtPerTile
+                    # set UI.text capt) <$> ePxPtText
+
+            -- The main action, in several parts.
+
+            eBtnGo <- event UI.click btnGo
+
+            -- Rendering parameters.
+
+            (addRenParams, fireRenParams) <- liftIO $ newAddHandler
+            eRenParams <- fromAddHandler (addRenParams :: AddHandler Pm.RenderingParameters)
+            bRenParams <- fromChanges Pm.defaultRenderingParameters addRenParams
+
+            -- The event fired here will trigger the main action.
+            reactimate $
+                (\ot -> selectedRenderingParameters w ot
+                    >>= fireRenParams) <$> bOutType <@ calm eBtnGo
+
+            -- Output from the main action, input for the next run.
+
+            (addRenState, fireRenState) <- liftIO $ newAddHandler
+            eRenState <- fromAddHandler (addRenState :: AddHandler Pm.RenderingState)
+            bRenState <- fromChanges Pm.initialRenderingState addRenState
+
+            (addRenEStyle, fireRenEStyle) <- liftIO $ newAddHandler
+            eRenEStyle <- fromAddHandler (addRenEStyle :: AddHandler Pm.RenderingElemStyle)
+            bRenEStyle <- fromChanges (Pm.toElemStyle Pm.defaultRenderingParameters) addRenEStyle
+            -- Worth pointing out that we have no reason to care what
+            -- bRenEState is before the first rendering.
+
+            -- Firing the main action.
+
+            reactimate $
+                (\(es,st,p) -> runRenderMap es p st
+                    >>= \(es',st') -> fireRenEStyle es' >> fireRenState st')
+                        <$> (pure (,,) <*> bRenEStyle <*> bRenState <@> eRenParams)
 
     compile networkDescription >>= actuate
+
 
 clearLog :: Window -> IO Element
 clearLog w = set value "" $ fromJust <$> getElementById w "log-text"
@@ -249,81 +365,6 @@ appendLineToLog w msg = void $ do
     logEl <- fromJust <$> getElementById w "log-text"
     msgs <- get value logEl
     set value (msgs ++ msg ++ "\r\n") $ return logEl
-
--- TODO: Yuck.
-currentRenderingState :: IORef (Pm.RenderingElemStyle, Pm.RenderingState)
-{-# NOINLINE currentRenderingState #-}
-currentRenderingState = unsafePerformIO $ newIORef
-    (Pm.toElemStyle Pm.defaultRenderingParameters, Pm.initialRenderingState)
-
-generateImageHandler :: Element -> (a -> IO ())
-generateImageHandler button = \_ -> do
-    w <- fromJust <$> getWindow button
-    clearLog w
-    trkRelPath <- join $ get value . fromJust
-        <$> getElementById w "trk-input"
-    basePath <- join $ get value . fromJust
-        <$> getElementById w "base-path-input"
-    let trkPath = basePath </> trkRelPath
-    trkExists <- doesFileExist trkPath
-    mFileSize <- retrieveFileSize trkPath
-    let sizeIsCorrect = mFileSize == Just 1802
-        fileExt = map toUpper $ takeExtension trkPath
-        extIsKnown = fileExt == ".TRK" || fileExt == ".RPL"
-        -- No size checks for .RPL at this point.
-        badTRKSize = fileExt == ".TRK" && not sizeIsCorrect
-        proceedWithLoading = trkExists && extIsKnown && not badTRKSize
-    if proceedWithLoading
-        then void $ do
-            -- Decide on input / output formats as well as (most) parameters.
-            let pngWriter = case fileExt of
-                    ".TRK" -> writePngFromTrk
-                    ".RPL" -> writePngFromRpl
-                    _      -> error "Unrecognized input extension."
-            outType <- selectedOutputFormat w
-            params <- selectedRenderingParameters w outType
-
-            -- Clear the element cache if the relevant parameters changed.
-            (oldElemStyle, st) <- readIORef currentRenderingState
-            let newElemStyle = Pm.toElemStyle params
-                st' = if newElemStyle /= oldElemStyle
-                    then Pm.clearElementCache st
-                    else st
-
-            -- Parse annotations and render the map.
-            let goCarto :: CartoT IO Pm.PostRenderInfo
-                goCarto = do
-                anns <- selectedAnnotations w
-                postRender <- RWS.local (\p -> p{ Pm.annotationSpecs = anns}) $
-                    pngWriter trkPath
-                return postRender
-            (postRender,st'',logW) <- RWS.runRWST goCarto params st'
-
-            -- Update the mutable state and the log.
-            atomicWriteIORef currentRenderingState (newElemStyle, st'')
-            appendLineToLog w $ Pm.logToList logW
-
-            -- Update the UI.
-            applyHorizonClass w $ Pm.renderedTrackHorizon postRender
-            trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
-            trkUri <- loadTmpTrk w postRender
-            terrainUri <- loadTmpTerrainTrk w postRender
-            runFunction w $ setTrackMapVisibility True
-            (fromJust <$> getElementById w "track-map") # set UI.src trackImage
-            setLinkHref w "save-trk-link" trkUri
-            setLinkHref w "save-terrain-link" terrainUri
-        else do
-            unless (extIsKnown || not trkExists) $
-                appendLineToLog w
-                    "Bad file extension (should be .TRK or .RPL, in upper or lower case)."
-            unless trkExists $
-                appendLineToLog w "File does not exist."
-            when (badTRKSize && trkExists) $
-                appendLineToLog w "Bad file size (.TRK files must have 1802 bytes)."
-
-            applyClassToBody w "blank-horizon"
-            runFunction w $ setTrackMapVisibility False
-            runFunction w $ unsetSaveLinksHref
 
 setTrackMapVisibility :: Bool -> JSFunction ()
 setTrackMapVisibility visible
@@ -397,7 +438,7 @@ selectedRenderingParameters w outType = do
             , Pm.pixelsPerTile = pxPerTile
             , Pm.drawGridLines = drawGrid
             , Pm.drawIndices = drawIxs
-            , Pm.outputType = outType
+            , Pm.outputType = outType -- Why don't we read this right here?
             , Pm.xTileBounds = xBounds
             , Pm.yTileBounds = yBounds
             }
@@ -413,10 +454,8 @@ selectedFromSelect fSel selId = \w -> do
         <$> getElementById w selId
     return $ fSel optionIx
 
-selectedOutputFormat :: Window -> IO OutputType
-selectedOutputFormat = selectedFromSelect fSel "output-format-select"
-    where
-    fSel = \n -> case n of
+intToOutputType :: Int -> OutputType
+intToOutputType n = case n of
         0 -> PNG
         1 -> SVG
         _ -> error "Unknown output format."
