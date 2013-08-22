@@ -62,6 +62,7 @@ instance IsAnnotation CarAnnotation where
     annotation ann = Annotation
         { renderAnnotation =
             acura' (carAnnColour ann) 1
+            # scale (carAnnSize ann)
             # (flip $ beside (cardinalDirToR2 $ carAnnCaptAlignment ann))
                 (renderCaption
                     (carAnnCaptColour ann) (carAnnCaptAlignment ann)
@@ -69,7 +70,6 @@ instance IsAnnotation CarAnnotation where
                     (carAnnCaption ann)
                 )
             # rotate (Deg $ carAnnAngle ann)
-            # scale (carAnnSize ann)
             # translate (r2 $ carAnnPosition ann)
         }
 
@@ -77,18 +77,41 @@ instance IsAnnotation SegAnnotation where
     annotation ann = Annotation
         { renderAnnotation =
             fromSegments
-                [ straight (r2 (segAnnLength ann, 0)
-                # rotate (Deg $ segAnnAngle ann)) ]
+                [ straight (r2 (segAnnLength ann, 0))
+                ]
             # stroke
             # lw 0.25 # lc (segAnnColour ann)
             # (flip $ beside (cardinalDirToR2 $ segAnnCaptAlignment ann))
                 (renderCaption
                     (segAnnCaptColour ann) (segAnnCaptAlignment ann)
-                    (segAnnCaptAngle ann) (segAnnCaptSize ann)
+                    (segAnnCaptAngle ann - segAnnAngle ann) (segAnnCaptSize ann)
                     (segAnnCaption ann))
+            # rotate (Deg $ segAnnAngle ann)
             # translate (r2 $ segAnnPosition ann)
         }
 
+instance IsAnnotation SplitAnnotation where
+    annotation ann = Annotation
+        { renderAnnotation =
+            let (posX, posY) = splAnnPosition ann
+                pos = (fromIntegral posX, fromIntegral posY)
+            in fromSegments
+                [ straight (r2 (fromIntegral $ splAnnLength ann, 0)
+                # rotate (Deg $ cardinalDirToAngle $ splAnnDirection ann)) ]
+            # stroke
+            # lw 0.25 # lc (splAnnColour ann)
+            # (flip $ beside (cardinalDirToR2 $ splAnnCaptAlignment ann))
+                (renderCaption
+                    (splAnnColour ann) (splAnnCaptAlignment ann)
+                    0 0.75
+                    (show $ splAnnIndex ann))
+            # translate (r2 pos)
+        }
+
+-- Ideally, we would implement Split in terms of Seg. That, however, is
+-- deferred until a satisfactory way of specifying the differences in how
+-- alignments are specified in one case and the other is defined.
+{-
 instance IsAnnotation SplitAnnotation where
     annotation ann = annotation $ SegAnnotation
         { segAnnColour = splAnnColour ann
@@ -101,18 +124,20 @@ instance IsAnnotation SplitAnnotation where
         , segAnnCaptColour = splAnnColour ann
         , segAnnCaptAlignment = splAnnCaptAlignment ann
         , segAnnCaptAngle = 0
-        , segAnnCaptSize = 0.5
+        , segAnnCaptSize = 0.75
         }
+-}
 
--- TODO: Deal with complications with caption alignment of oblique Segs.
 renderCaption colour captAlign captAngle captSize caption =
     let dirAlign = - cardinalDirToR2 captAlign
         adjustAlignments (x, y) = ((x + 1) / 2, (y + 1) / 2)
         (xAlign, yAlign) = adjustAlignments $ unr2 dirAlign
     in (
         alignedText xAlign yAlign caption
-        # scale captSize # rotate (Deg captAngle) # fc colour
-    -- TODO: Changing the rectangle size doesn't seem to change padding.
+        # scale captSize # rotate (Deg captAngle)
+        # fc colour # bold
+    -- In effect, this sets the separation between caption and annotation at
+    -- (captSize / 2).
         <> rect captSize captSize # lw 0
     )
     # align dirAlign

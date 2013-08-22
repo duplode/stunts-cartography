@@ -50,7 +50,7 @@ car = do
                            <|?> (yellow, colour)
                            <|?> (0, angle)
                            <|?> (0.5, size)
-                           <|?> ((Nothing, 0, E, 0.75, ""), caption))
+                           <|?> ((Nothing, 0, E, 0.4, ""), caption))
     let (pos, cl, ang, sz, capt) = opt
     let (mCpCl, cpAng, cpAl, cpSz, cpTxt) = capt
     return $ CarAnnotation
@@ -71,7 +71,7 @@ seg = do
                            <|?> (yellow, colour)
                            <||> angle
                            <||> size
-                           <|?> ((Nothing, 0, E, 0.75, ""), caption))
+                           <|?> ((Nothing, 0, E, 0.4, ""), caption))
     let (pos, cl, ang, len, capt) = opt
     let (mCpCl, cpAng, cpAl, cpSz, cpTxt) = capt
     return $ SegAnnotation
@@ -142,9 +142,9 @@ caption :: Parsec String u
                , Double, String )
 caption = do
     txt <- stringLiteral
-    (al, sz, ang, mCl) <- option (E, 0.5, 0, Nothing) . try . braces $
+    (al, sz, ang, mCl) <- option (E, 0.4, 0, Nothing) . try . braces $
         permute ((,,,) <$?> (E, alignment)
-                       <|?> (0.5, size)
+                       <|?> (0.4, size)
                        <|?> (0, angle)
                        <|?> (Nothing, Just <$> colour))
     return (mCl, ang, al, sz, txt)
