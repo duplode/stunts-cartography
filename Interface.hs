@@ -1,3 +1,4 @@
+{-# LANGUAGE Rank2Types #-}
 module Main
     ( main
     ) where
@@ -17,7 +18,9 @@ import System.FilePath ((</>), takeExtension, addExtension)
 import Data.Char (toUpper)
 
 import qualified Graphics.UI.Threepenny as UI
-import Graphics.UI.Threepenny.Core
+import Graphics.UI.Threepenny.Core hiding (Event)
+import Reactive.Banana
+import Reactive.Banana.Threepenny
 import Diagrams.Backend.Cairo (OutputType(..))
 
 import Output
@@ -103,7 +106,7 @@ setup w = void $ do
         UI.input # set UI.type_ "text" # set UI.name "bank-rel-h-input"
             # set UI.id_ "bank-rel-h-input" # set UI.size "5"
 
-    strPxPtPerTile <- string "Pixels per tile (PNG)"
+    strPxPtPerTile <- string "Pixels per tile:"
     itxPxPtPerTile <-
         UI.input # set UI.type_ "text" # set UI.name "px-per-tile-input"
             # set UI.id_ "px-per-tile-input" # set UI.size "5"
@@ -184,7 +187,6 @@ setup w = void $ do
                 ]
             , UI.p #+
                 [ element strPxPtPerTile, UI.br
-                , string "Points per tile (SVG):", UI.br
                 , element itxPxPtPerTile, string " from 8 to 128"
                 ]
             , UI.p #+
@@ -219,6 +221,25 @@ setup w = void $ do
     -- Initializing fields.
 
     fillDrawingRatiosFields w Pm.defaultRenderingParameters
+
+    -- reactive-banana network.
+
+    let networkDescription :: forall t. Frameworks t => Moment t ()
+        networkDescription = do
+
+            eOutputSel <- eventSelection selOutput
+
+            let ePxPtText =
+                    let toPxPtText x =
+                            if x == 1
+                                then "Points per tile:" -- SVG
+                                else "Pixels per tile:" -- PNG
+                    in toPxPtText . fromMaybe 0 <$> eOutputSel
+
+            reactimate $
+                (\capt -> void $ element strPxPtPerTile # set UI.text capt) <$> ePxPtText
+
+    compile networkDescription >>= actuate
 
 clearLog :: Window -> IO Element
 clearLog w = set value "" $ fromJust <$> getElementById w "log-text"
