@@ -245,11 +245,10 @@ clearLog :: Window -> IO Element
 clearLog w = set value "" $ fromJust <$> getElementById w "log-text"
 
 appendLineToLog :: Window -> String -> IO ()
-appendLineToLog w msg = do
+appendLineToLog w msg = void $ do
     logEl <- fromJust <$> getElementById w "log-text"
     msgs <- get value logEl
     set value (msgs ++ msg ++ "\r\n") $ return logEl
-    return ()
 
 -- TODO: Yuck.
 currentRenderingState :: IORef (Pm.RenderingElemStyle, Pm.RenderingState)
@@ -275,7 +274,7 @@ generateImageHandler button = \_ -> do
         badTRKSize = fileExt == ".TRK" && not sizeIsCorrect
         proceedWithLoading = trkExists && extIsKnown && not badTRKSize
     if proceedWithLoading
-        then do
+        then void $ do
             -- Decide on input / output formats as well as (most) parameters.
             let pngWriter = case fileExt of
                     ".TRK" -> writePngFromTrk
@@ -313,7 +312,6 @@ generateImageHandler button = \_ -> do
             (fromJust <$> getElementById w "track-map") # set UI.src trackImage
             setLinkHref w "save-trk-link" trkUri
             setLinkHref w "save-terrain-link" terrainUri
-            return ()
         else do
             unless (extIsKnown || not trkExists) $
                 appendLineToLog w
@@ -371,7 +369,7 @@ applyHorizonClass w horizon = do
     applyClassToBody w horizonClass
 
 applyClassToBody :: Window -> String -> IO ()
-applyClassToBody w klass = getBody w # set UI.class_ klass >> return ()
+applyClassToBody w klass = void $ getBody w # set UI.class_ klass
 
 loadTrackImage :: Window -> OutputType -> FilePath -> IO String
 loadTrackImage w outType outPath = case outType of
