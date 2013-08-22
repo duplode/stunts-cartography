@@ -218,10 +218,9 @@ setup w = void $ do
 
     -- The main action proper.
 
-    let runRenderMap :: Pm.RenderingElemStyle
-                     -> Pm.RenderingParameters -> Pm.RenderingState
+    let runRenderMap :: Pm.RenderingParameters -> Pm.RenderingState
                      -> IO (Pm.RenderingElemStyle, Pm.RenderingState)
-        runRenderMap oldElemStyle params st = do
+        runRenderMap params st = do
 
             let  newElemStyle = Pm.toElemStyle params
 
@@ -249,12 +248,6 @@ setup w = void $ do
                             ".RPL" -> writePngFromRpl
                             _      -> error "Unrecognized input extension."
 
-                    -- Clear the element cache if the relevant parameters changed.
-                    -- TODO: We might consider doing this in the event network.
-                    let st' = if newElemStyle /= oldElemStyle
-                            then Pm.clearElementCache st
-                            else st
-
                     -- Parse annotations and render the map.
                     let goCarto :: CartoT IO Pm.PostRenderInfo
                         goCarto = do
@@ -262,7 +255,7 @@ setup w = void $ do
                         postRender <- RWS.local (\p -> p{ Pm.annotationSpecs = anns}) $
                             pngWriter trkPath
                         return postRender
-                    (postRender,st'',logW) <- RWS.runRWST goCarto params st'
+                    (postRender,st',logW) <- RWS.runRWST goCarto params st
 
                     -- Update the log.
                     appendLineToLog w $ Pm.logToList logW
@@ -282,7 +275,7 @@ setup w = void $ do
                     -- Maybe we don't even need to return it, as long as it is
                     -- generated and then consumed in the event network at the
                     -- right time.
-                    return (newElemStyle, st'')
+                    return (newElemStyle, st')
                 else do
                     unless (extIsKnown || not trkExists) $
                         appendLineToLog w
@@ -328,9 +321,9 @@ setup w = void $ do
 
             (addRenParams, fireRenParams) <- liftIO $ newAddHandler
             eRenParams <- fromAddHandler (addRenParams :: AddHandler Pm.RenderingParameters)
-            bRenParams <- fromChanges Pm.defaultRenderingParameters addRenParams
+            -- For immediate consumption only.
 
-            -- The event fired here will trigger the main action.
+            -- The event fired here indirectly triggers the main action.
             reactimate $
                 (\ot -> selectedRenderingParameters w ot
                     >>= fireRenParams) <$> bOutType <@ calm eBtnGo
@@ -347,12 +340,26 @@ setup w = void $ do
             -- Worth pointing out that we have no reason to care what
             -- bRenEState is before the first rendering.
 
+            -- An example of how reactimate can make things trickier.  Here, we
+            -- cannot query a bRenParams for the updated value of the
+            -- parameters when starting the chain with the same eRenParams
+            -- which changed the value, as we might end up with the old value.
+            -- Rather, we keep the params from the event around.
+            let bIsEStyleDifferent = pure (\oldES params ->
+                    (params, Pm.toElemStyle params /= oldES)) <*> bRenEStyle
+
+            -- The immediate trigger of the main action.
+            let ePreparedCacheState = ((\s (p, f) -> (p, f s)) <$> bRenState) <@>
+                    ((\(p, willDo) ->
+                        (p, if willDo then Pm.clearElementCache else id))
+                            <$> (bIsEStyleDifferent <@> eRenParams))
+
             -- Firing the main action.
 
             reactimate $
-                (\(es,st,p) -> runRenderMap es p st
+                (\(p, st) -> runRenderMap p st
                     >>= \(es',st') -> fireRenEStyle es' >> fireRenState st')
-                        <$> (pure (,,) <*> bRenEStyle <*> bRenState <@> eRenParams)
+                        <$> ePreparedCacheState
 
     compile networkDescription >>= actuate
 
