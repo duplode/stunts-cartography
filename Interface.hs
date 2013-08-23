@@ -269,7 +269,7 @@ setup w = void $ do
                     setLinkHref w "save-trk-link" trkUri
                     setLinkHref w "save-terrain-link" terrainUri
 
-                    return st
+                    return st'
                 else do
                     unless (extIsKnown || not trkExists) $
                         appendLineToLog w
