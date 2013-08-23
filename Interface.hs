@@ -219,10 +219,8 @@ setup w = void $ do
     -- The main action proper.
 
     let runRenderMap :: Pm.RenderingParameters -> Pm.RenderingState
-                     -> IO (Pm.RenderingElemStyle, Pm.RenderingState)
+                     -> IO Pm.RenderingState
         runRenderMap params st = do
-
-            let  newElemStyle = Pm.toElemStyle params
 
             clearLog w
 
@@ -271,11 +269,7 @@ setup w = void $ do
                     setLinkHref w "save-trk-link" trkUri
                     setLinkHref w "save-terrain-link" terrainUri
 
-                    -- TODO: newElemStyle is known right at the beginning.
-                    -- Maybe we don't even need to return it, as long as it is
-                    -- generated and then consumed in the event network at the
-                    -- right time.
-                    return (newElemStyle, st')
+                    return st
                 else do
                     unless (extIsKnown || not trkExists) $
                         appendLineToLog w
@@ -289,7 +283,7 @@ setup w = void $ do
                     runFunction w $ setTrackMapVisibility False
                     runFunction w $ unsetSaveLinksHref
 
-                    return (newElemStyle, st)
+                    return st
 
     -- The event network.
 
@@ -358,7 +352,7 @@ setup w = void $ do
 
             reactimate $
                 (\(p, st) -> runRenderMap p st
-                    >>= \(es',st') -> fireRenEStyle es' >> fireRenState st')
+                    >>= \st'-> fireRenEStyle (Pm.toElemStyle p) >> fireRenState st')
                         <$> ePreparedCacheState
 
     compile networkDescription >>= actuate
