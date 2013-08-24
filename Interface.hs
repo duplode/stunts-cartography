@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Main
     ( main
     ) where
@@ -15,7 +15,7 @@ import System.FilePath ((</>), takeExtension, addExtension)
 import Data.Char (toUpper)
 
 import qualified Graphics.UI.Threepenny as UI
-import Graphics.UI.Threepenny.Core hiding (Event)
+import Graphics.UI.Threepenny.Core hiding (Event, newEvent)
 import Reactive.Banana
 import Reactive.Banana.Threepenny
 import Diagrams.Backend.Cairo (OutputType(..))
@@ -313,8 +313,7 @@ setup w = void $ do
 
             -- Rendering parameters.
 
-            (addRenParams, fireRenParams) <- liftIO $ newAddHandler
-            eRenParams <- fromAddHandler (addRenParams :: AddHandler Pm.RenderingParameters)
+            (eRenParams, fireRenParams) <- newEvent
             -- For immediate consumption only.
 
             -- The event fired here indirectly triggers the main action.
@@ -324,13 +323,11 @@ setup w = void $ do
 
             -- Output from the main action, input for the next run.
 
-            (addRenState, fireRenState) <- liftIO $ newAddHandler
-            eRenState <- fromAddHandler (addRenState :: AddHandler Pm.RenderingState)
-            bRenState <- fromChanges Pm.initialRenderingState addRenState
+            (eRenState, fireRenState) <- newEvent
+            let bRenState = Pm.initialRenderingState `stepper` eRenState
 
-            (addRenEStyle, fireRenEStyle) <- liftIO $ newAddHandler
-            eRenEStyle <- fromAddHandler (addRenEStyle :: AddHandler Pm.RenderingElemStyle)
-            bRenEStyle <- fromChanges (Pm.toElemStyle Pm.defaultRenderingParameters) addRenEStyle
+            (eRenEStyle, fireRenEStyle) <- newEvent
+            let bRenEStyle = Pm.toElemStyle Pm.defaultRenderingParameters `stepper` eRenEStyle
             -- Worth pointing out that we have no reason to care what
             -- bRenEState is before the first rendering.
 
