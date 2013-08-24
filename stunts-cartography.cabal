@@ -29,7 +29,7 @@ Executable sc-trk-viewer
                     ,Annotate
                     ,AnnotationParser
                     ,MM
-  Hs-Source-Dirs:   .
+  Hs-Source-Dirs:   src
 
   Build-Depends:     base >= 4.6 && < 5
                     ,threepenny-gui >= 0.2.0.1 && < 0.3

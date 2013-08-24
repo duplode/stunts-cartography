@@ -21,6 +21,7 @@ movie/*
 demos/*
 laptrace/z70-demo
 dist/**
+_hsbuild/**
 
 laptrace/*.ods
 laptrace/*.dat
