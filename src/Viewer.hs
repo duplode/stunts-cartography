@@ -81,10 +81,7 @@ setup w = void $ do
                 , UI.option #+ [string "Traditional"]
                 ]
 
-    btnPreset <- do
-        button <- UI.button #. "button" #+ [string "Set"]
-        on UI.click button $ applyPresetHandler button
-        return button
+    btnPreset <- UI.button #. "button" #+ [string "Set"]
 
     itxRoadW <-
         UI.input # set UI.type_ "text" # set UI.name "road-w-input"
@@ -294,9 +291,9 @@ setup w = void $ do
 
             -- Output type and tile resolution caption
 
-            eOutputSel <- eventSelection selOutput
-            let eOutType = intToOutputType . fromMaybe (-1) <$> eOutputSel
-                bOutType = PNG `stepper` eOutType
+            eOutType <- ((intToOutputType . fromMaybe (-1)) <$>)
+                <$> eventSelection selOutput
+            let bOutType = intToOutputType 0 `stepper` eOutType
 
             let ePxPtText =
                     let toPxPtText x =
@@ -308,6 +305,18 @@ setup w = void $ do
             reactimate $
                 (\capt -> void $ element strPxPtPerTile
                     # set UI.text capt) <$> ePxPtText
+
+            -- Preset selection.
+
+            ePreset <- ((intToPresetRenderingParams . fromMaybe (-1)) <$>)
+                <$> eventSelection selPreset
+            let bPreset = intToPresetRenderingParams 0 `stepper` ePreset
+
+            eConfirmPreset <- (bPreset <@)
+                <$> event UI.click btnPreset
+
+            reactimate $ (\preset -> fillDrawingRatiosFields w preset)
+                <$> eConfirmPreset
 
             -- The main action, in several parts.
 
@@ -460,12 +469,6 @@ intToOutputType n = case n of
         1 -> SVG
         _ -> error "Unknown output format."
 
-applyPresetHandler :: Element -> (a -> IO ())
-applyPresetHandler button = \_ -> do
-    w <- fromJust <$> getWindow button
-    preset <- selectedPresetRenderingParams w
-    fillDrawingRatiosFields w preset
-
 fillDrawingRatiosFields :: Window -> Pm.RenderingParameters -> IO ()
 fillDrawingRatiosFields w params = do
     let txtValues = map (printf "%.3f" . ($ params)) txtFuncs
@@ -487,15 +490,13 @@ fillDrawingRatiosFields w params = do
         ]
 
 -- The order in the case statement matches that in the style-preset-select.
-selectedPresetRenderingParams :: Window -> IO Pm.RenderingParameters
-selectedPresetRenderingParams = selectedFromSelect fSel "style-preset-select"
-    where
-    fSel = \n -> case n of
-        0 -> Pm.defaultRenderingParameters
-        1 -> Pm.widerRoadsRenderingParameters
-        2 -> Pm.slopingRampsRenderingParameters
-        3 -> Pm.classicRenderingParameters
-        _ -> error "Unknown preset."
+intToPresetRenderingParams :: Int -> Pm.RenderingParameters
+intToPresetRenderingParams n = case n of
+    0 -> Pm.defaultRenderingParameters
+    1 -> Pm.widerRoadsRenderingParameters
+    2 -> Pm.slopingRampsRenderingParameters
+    3 -> Pm.classicRenderingParameters
+    _ -> error "Unknown preset."
 
 selectedNumFromTextInput :: (Num a, Read a, Ord a)
                          => String -> a -> a -> a
