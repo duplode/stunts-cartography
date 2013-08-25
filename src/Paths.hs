@@ -1,9 +1,15 @@
 {-# LANGUAGE CPP #-}
 module Paths where
 
-#ifdef CABAL
+#ifdef RESOURCES_WITH_EXECUTABLES
+import System.Environment (getExecutablePath)
+import System.FilePath (takeDirectory)
+getDataDir = fmap takeDirectory getExecutablePath
+#else
+# ifdef CABAL
 import qualified Paths_stunts_cartography
 getDataDir = Paths_stunts_cartography.getDataDir
-#else
+# else
 getDataDir = return "." :: IO FilePath
+# endif
 #endif

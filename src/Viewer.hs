@@ -33,7 +33,6 @@ import Paths
 main :: IO ()
 main = do
     staticDir <- (</> "wwwroot") <$> getDataDir
-    putStrLn staticDir
     startGUI Config
         { tpPort = 10000
         , tpCustomHTML = Nothing

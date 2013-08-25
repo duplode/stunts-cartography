@@ -15,6 +15,12 @@ Data-Files:          wwwroot/css/viewer.css
                      wwwroot/css/help.css
                      wwwroot/annotations-help.html
 
+flag resourcesWithExecutables
+    description: Retrieve resources (i.e. files listed under Data-Files in the
+                 cabal file) from corresponding directories at the location of
+                 the stunts-cartography executables.
+    default:     False
+
 Source-Repository head
   type: hg
   location: https://duplode@bitbucket.org/duplode/stunts-cartography
@@ -38,7 +44,11 @@ Executable sc-trk-viewer
                     ,Pics.MM
                     ,Paths
 
-  CPP-Options:      -DCABAL
+
+  if flag (resourcesWithExecutables)
+    CPP-Options:      -DCABAL -DRESOURCES_WITH_EXECUTABLES
+  else
+    CPP-Options:      -DCABAL
   Hs-Source-Dirs:   src
 
   Build-Depends:     base >= 4.6 && < 5
