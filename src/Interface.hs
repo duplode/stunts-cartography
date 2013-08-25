@@ -28,13 +28,16 @@ import Utils (retrieveFileSize)
 import Annotate (Annotation)
 import AnnotationParser (parseAnnotations)
 import CartoM
+import Paths
 
 main :: IO ()
 main = do
+    staticDir <- (</> "wwwroot") <$> getDataDir
+    putStrLn staticDir
     startGUI Config
         { tpPort = 10000
         , tpCustomHTML = Nothing
-        , tpStatic = "."
+        , tpStatic = staticDir
         } setup
 
 setup :: Window -> IO ()
@@ -197,7 +200,7 @@ setup w = void $ do
             , UI.p #+
                 [ string "Annotations - "
                 , UI.a # set UI.text "help"
-                    # set UI.href "/static/annotations-help.html"
+                    # set UI.href ("static/annotations-help.html")
                     # set UI.target "_blank"
                 , UI.br
                 , element txaAnns

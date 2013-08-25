@@ -9,9 +9,10 @@ Build-Type:          Simple
 Cabal-Version:       >=1.8
 
 Extra-Source-Files:  README.md
-Data-Files:          css/viewer.css
-                     css/help.css
-                     annotations-help.html
+Data-Dir:            .
+Data-Files:          wwwroot/css/viewer.css
+                     wwwroot/css/help.css
+                     wwwroot/annotations-help.html
 
 Executable sc-trk-viewer
   Main-is:           Interface.hs
@@ -29,6 +30,9 @@ Executable sc-trk-viewer
                     ,Annotate
                     ,AnnotationParser
                     ,MM
+                    ,Paths
+
+  CPP-Options:      -DCABAL
   Hs-Source-Dirs:   src
 
   Build-Depends:     base >= 4.6 && < 5
