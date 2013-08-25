@@ -1,18 +1,24 @@
 Name:                stunts-cartography
 Version:             0.2.0.1
-Description:         Power tools for creating Stunts track maps.
+Synopsis:            Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
+Description:         Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
+Category:            Game, Graphics
 License:             BSD3
 License-file:        LICENSE
 Author:              Daniel Mlot
 Maintainer:          Daniel Mlot
 Build-Type:          Simple
 Cabal-Version:       >=1.8
-
 Extra-Source-Files:  README.md
 Data-Dir:            .
 Data-Files:          wwwroot/css/viewer.css
                      wwwroot/css/help.css
                      wwwroot/annotations-help.html
+
+Source-Repository head
+  type: hg
+  location: https://duplode@bitbucket.org/duplode/stunts-cartography
+
 
 Executable sc-trk-viewer
   Main-is:           Viewer.hs
@@ -50,6 +56,4 @@ Executable sc-trk-viewer
                     ,mtl
                     ,directory
                     ,filepath
-
-  Ghc-Options:       -O
 

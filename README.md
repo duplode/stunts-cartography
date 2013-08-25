@@ -49,8 +49,8 @@ functional.
   extra diagrams such as grid lines.
 * Output.hs: carries out the IO rendering for the track viewer, bridging
   backend and frontend.
-* Interface.hs: the Threepenny frontend. Communicates with the Diagrams code
-  through the Output module.
+* Viewer.hs: the Threepenny frontend of the track viewer. Communicates with the
+  Diagrams code through the Output module.
 * Animate.hs: a demonstration of how the Diagrams backend can be used to
   generate an animation of a car following a path on the track. Usage
   suggestions are given by the generate-movie.sh script and the video-notes.txt
