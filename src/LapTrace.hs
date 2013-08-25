@@ -9,8 +9,8 @@ module LapTrace
     ) where
 
 import Diagrams.Prelude
-import MM (acura)
-import Palette (signCl)
+import Pics.MM (acura)
+import Pics.Palette (signCl)
 
 scaleTrace :: [(Integer, Integer)] -> [(Double, Double)]
 scaleTrace = map sclBoth

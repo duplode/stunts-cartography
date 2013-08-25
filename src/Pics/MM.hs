@@ -1,10 +1,10 @@
-module MM
+module Pics.MM
     ( acura
     , acura'
     ) where
 
 import Diagrams.Prelude
-import Palette (sunroofCl, windshieldCl)
+import Pics.Palette (sunroofCl, windshieldCl)
 
 acura cl =
     (

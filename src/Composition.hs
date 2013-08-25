@@ -12,11 +12,11 @@ import qualified Data.Map as M (lookup, insert)
 import Diagrams.Prelude
 import Track
 import Pics
-import Utils
-import Palette (plainCl)
+import Util.Misc
+import Pics.Palette (plainCl)
 import qualified Parameters as Pm
-import CartoM
-import Types (BEDia)
+import Types.CartoM
+import Types.Diagrams (BEDia)
 
 renderTerrain :: [Tile] -> CartoM (Diagram BEDia R2)
 renderTerrain tiles =

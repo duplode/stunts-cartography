@@ -9,9 +9,9 @@ import qualified Data.Foldable as Fold
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo (OutputType(..))
 import Track (Horizon(..), Element, Terrain)
-import qualified OurByteString as LB
-import Annotate (Annotation)
-import Types (BEDia)
+import qualified Util.ByteString as LB
+import Annotation (Annotation)
+import Types.Diagrams (BEDia)
 
 -- Data types which shift information across the various layers of the
 -- rendering programs. It is probably a good idea to import it qualified, for

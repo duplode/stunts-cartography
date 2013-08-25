@@ -1,4 +1,4 @@
-module OurByteString
+module Util.ByteString
     ( module Data.ByteString.Lazy
     ) where
 

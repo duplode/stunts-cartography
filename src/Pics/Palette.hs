@@ -1,4 +1,4 @@
-module Palette where
+module Pics.Palette where
 
 import Diagrams.Prelude
 

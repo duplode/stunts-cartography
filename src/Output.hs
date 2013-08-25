@@ -12,19 +12,19 @@ import System.Directory (getTemporaryDirectory)
 import System.FilePath (takeBaseName, (</>))
 import System.CPUTime
 import Text.Printf (printf)
-import qualified OurByteString as LB
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo
 import Diagrams.Backend.Cairo.Internal
 import Diagrams.Core
 import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
-import Utils
+import qualified Util.ByteString as LB
+import Util.Misc
 import Replay
 import Composition
 import qualified Parameters as Pm
-import Annotate (renderAnnotation)
-import CartoM
-import Types
+import Annotation (renderAnnotation)
+import Types.CartoM
+import Types.Diagrams
 
 -- TODO: We probably should convert these write functions into CartoT IO.
 writePngFromTrk :: FilePath -> CartoT IO Pm.PostRenderInfo

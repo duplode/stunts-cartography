@@ -2,12 +2,12 @@
 module Main where
 
 import Data.Array
-import Control.Monad.Trans.Reader
-import qualified OurByteString as LB
+import Control.Monad.RWS hiding ((<>))
+import qualified Util.ByteString as LB
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo.CmdLine
 import Track (veryRawReadTrack, rawTrackToTileArray)
-import Utils
+import Util.Misc
 import LapTrace
 import Composition
 import qualified Parameters as Pm
@@ -21,7 +21,8 @@ main = do
         baseMap =
             gridLines
             <>
-            runReader (renderMap tiles) (Pm.defaultRenderingParameters)
+            (fst3 $ runRWS (renderMap tiles)
+                (Pm.defaultRenderingParameters) (Pm.initialRenderingState))
     trDat <- readFile "data/070zgut.dat"
     let lapTrace = readRawTrace trDat
         lapPath = pathFromTrace lapTrace

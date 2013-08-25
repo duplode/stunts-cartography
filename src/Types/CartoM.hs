@@ -1,4 +1,4 @@
-module CartoM where
+module Types.CartoM where
 
 import Control.Monad.RWS
 import Control.Monad.Identity

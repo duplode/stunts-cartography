@@ -1,4 +1,4 @@
-module Utils
+module Util.Misc
     ( splitAtEvery30th
     , bsSplitAtEvery30th
     , retrieveFileSize
@@ -8,7 +8,7 @@ module Utils
     ) where
 
 import Data.List (groupBy, splitAt, unfoldr)
-import qualified OurByteString as LB
+import qualified Util.ByteString as LB
 import Control.Exception (handle)
 import System.IO (IOMode(..), hClose, hFileSize, openFile)
 

@@ -32,10 +32,10 @@ module Track
 
 import Data.Maybe (fromJust)
 import Control.Applicative ((<$>))
-import qualified OurByteString as LB
+import qualified Util.ByteString as LB
 import Data.Word (Word8)
 import Data.Array
-import Utils
+import Util.Misc
 
 -- |The .TRK byte string with its components separated and the padding byte
 -- excised.

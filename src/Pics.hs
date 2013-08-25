@@ -16,11 +16,11 @@ import Track (Orientation(..), Chirality(..), rotateOrientation
              , getTileSurface, getTerrainOrientation
              , getElementType, getTerrainType
              , isElemAttrOf )
-import Palette
+import Pics.Palette
 import qualified Parameters as Pm
-import MM (acura)
-import CartoM
-import Types (BEDia)
+import Pics.MM (acura)
+import Types.CartoM
+import Types.Diagrams (BEDia)
 
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
 rotateByOrient = rotateBy . Turn . (/4) . fromIntegral . fromEnum

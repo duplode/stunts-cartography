@@ -21,13 +21,13 @@ import Reactive.Banana.Threepenny
 import Diagrams.Backend.Cairo (OutputType(..))
 
 import Output
-import qualified OurByteString as LB
+import qualified Util.ByteString as LB
 import Track (Horizon(..), terrainTrkSimple)
 import qualified Parameters as Pm
-import Utils (retrieveFileSize)
-import Annotate (Annotation)
-import AnnotationParser (parseAnnotations)
-import CartoM
+import Util.Misc (retrieveFileSize)
+import Annotation (Annotation)
+import Annotation.Parser (parseAnnotations)
+import Types.CartoM
 import Paths
 
 main :: IO ()

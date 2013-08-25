@@ -15,21 +15,21 @@ Data-Files:          wwwroot/css/viewer.css
                      wwwroot/annotations-help.html
 
 Executable sc-trk-viewer
-  Main-is:           Interface.hs
+  Main-is:           Viewer.hs
   Other-Modules:     Composition
-                    ,OurByteString
+                    ,Util.ByteString
                     ,Output
-                    ,Palette
+                    ,Pics.Palette
                     ,Parameters
                     ,Pics
                     ,Track
-                    ,Utils
+                    ,Util.Misc
                     ,Replay
-                    ,Types
-                    ,CartoM
-                    ,Annotate
-                    ,AnnotationParser
-                    ,MM
+                    ,Types.Diagrams
+                    ,Types.CartoM
+                    ,Annotation
+                    ,Annotation.Parser
+                    ,Pics.MM
                     ,Paths
 
   CPP-Options:      -DCABAL

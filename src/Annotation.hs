@@ -1,12 +1,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE Rank2Types #-}
-module Annotate where
+module Annotation where
 
 -- It seems sensible to import this qualified if you need the raw constructors.
 
 import Diagrams.Prelude
-import Types (BEDia)
-import MM
+import Types.Diagrams (BEDia)
+import Pics.MM
 
 data CardinalDirection = E
                        | N

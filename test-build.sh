@@ -1,2 +1,2 @@
 #!/bin/sh
-ghc -i./src --make -hidir _hsbuild -outputdir _hsbuild src/Interface.hs -o ./Interface
+ghc -i./src --make -hidir _hsbuild -outputdir _hsbuild src/Viewer.hs -o ./Viewer

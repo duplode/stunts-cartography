@@ -1,4 +1,4 @@
-module AnnotationParser
+module Annotation.Parser
     ( parseAnnotations
     , annotations
     , pAnnotation
@@ -12,10 +12,10 @@ import Text.Parsec.Perm
 import Control.Applicative ((<$>), (<*))
 import Data.Maybe (fromMaybe)
 
-import Annotate
+import Annotation
 import Data.Colour
 import Data.Colour.Names (readColourName, yellow)
-import CartoM
+import Types.CartoM
 import Control.Monad.RWS (tell)
 import qualified Parameters as Pm
 

@@ -3,11 +3,11 @@ module Main where
 
 import Data.Array
 import Control.Monad.Trans.Reader
-import qualified OurByteString as LB
+import qualified Util.ByteString as LB
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo.CmdLine
 import Track (veryRawReadTrack, rawTrackToTileArray)
-import Utils
+import Util.Misc
 import LapTrace
 import Composition
 import qualified Parameters as Pm

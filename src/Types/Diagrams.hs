@@ -1,7 +1,7 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Types where
+module Types.Diagrams where
 
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo (Cairo)
