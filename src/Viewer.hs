@@ -15,7 +15,8 @@ import System.FilePath ((</>), takeExtension, addExtension)
 import Data.Char (toUpper)
 
 import qualified Graphics.UI.Threepenny as UI
-import Graphics.UI.Threepenny.Core hiding (Event, newEvent)
+import Graphics.UI.Threepenny.Core hiding (Event, newEvent, filterJust)
+import qualified Graphics.UI.Threepenny.Core as Reg (Event, newEvent)
 import Reactive.Banana
 import Reactive.Banana.Threepenny
 import Diagrams.Backend.Cairo (OutputType(..))
@@ -29,6 +30,7 @@ import Annotation (Annotation)
 import Annotation.Parser (parseAnnotations)
 import Types.CartoM
 import Paths
+import qualified Widgets.BoundedInput as BI
 
 main :: IO ()
 main = do
@@ -140,6 +142,9 @@ setup w = void $ do
         UI.textarea # set UI.id_ "log-text"
             # set UI.cols "72" # set UI.rows "6"
 
+    biTest <- BI.new (0, 30) (15 :: Int)
+    elBiTest <- BI.toElement biTest
+
     -- Assembling the interface HTML.
 
     getBody w # set UI.id_ "the-body" # set UI.class_ "blank-horizon" #+
@@ -201,6 +206,7 @@ setup w = void $ do
                 , UI.br
                 , element txaAnns
                 ]
+            , UI.p #+ [element elBiTest]
             ]
         , UI.div # set UI.id_ "main-wrap" #+
             [ element imgMap
@@ -362,6 +368,16 @@ setup w = void $ do
                 (\(p, st) -> runRenderMap p st
                     >>= \st'-> fireRenEStyle (Pm.toElemStyle p) >> fireRenState st')
                         <$> ePreparedCacheState
+
+            -- Debugging.
+
+            eGetDebug <- fromAddHandler (register $ BI.getValueEvent biTest)
+            eRequestDebug <- fromAddHandler (register $ UI.click elBiTest)
+            reactimate $ BI.requestValue biTest <$ eRequestDebug
+            reactimate $
+                (\x -> appendLineToLog w (show x))
+                    <$> eGetDebug
+
 
     compile networkDescription >>= actuate
 
