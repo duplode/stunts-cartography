@@ -36,19 +36,28 @@ data BoundedInput a = BoundedInput
     , _maximumValue :: a
 
     , _setValueEvent :: Reg.Event a
-    , setValue :: a -> IO ()
+    , _setValue :: a -> IO ()
 
-    , valueChangedEvent :: Reg.Event a
+    , _valueChangedEvent :: Reg.Event a
     , _valueChanged :: a -> IO ()
 
     , _requestValueEvent :: Reg.Event ()
-    , requestValue' :: () -> IO () -- exported as requestValue
-    , receiveValueEvent :: Reg.Event a
+    , _requestValue :: () -> IO ()
+    , _receiveValueEvent :: Reg.Event a
     , _receiveValue :: a -> IO ()
     }
 
+setValue :: BoundedInput a -> a -> IO ()
+setValue = _setValue
+
+valueChangedEvent :: BoundedInput a -> Reg.Event a
+valueChangedEvent = _valueChangedEvent
+
 requestValue :: BoundedInput a -> IO ()
-requestValue bi = (requestValue' bi) ()
+requestValue bi = (_requestValue bi) ()
+
+receiveValueEvent :: BoundedInput a -> Reg.Event a
+receiveValueEvent = _receiveValueEvent
 
 new :: (Ord a, Show a, Read a)
     => (a, a) -> a -> IO (BoundedInput a)
@@ -60,64 +69,60 @@ new (_minimumValue, _maximumValue) _defaultValue = do
         (" (" ++ show _minimumValue ++ " - " ++ show _maximumValue ++ ")")
         #. "bounded-input-caption"
 
-    (_setValueEvent, setValue) <- Reg.newEvent
+    (_setValueEvent, _setValue) <- Reg.newEvent
 
-    (valueChangedEvent, _valueChanged) <- Reg.newEvent
+    (_valueChangedEvent, _valueChanged) <- Reg.newEvent
 
-    (_requestValueEvent, requestValue') <- Reg.newEvent
-    (receiveValueEvent, _receiveValue) <- Reg.newEvent
+    (_requestValueEvent, _requestValue) <- Reg.newEvent
+    (_receiveValueEvent, _receiveValue) <- Reg.newEvent
 
     let networkDescription :: forall t. Frameworks t => Moment t ()
         networkDescription = do
 
-        eUserInput <- ((readMaybe <$>))
-            <$> eventValue _itxValue
+            eUserInput <- ((readMaybe <$>))
+                <$> eventValue _itxValue
 
-        let eUserValue = filterJust eUserInput
-            eInvalidInput = filterE isNothing $ eUserInput
+            let eUserValue = filterJust eUserInput
+                eInvalidInput = filterE isNothing $ eUserInput
 
-        eSetValue <- pure union <*> pure eUserValue
-            <*> fromAddHandler (register _setValueEvent)
+            eSetValue <- pure union <*> pure eUserValue
+                <*> fromAddHandler (register _setValueEvent)
 
-        let (eBoundValue, eInBoundsValue) = split $ enforceBounds <$> eSetValue
+            let (eBoundValue, eInBoundsValue) = split $ enforceBounds <$> eSetValue
 
-        eBlur <- fromAddHandler (register $ UI.blur _itxValue)
-        eRequestValue <- fromAddHandler (register _requestValueEvent)
+            eBlur <- fromAddHandler (register $ UI.blur _itxValue)
+            eRequestValue <- fromAddHandler (register _requestValueEvent)
 
-        let eBoundedValue = max _minimumValue . min _maximumValue
-                <$> eSetValue
+            let eUndoValue = bValue <@ eInvalidInput
 
-            eUndoValue = bValue <@ eInvalidInput
+                bCorrectValue = Nothing `stepper` unions
+                    [ Just <$> eUndoValue
+                    , Just <$> eBoundValue
+                    , Nothing <$ eInBoundsValue
+                    ]
+                eCorrectOnBlur = filterJust $ bCorrectValue <@ eBlur
+                eValue = eInBoundsValue `union` eCorrectOnBlur
 
-            bCorrectValue = Nothing `stepper` unions
-                [ Just <$> eUndoValue
-                , Just <$> eBoundValue
-                , Nothing <$ eInBoundsValue
-                ]
-            eCorrectOnBlur = filterJust $ bCorrectValue <@ eBlur
-            eValue = eInBoundsValue `union` eCorrectOnBlur
+                -- These complications are needed because we cannot rely on the
+                -- value of bValue as is if eRequestValue may trigger changes to
+                -- it in case there is a correction.
+                eCorrectOnRequest = filterJust $ bCorrectValue <@ eRequestValue
+                eValidOnRequest = bValue <@
+                    (filterE isNothing $ bCorrectValue <@ eRequestValue)
+                eGetValue = eCorrectOnRequest `union` eValidOnRequest
 
-            -- These complications are needed because we cannot rely on the
-            -- value of bValue as is if eRequestValue may trigger changes to
-            -- it in case there is a correction.
-            eCorrectOnRequest = filterJust $ bCorrectValue <@ eRequestValue
-            eValidOnRequest = bValue <@
-                (filterE isNothing $ bCorrectValue <@ eRequestValue)
-            eGetValue = eCorrectOnRequest `union` eValidOnRequest
+                bValue = _defaultValue `stepper` (eValue `union` eGetValue)
 
-            bValue = _defaultValue `stepper` (eValue `union` eGetValue)
+            return _itxValue # sink UI.value (show <$> bValue)
 
-        return _itxValue # sink UI.value (show <$> bValue)
+            -- TODO: We might not want to trigger _valueChanged via eUndoValue .
+            reactimate $ _valueChanged <$> eValue
 
-        -- TODO: We might not want to trigger _valueChanged via eUndoValue .
-        reactimate $ _valueChanged <$> eValue
+            reactimate $ _receiveValue <$> eGetValue
 
-        reactimate $ _receiveValue <$> eGetValue
+    compile networkDescription >>= actuate
 
-    network <- compile networkDescription
-    actuate network
-
-    setValue _defaultValue
+    _setValue _defaultValue
 
     return BoundedInput {..}
 
