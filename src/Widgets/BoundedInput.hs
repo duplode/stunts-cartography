@@ -14,18 +14,21 @@ module Widgets.BoundedInput
     , setValue
     , valueChangedEvent
     , requestValue
-    , receiveValueEvent
+    , getValueEvent
     ) where
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core hiding (Event, newEvent, filterJust)
-import qualified Graphics.UI.Threepenny.Core as Reg (Event, newEvent)
+import qualified Graphics.UI.Threepenny.Core as Reg
+    (Event, newEvent, newEventsTagged)
 
 import Reactive.Banana
 import Reactive.Banana.Threepenny
 
 import Text.Read (readMaybe)
 import Data.Maybe (isNothing)
+
+type TagGet = String
 
 data BoundedInput a = BoundedInput
     { _itxValue :: Element
@@ -41,10 +44,10 @@ data BoundedInput a = BoundedInput
     , _valueChangedEvent :: Reg.Event a
     , _valueChanged :: a -> IO ()
 
-    , _requestValueEvent :: Reg.Event ()
-    , _requestValue :: () -> IO ()
-    , _receiveValueEvent :: Reg.Event a
-    , _receiveValue :: a -> IO ()
+    , _requestValueEvent :: Reg.Event TagGet
+    , _requestValue :: TagGet -> IO ()
+    , _getValueEvent :: TagGet -> Reg.Event a
+    , _getValue :: (TagGet, a) -> IO ()
     }
 
 setValue :: BoundedInput a -> a -> IO ()
@@ -53,11 +56,11 @@ setValue = _setValue
 valueChangedEvent :: BoundedInput a -> Reg.Event a
 valueChangedEvent = _valueChangedEvent
 
-requestValue :: BoundedInput a -> IO ()
-requestValue bi = (_requestValue bi) ()
+requestValue :: BoundedInput a -> TagGet -> IO ()
+requestValue = _requestValue
 
-receiveValueEvent :: BoundedInput a -> Reg.Event a
-receiveValueEvent = _receiveValueEvent
+getValueEvent :: BoundedInput a -> TagGet -> Reg.Event a
+getValueEvent = _getValueEvent
 
 new :: (Ord a, Show a, Read a)
     => (a, a) -> a -> IO (BoundedInput a)
@@ -74,7 +77,7 @@ new (_minimumValue, _maximumValue) _defaultValue = do
     (_valueChangedEvent, _valueChanged) <- Reg.newEvent
 
     (_requestValueEvent, _requestValue) <- Reg.newEvent
-    (_receiveValueEvent, _receiveValue) <- Reg.newEvent
+    (_getValueEvent, _getValue) <- Reg.newEventsTagged
 
     let networkDescription :: forall t. Frameworks t => Moment t ()
         networkDescription = do
@@ -95,30 +98,32 @@ new (_minimumValue, _maximumValue) _defaultValue = do
 
             let eUndoValue = bValue <@ eInvalidInput
 
-                bCorrectValue = Nothing `stepper` unions
-                    [ Just <$> eUndoValue
-                    , Just <$> eBoundValue
-                    , Nothing <$ eInBoundsValue
+                bCorrectValue = Left () `stepper` unions
+                    [ Right <$> eUndoValue
+                    , Right <$> eBoundValue
+                    , Left () <$ eInBoundsValue
                     ]
-                eCorrectOnBlur = filterJust $ bCorrectValue <@ eBlur
-                eValue = eInBoundsValue `union` eCorrectOnBlur
+                (_, eCorrectOnBlur) = split $ bCorrectValue <@ eBlur
 
                 -- These complications are needed because we cannot rely on the
-                -- value of bValue as is if eRequestValue may trigger changes to
-                -- it in case there is a correction.
-                eCorrectOnRequest = filterJust $ bCorrectValue <@ eRequestValue
-                eValidOnRequest = bValue <@
-                    (filterE isNothing $ bCorrectValue <@ eRequestValue)
+                -- value of bValue as-is - eRequestValue may trigger changes to
+                -- it in case there is a correction to be made.
+                (eDontCorrectOnRequest, eCorrectOnRequest) = split $
+                    (addTagToCorrection <$> bCorrectValue) <@> eRequestValue
+                eValidOnRequest = ((<$) <$> bValue) <@> eDontCorrectOnRequest
                 eGetValue = eCorrectOnRequest `union` eValidOnRequest
 
-                bValue = _defaultValue `stepper` (eValue `union` eGetValue)
+                eValue = eInBoundsValue `union` eCorrectOnBlur
+                    `union` (snd <$> eCorrectOnRequest)
+
+                bValue = _defaultValue `stepper` eValue
 
             return _itxValue # sink UI.value (show <$> bValue)
 
             -- TODO: We might not want to trigger _valueChanged via eUndoValue .
             reactimate $ _valueChanged <$> eValue
 
-            reactimate $ _receiveValue <$> eGetValue
+            reactimate $ _getValue <$> eGetValue
 
     compile networkDescription >>= actuate
 
@@ -132,14 +137,9 @@ new (_minimumValue, _maximumValue) _defaultValue = do
         | x > _maximumValue = Left _maximumValue
         | otherwise         = Right x
 
-{-
--- We would like to write the element modifiers in terms of something like:
-modifyElement :: (BoundedInput a -> Element)
-              -> (IO (Element a) -> IO (Element a))
-              -> IO (BoundedInput a) -> IO (BoundedInput a)
--- But record updates are not first class, and so that would require something
--- like lens.
--}
+    addTagToCorrection corr tag = case corr of
+        Left () -> Left (tag, ())
+        Right x -> Right (tag, x)
 
 formatBoundsCaption :: (Show a, Read a) => ((a, a) -> String)
                     -> IO (BoundedInput a) -> IO (BoundedInput a)

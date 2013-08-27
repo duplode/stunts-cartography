@@ -371,9 +371,9 @@ setup w = void $ do
 
             -- Debugging.
 
-            eGetDebug <- fromAddHandler (register $ BI.receiveValueEvent biTest)
+            eGetDebug <- fromAddHandler (register $ BI.getValueEvent biTest "debug")
             eRequestDebug <- fromAddHandler (register $ UI.click elBiTest)
-            reactimate $ BI.requestValue biTest <$ eRequestDebug
+            reactimate $ BI.requestValue biTest "debug" <$ eRequestDebug
             reactimate $
                 (\x -> appendLineToLog w (show x))
                     <$> eGetDebug
