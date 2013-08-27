@@ -26,7 +26,6 @@ import Reactive.Banana
 import Reactive.Banana.Threepenny
 
 import Text.Read (readMaybe)
-import Data.Maybe (isNothing)
 import Control.Monad (void)
 
 type TagGet = String
@@ -83,21 +82,23 @@ new (_minimumValue, _maximumValue) _defaultValue = do
     let networkDescription :: forall t. Frameworks t => Moment t ()
         networkDescription = do
 
-            eUserInput <- ((readMaybe <$>))
-                <$> eventValue _itxValue
+            eUserInput <- eventValue _itxValue
 
-            let eUserValue = filterJust eUserInput
-                eInvalidInput = filterE isNothing $ eUserInput
+            let (eInvalidInput, eUserValue) = split $
+                    maybe (Left ()) Right . readMaybe <$> eUserInput
 
-            eSetValue <- pure union <*> pure eUserValue
-                <*> fromAddHandler (register _setValueEvent)
-
-            let (eBoundValue, eInBoundsValue) = split $ enforceBounds <$> eSetValue
+            eSetValue <- fromAddHandler (register _setValueEvent)
 
             eBlur <- fromAddHandler (register $ UI.blur _itxValue)
             eRequestValue <- fromAddHandler (register _requestValueEvent)
 
-            let bCorrectValue = Left () `stepper` union
+            let eUnboundedValue = eUserValue `union` eSetValue
+
+                (eBoundValue, eInBoundsValue) = split $
+                    enforceBounds <$> eUnboundedValue
+
+                -- Left, in this passage, means "no correction is necessary".
+                bCorrectValue = Left () `stepper` union
                     (Right <$> eBoundValue) (Left () <$ eInBoundsValue)
                 (_, eCorrectOnBlur) = split $ bCorrectValue <@ eBlur
 
@@ -128,7 +129,6 @@ new (_minimumValue, _maximumValue) _defaultValue = do
             reactimate $
                 (void . (element _itxValue #) . set UI.value . show)
                     <$> union eUndoOnBlur eUndoOnRequest
-
 
     compile networkDescription >>= actuate
 
