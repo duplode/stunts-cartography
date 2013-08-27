@@ -1,4 +1,16 @@
-module Parameters where
+module Parameters
+    ( RenderingParameters(..)
+    , defaultRenderingParameters, widerRoadsRenderingParameters
+    , slopingRampsRenderingParameters, classicRenderingParameters
+    , minTileBounds, maxTileBounds, deltaTileBounds
+    , RenderingElemStyle(..), toElemStyle
+    , PostRenderInfo(..)
+    , RenderingState(..), initialRenderingState
+    , clearElementCache, clearTerrainCache
+    , insertIntoElementCache, insertIntoTerrainCache
+    , RenderingLog(..), logToList, logFromList
+    , module Data.Default
+    ) where
 
 import Data.Function (on)
 import Data.Map (Map)
@@ -6,6 +18,7 @@ import qualified Data.Map as M
 import Data.Sequence (Seq, (><))
 import qualified Data.Sequence as Seq
 import qualified Data.Foldable as Fold
+import Data.Default
 import Diagrams.Prelude
 import Diagrams.Backend.Cairo (OutputType(..))
 import Track (Horizon(..), Element, Terrain)
@@ -50,16 +63,19 @@ defaultRenderingParameters = RenderingParameters
     , annotationSpecs = []
     }
 
-widerRoadsRenderingParameters = defaultRenderingParameters
+instance Default RenderingParameters where
+    def = defaultRenderingParameters
+
+widerRoadsRenderingParameters = def
     { roadWidth = 1 / 4
     }
 
-slopingRampsRenderingParameters = defaultRenderingParameters
+slopingRampsRenderingParameters = def
     { bridgeRelativeWidth = 3 / 2
     , bridgeHeight = 1 / 4
     }
 
-classicRenderingParameters = defaultRenderingParameters
+classicRenderingParameters = def
     { roadWidth = 1 / 3
     , bridgeHeight = 4 / 15
     , bridgeRelativeWidth = 7 / 5
@@ -112,6 +128,9 @@ initialRenderingState = RenderingState
     { elementCache = M.empty
     , terrainCache = M.empty
     }
+
+instance Default RenderingState where
+    def = initialRenderingState
 
 clearElementCache :: RenderingState -> RenderingState
 clearElementCache st = st{ elementCache = M.empty }

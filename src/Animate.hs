@@ -21,8 +21,7 @@ main = do
         baseMap =
             gridLines
             <>
-            (fst3 $ runRWS (renderMap tiles)
-                (Pm.defaultRenderingParameters) (Pm.initialRenderingState))
+            (fst3 $ runRWS (renderMap tiles) Pm.def Pm.def)
     trDat <- readFile "data/070zgut.dat"
     let lapTrace = readRawTrace trDat
         lapPath = pathFromTrace lapTrace

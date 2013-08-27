@@ -219,7 +219,7 @@ setup w = void $ do
 
     -- Initializing fields.
 
-    fillDrawingRatiosFields w Pm.defaultRenderingParameters
+    fillDrawingRatiosFields w Pm.def
 
     -- The main action proper.
 
@@ -341,10 +341,10 @@ setup w = void $ do
             -- Output from the main action, input for the next run.
 
             (eRenState, fireRenState) <- newEvent
-            let bRenState = Pm.initialRenderingState `stepper` eRenState
+            let bRenState = Pm.def `stepper` eRenState
 
             (eRenEStyle, fireRenEStyle) <- newEvent
-            let bRenEStyle = Pm.toElemStyle Pm.defaultRenderingParameters `stepper` eRenEStyle
+            let bRenEStyle = Pm.toElemStyle Pm.def `stepper` eRenEStyle
             -- Worth pointing out that we have no reason to care what
             -- bRenEState is before the first rendering.
 
@@ -455,7 +455,7 @@ selectedRenderingParameters w outType = do
     drawIxs <- selectedDrawGridIndices w
     xBounds <- selectedXTileBounds w
     yBounds <- selectedYTileBounds w
-    return Pm.defaultRenderingParameters
+    return Pm.def
             { Pm.roadWidth = roadW
             , Pm.bridgeHeight = bridgeH
             , Pm.bridgeRelativeWidth = bridgeRelW
