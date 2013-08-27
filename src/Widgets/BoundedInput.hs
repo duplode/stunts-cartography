@@ -92,10 +92,14 @@ new (_minimumValue, _maximumValue) _defaultValue = do
             eBlur <- fromAddHandler (register $ UI.blur _itxValue)
             eRequestValue <- fromAddHandler (register _requestValueEvent)
 
-            let eUnboundedValue = eUserValue `union` eSetValue
+            let (eBoundSetValue, eInBoundsSetValue) = split $
+                    enforceBounds <$> eSetValue
 
-                (eBoundValue, eInBoundsValue) = split $
-                    enforceBounds <$> eUnboundedValue
+                (eBoundUserValue, eInBoundsUserValue) = split $
+                    enforceBounds <$> eUserValue
+
+                eBoundValue = eBoundUserValue `union` eBoundSetValue
+                eInBoundsValue = eInBoundsUserValue `union` eInBoundsSetValue
 
                 -- Left, in this passage, means "no correction is necessary".
                 bCorrectValue = Left () `stepper` union
@@ -115,13 +119,17 @@ new (_minimumValue, _maximumValue) _defaultValue = do
                 eValidOnRequest = ((<$) <$> bValue) <@> eDontCorrectOnRequest
                 eGetValue = eCorrectOnRequest `union` eValidOnRequest
 
-                eValue = eInBoundsValue `union` eCorrectOnBlur
+                eCorrectedValue = eCorrectOnBlur
                     `union` (snd <$> eCorrectOnRequest)
+
+                eValue = eInBoundsValue `union` eCorrectedValue
 
                 bValue = _defaultValue `stepper` eValue
 
-            -- TODO: Fix conflict between integer and fractional parsing.
-            return _itxValue # sink UI.value (show <$> bValue)
+                eUndoValue = eUndoOnBlur `union` eUndoOnRequest
+
+                eSetTextValue = eUndoValue
+                    `union` eCorrectedValue `union` eInBoundsSetValue
 
             reactimate $ _valueChanged <$> eValue
 
@@ -129,7 +137,7 @@ new (_minimumValue, _maximumValue) _defaultValue = do
 
             reactimate $
                 (void . (element _itxValue #) . set UI.value . show)
-                    <$> eUndoOnBlur `union` eUndoOnRequest
+                    <$> eSetTextValue
 
     compile networkDescription >>= actuate
 
