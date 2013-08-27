@@ -14,7 +14,7 @@ module Widgets.BoundedInput
     , setValue
     , valueChangedEvent
     , requestValue
-    , getValueEvent
+    , receiveValueEvent
     ) where
 
 import qualified Graphics.UI.Threepenny as UI
@@ -43,8 +43,8 @@ data BoundedInput a = BoundedInput
 
     , _requestValueEvent :: Reg.Event ()
     , requestValue' :: () -> IO () -- exported as requestValue
-    , getValueEvent :: Reg.Event a
-    , _getValue :: a -> IO ()
+    , receiveValueEvent :: Reg.Event a
+    , _receiveValue :: a -> IO ()
     }
 
 requestValue :: BoundedInput a -> IO ()
@@ -65,7 +65,7 @@ new (_minimumValue, _maximumValue) _defaultValue = do
     (valueChangedEvent, _valueChanged) <- Reg.newEvent
 
     (_requestValueEvent, requestValue') <- Reg.newEvent
-    (getValueEvent, _getValue) <- Reg.newEvent
+    (receiveValueEvent, _receiveValue) <- Reg.newEvent
 
     let networkDescription :: forall t. Frameworks t => Moment t ()
         networkDescription = do
@@ -112,7 +112,7 @@ new (_minimumValue, _maximumValue) _defaultValue = do
         -- TODO: We might not want to trigger _valueChanged via eUndoValue .
         reactimate $ _valueChanged <$> eValue
 
-        reactimate $ _getValue <$> eGetValue
+        reactimate $ _receiveValue <$> eGetValue
 
     network <- compile networkDescription
     actuate network

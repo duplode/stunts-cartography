@@ -371,7 +371,7 @@ setup w = void $ do
 
             -- Debugging.
 
-            eGetDebug <- fromAddHandler (register $ BI.getValueEvent biTest)
+            eGetDebug <- fromAddHandler (register $ BI.receiveValueEvent biTest)
             eRequestDebug <- fromAddHandler (register $ UI.click elBiTest)
             reactimate $ BI.requestValue biTest <$ eRequestDebug
             reactimate $
