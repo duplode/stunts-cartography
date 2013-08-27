@@ -120,6 +120,7 @@ new (_minimumValue, _maximumValue) _defaultValue = do
 
                 bValue = _defaultValue `stepper` eValue
 
+            -- TODO: Fix conflict between integer and fractional parsing.
             return _itxValue # sink UI.value (show <$> bValue)
 
             reactimate $ _valueChanged <$> eValue
@@ -128,7 +129,7 @@ new (_minimumValue, _maximumValue) _defaultValue = do
 
             reactimate $
                 (void . (element _itxValue #) . set UI.value . show)
-                    <$> union eUndoOnBlur eUndoOnRequest
+                    <$> eUndoOnBlur `union` eUndoOnRequest
 
     compile networkDescription >>= actuate
 
@@ -146,7 +147,7 @@ new (_minimumValue, _maximumValue) _defaultValue = do
         Left () -> Left (tag, ())
         Right x -> Right (tag, x)
 
-formatBoundsCaption :: (Show a, Read a) => ((a, a) -> String)
+formatBoundsCaption :: ((a, a) -> String)
                     -> IO (BoundedInput a) -> IO (BoundedInput a)
 formatBoundsCaption fFormat mBI = do
     bi <- mBI
@@ -162,7 +163,6 @@ setTextInputSize sz mBI = do
 
 toElement :: BoundedInput a -> IO Element
 toElement bi =
-    UI.div #. "bounded-input" #+
+    UI.span #. "bounded-input" #+
         map element [ _itxValue bi, _strRange bi ]
-
 
