@@ -27,6 +27,7 @@ import Reactive.Banana.Threepenny
 
 import Text.Read (readMaybe)
 import Data.Maybe (isNothing)
+import Control.Monad (void)
 
 type TagGet = String
 
@@ -96,14 +97,14 @@ new (_minimumValue, _maximumValue) _defaultValue = do
             eBlur <- fromAddHandler (register $ UI.blur _itxValue)
             eRequestValue <- fromAddHandler (register _requestValueEvent)
 
-            let eUndoValue = bValue <@ eInvalidInput
-
-                bCorrectValue = Left () `stepper` unions
-                    [ Right <$> eUndoValue
-                    , Right <$> eBoundValue
-                    , Left () <$ eInBoundsValue
-                    ]
+            let bCorrectValue = Left () `stepper` union
+                    (Right <$> eBoundValue) (Left () <$ eInBoundsValue)
                 (_, eCorrectOnBlur) = split $ bCorrectValue <@ eBlur
+
+                bUndoInput = Left () `stepper` union
+                    (Right <$> (bValue <@ eInvalidInput)) (Left () <$ eUserValue)
+                (_, eUndoOnBlur) = split $ bUndoInput <@ eBlur
+                (_, eUndoOnRequest) = split $ bUndoInput <@ eRequestValue
 
                 -- These complications are needed because we cannot rely on the
                 -- value of bValue as-is - eRequestValue may trigger changes to
@@ -120,10 +121,14 @@ new (_minimumValue, _maximumValue) _defaultValue = do
 
             return _itxValue # sink UI.value (show <$> bValue)
 
-            -- TODO: We might not want to trigger _valueChanged via eUndoValue .
             reactimate $ _valueChanged <$> eValue
 
             reactimate $ _getValue <$> eGetValue
+
+            reactimate $
+                (void . (element _itxValue #) . set UI.value . show)
+                    <$> union eUndoOnBlur eUndoOnRequest
+
 
     compile networkDescription >>= actuate
 
