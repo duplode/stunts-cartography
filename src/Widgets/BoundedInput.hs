@@ -15,6 +15,7 @@ module Widgets.BoundedInput
     , valueChangedEvent
     , requestValue
     , getValueEvent
+    , refresh
     ) where
 
 import qualified Graphics.UI.Threepenny as UI
@@ -48,6 +49,9 @@ data BoundedInput a = BoundedInput
     , _requestValue :: TagGet -> IO ()
     , _getValueEvent :: TagGet -> Reg.Event a
     , _getValue :: (TagGet, a) -> IO ()
+
+    , _refreshEvent :: Reg.Event ()
+    , _refresh :: () -> IO ()
     }
 
 setValue :: BoundedInput a -> a -> IO ()
@@ -61,6 +65,9 @@ requestValue = _requestValue
 
 getValueEvent :: BoundedInput a -> TagGet -> Reg.Event a
 getValueEvent = _getValueEvent
+
+refresh :: BoundedInput a -> IO ()
+refresh bi = _refresh bi ()
 
 new :: (Ord a, Show a, Read a)
     => (a, a) -> a -> IO (BoundedInput a)
@@ -79,6 +86,8 @@ new (_minimumValue, _maximumValue) _defaultValue = do
     (_requestValueEvent, _requestValue) <- Reg.newEvent
     (_getValueEvent, _getValue) <- Reg.newEventsTagged
 
+    (_refreshEvent, _refresh) <- Reg.newEvent
+
     let networkDescription :: forall t. Frameworks t => Moment t ()
         networkDescription = do
 
@@ -91,6 +100,7 @@ new (_minimumValue, _maximumValue) _defaultValue = do
 
             eBlur <- fromAddHandler (register $ UI.blur _itxValue)
             eRequestValue <- fromAddHandler (register _requestValueEvent)
+            eRefresh <- fromAddHandler (register _refreshEvent)
 
             let (eBoundSetValue, eInBoundsSetValue) = split $
                     enforceBounds <$> eSetValue
@@ -102,13 +112,15 @@ new (_minimumValue, _maximumValue) _defaultValue = do
                 eInBoundsValue = eInBoundsUserValue `union` eInBoundsSetValue
 
                 -- Left, in this passage, means "no correction is necessary".
+                eSync = eBlur `union` eRefresh
+
                 bCorrectValue = Left () `stepper` union
                     (Right <$> eBoundValue) (Left () <$ eInBoundsValue)
-                (_, eCorrectOnBlur) = split $ bCorrectValue <@ eBlur
+                (_, eCorrectOnSync) = split $ bCorrectValue <@ eSync
 
                 bUndoInput = Left () `stepper` union
                     (Right <$> (bValue <@ eInvalidInput)) (Left () <$ eUserValue)
-                (_, eUndoOnBlur) = split $ bUndoInput <@ eBlur
+                (_, eUndoOnSync) = split $ bUndoInput <@ eSync
                 (_, eUndoOnRequest) = split $ bUndoInput <@ eRequestValue
 
                 -- These complications are needed because we cannot rely on the
@@ -119,14 +131,14 @@ new (_minimumValue, _maximumValue) _defaultValue = do
                 eValidOnRequest = ((<$) <$> bValue) <@> eDontCorrectOnRequest
                 eGetValue = eCorrectOnRequest `union` eValidOnRequest
 
-                eCorrectedValue = eCorrectOnBlur
+                eCorrectedValue = eCorrectOnSync
                     `union` (snd <$> eCorrectOnRequest)
 
                 eValue = eInBoundsValue `union` eCorrectedValue
 
                 bValue = _defaultValue `stepper` eValue
 
-                eUndoValue = eUndoOnBlur `union` eUndoOnRequest
+                eUndoValue = eUndoOnSync `union` eUndoOnRequest
 
                 eSetTextValue = eUndoValue
                     `union` eCorrectedValue `union` eInBoundsSetValue
