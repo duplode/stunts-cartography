@@ -221,10 +221,8 @@ setup w = void $ do
     -- The main action proper.
 
     let runRenderMap :: Pm.RenderingParameters -> Pm.RenderingState
-                     -> IO Pm.RenderingState
+                     -> IO (Pm.RenderingState, Pm.RenderingLog)
         runRenderMap params st = do
-
-            clearLog w
 
             trkRelPath <- join $ get value . fromJust
                 <$> getElementById w "trk-input"
@@ -238,6 +236,18 @@ setup w = void $ do
                 extIsKnown = fileExt == ".TRK" || fileExt == ".RPL"
                 -- No size checks for .RPL at this point.
                 badTRKSize = fileExt == ".TRK" && not sizeIsCorrect
+
+                fileCheckLog = Pm.logFromList $
+                    if not trkExists
+                    then "File does not exist."
+                    else
+                        if not extIsKnown
+                        then "Bad file extension (should be .TRK or .RPL, in upper or lower case)."
+                        else
+                            if badTRKSize
+                            then "Bad file size (.TRK files must have 1802 bytes)."
+                            else ""
+
                 proceedWithLoading = trkExists && extIsKnown && not badTRKSize
 
             if proceedWithLoading
@@ -257,9 +267,6 @@ setup w = void $ do
                         return postRender
                     (postRender,st',logW) <- RWS.runRWST goCarto params st
 
-                    -- Update the log.
-                    appendLineToLog w $ Pm.logToList logW
-
                     -- Update the UI.
                     applyHorizonClass w $ Pm.renderedTrackHorizon postRender
                     let outType = Pm.outputType params
@@ -271,21 +278,13 @@ setup w = void $ do
                     setLinkHref w "save-trk-link" trkUri
                     setLinkHref w "save-terrain-link" terrainUri
 
-                    return st'
+                    return (st', fileCheckLog `mappend` logW)
                 else do
-                    unless (extIsKnown || not trkExists) $
-                        appendLineToLog w
-                            "Bad file extension (should be .TRK or .RPL, in upper or lower case)."
-                    unless trkExists $
-                        appendLineToLog w "File does not exist."
-                    when (badTRKSize && trkExists) $
-                        appendLineToLog w "Bad file size (.TRK files must have 1802 bytes)."
-
                     applyClassToBody w "blank-horizon"
                     runFunction w $ setTrackMapVisibility False
                     runFunction w $ unsetSaveLinksHref
 
-                    return st
+                    return (st, fileCheckLog)
 
     -- The event network.
 
@@ -325,6 +324,27 @@ setup w = void $ do
 
             eBtnGo <- event UI.click btnGo
 
+            -- Log handling
+
+            (eAppendToLog, appendToLog) <- newEvent
+            (eStringToLog, stringToLog) <- newEvent
+
+            let bLogContents :: Behavior t Pm.RenderingLog
+                bLogContents = mempty `accumB` (eClearLog `union` ePutLnLog)
+
+                ePutLnLog = flip mappend . flip mappend (Pm.logFromList "\r\n")
+                    <$> (eAppendToLog `union` (Pm.logFromList <$> eStringToLog))
+
+                -- The log is cleared at the beginning of the chain.
+                eClearLog = const mempty <$ eBtnGo
+
+            -- Displaying the whole log at once, at the end.
+            -- We will have to reconsider should the log have to be used before
+            -- the start of the chain.
+            (eRenderLog, renderLog) <- newEvent
+            reactimate $ void . (element txaLog #) . set value . Pm.logToList
+                <$> bLogContents <@ eRenderLog
+
             -- Rendering parameters.
             -- Note that the annotations are parsed in a separate step.
             -- TODO: Make this less of an eyesore.
@@ -341,6 +361,9 @@ setup w = void $ do
                 (get UI.checked chkDrawIndices >>= fireDrawIndices)
                     <$ eDrawIndicesClick
 
+            -- What comes below is just an unsightly way to state we listen to
+            -- changes in all of the rendering parameter fields (bar the
+            -- annotations one) and propagate these changes to bRenParams.
             bRenParams <- do
                 let mkLstn = fromAddHandler . register . BI.valueChangedEvent
                 pure accumB <*> pure Pm.def <*> (fmap unions . sequence)
@@ -385,40 +408,37 @@ setup w = void $ do
             (eRenState, fireRenState) <- newEvent
             let bRenState = Pm.def `stepper` eRenState
 
-            (eRenEStyle, fireRenEStyle) <- newEvent
-            let bRenEStyle = Pm.toElemStyle Pm.def `stepper` eRenEStyle
+            -- Element style used in the *previous* run.
             -- Worth pointing out that we have no reason to care what
-            -- bRenEState is before the first rendering.
+            -- it is before the first rendering.
+            let bRenEStyle = Pm.toElemStyle Pm.def `stepper` eRenEStyle
 
-            let (eRenParamsDiffEStyle, eRenParamsSameEStyle) = split $
+                (eRenParamsDiffEStyle, eRenParamsSameEStyle) = split $
                     (\es -> \p -> if Pm.toElemStyle p /= es
                         then Left p else Right p) <$> bRenEStyle <@> eRenParams
 
-            -- The immediate trigger of the main action.
-            let eParamsAndStateAfterEStyleCheck =
+                -- The immediate trigger of the main action.
+                eParamsAndStateAfterEStyleCheck =
                     (flip (,) . Pm.clearElementCache <$> bRenState
                         <@> eRenParamsDiffEStyle)
                     `union` (flip (,) <$> bRenState
                         <@> eRenParamsSameEStyle)
 
+                eRenEStyle = Pm.toElemStyle . fst
+                    <$> eParamsAndStateAfterEStyleCheck
+
             -- Firing the main action.
 
+            -- TODO: Ensure it is safe to run appendToLog and then renderLog
+            -- like this.
             reactimate $
                 (\(p, st) -> runRenderMap p st
-                    >>= \st'-> fireRenEStyle (Pm.toElemStyle p) >> fireRenState st')
-                        <$> eParamsAndStateAfterEStyleCheck
+                    >>= \(st', w) -> fireRenState st'
+                        >> appendToLog w >> renderLog ())
+                            <$> eParamsAndStateAfterEStyleCheck
 
     compile networkDescription >>= actuate
 
-
-clearLog :: Window -> IO Element
-clearLog w = set value "" $ fromJust <$> getElementById w "log-text"
-
-appendLineToLog :: Window -> String -> IO ()
-appendLineToLog w msg = void $ do
-    logEl <- fromJust <$> getElementById w "log-text"
-    msgs <- get value logEl
-    set value (msgs ++ msg ++ "\r\n") $ return logEl
 
 setTrackMapVisibility :: Bool -> JSFunction ()
 setTrackMapVisibility visible
