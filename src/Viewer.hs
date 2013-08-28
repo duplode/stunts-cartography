@@ -390,22 +390,23 @@ setup w = void $ do
             -- Worth pointing out that we have no reason to care what
             -- bRenEState is before the first rendering.
 
-            -- TODO: Rewrite this to better use bRenParams.
-            let bIsEStyleDifferent = pure (\oldES params ->
-                    (params, Pm.toElemStyle params /= oldES)) <*> bRenEStyle
+            let (eRenParamsDiffEStyle, eRenParamsSameEStyle) = split $
+                    (\es -> \p -> if Pm.toElemStyle p /= es
+                        then Left p else Right p) <$> bRenEStyle <@> eRenParams
 
             -- The immediate trigger of the main action.
-            let ePreparedCacheState = ((\s (p, f) -> (p, f s)) <$> bRenState) <@>
-                    ((\(p, willDo) ->
-                        (p, if willDo then Pm.clearElementCache else id))
-                            <$> (bIsEStyleDifferent <@> eRenParams))
+            let eParamsAndStateAfterEStyleCheck =
+                    (flip (,) . Pm.clearElementCache <$> bRenState
+                        <@> eRenParamsDiffEStyle)
+                    `union` (flip (,) <$> bRenState
+                        <@> eRenParamsSameEStyle)
 
             -- Firing the main action.
 
             reactimate $
                 (\(p, st) -> runRenderMap p st
                     >>= \st'-> fireRenEStyle (Pm.toElemStyle p) >> fireRenState st')
-                        <$> ePreparedCacheState
+                        <$> eParamsAndStateAfterEStyleCheck
 
     compile networkDescription >>= actuate
 
