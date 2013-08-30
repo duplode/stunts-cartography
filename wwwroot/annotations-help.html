@@ -15,8 +15,8 @@
 annotations text area of the viewer. A particular set of commands might look
 like this:</p>
 <pre>
-Car @15.5 10 ^105 #aliceblue "Alan Rotoi" {'S %1}
-Split 1 @11 14 ^S %3 'N
+Car @15.5 10 ^105 #aliceblue "Alan Rotoi" {'S *1}
+Split 1 @11 14 ^S *3 'N
 </pre>
 <p>There are currently three types of annotations available: <code>Car</code>,
 <code>Seg</code> and <code>Split</code>. These keywords inform the program the
@@ -35,8 +35,8 @@ class="anns-fixed">underlined</span></code>.</p>
 
 <code><span class="anns-fixed anns-mandatory">Car</span>
  <span class="anns-mandatory">@15.5 10</span>
- ^45 %0.5 #orange
- "Mark Nailwood" { #yellow ^0 %0.5 'N }</code>
+ ^45 *0.5 #orange
+ "Mark Nailwood" { #yellow ^0 *0.5 'N }</code>
 
 <p><code>Car</code> adds a car annotation, similar to the one used for the
 0x02/0x03 ghost car track elements.</p>
@@ -58,7 +58,7 @@ class="anns-fixed">underlined</span></code>.</p>
       and growing counterclockwise (as per the usual convention in maths).</td>
   </tr>
   <tr>
-    <td>%</td><td>Size</td>
+    <td>*</td><td>Size</td>
     <td>Length of the car relative to tile size. The default value, 0.5, is the
       same used for the ghost car track elements.</td>
   </tr>
@@ -92,7 +92,7 @@ class="anns-fixed">underlined</span></code>.</p>
       </td>
   </tr>
   <tr>
-    <td>%</td><td>Size</td>
+    <td>*</td><td>Size</td>
     <td>Font size, relative to the tile size.
       </td>
   </tr>
@@ -110,8 +110,8 @@ class="anns-fixed">underlined</span></code>.</p>
 <code><span class="anns-fixed anns-mandatory">Seg</span>
  <span class="anns-mandatory">@17.5 10.25</span>
  <span class="anns-mandatory">^90</span>
- <span class="anns-mandatory">%3.5</span>
- #orange "Start of braking zone" { #orange ^30 %0.5 'N }</code>
+ <span class="anns-mandatory">*3.5</span>
+ #orange "Start of braking zone" { #orange ^30 *0.5 'N }</code>
 
 <p><code>Seg</code> adds a line segment over the map.</p>
 
@@ -129,7 +129,7 @@ class="anns-fixed">underlined</span></code>.</p>
       coordinates defined by <code>@</code>.</td>
   </tr>
   <tr>
-    <td>%</td><td>Length</td>
+    <td>*</td><td>Length</td>
     <td>Length of the segment, in tiles.</td>
   </tr>
 </table>
@@ -142,7 +142,7 @@ class="anns-fixed">underlined</span></code>.</p>
  <span class="anns-fixed anns-mandatory">1</span>
  <span class="anns-mandatory">@22 14</span>
  <span class="anns-mandatory">^E</span>
- <span class="anns-mandatory">%5</span>
+ <span class="anns-mandatory">*5</span>
  #yellow 'W</code>
 
 <p><code>Split</code> adds a split / section marker, drawn as a segment with
@@ -169,7 +169,7 @@ specialised properties.</p>
       <code>W</code> and <code>S</code>.</td>
   </tr>
   <tr>
-    <td>%</td><td>Length</td>
+    <td>*</td><td>Length</td>
     <td>Length of the split line, in tiles. The value must be integer.</td>
   </tr>
   <tr>

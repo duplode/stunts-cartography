@@ -129,11 +129,11 @@ colour = do
     many1 alphaNum >>= ((skipMany space >>) . readColourName)
 
 size = do
-    symbol "%"
+    symbol "*"
     floatOrInteger
 
 sizeInt = do
-    symbol "%"
+    symbol "*"
     fromIntegral <$> integer
 
 -- On the Maybe (Colour Double): Nothing means "use a default from somewhere".
@@ -176,20 +176,20 @@ parens = P.parens lexer
 semi = P.semi lexer
 whiteSpace = P.whiteSpace lexer
 
-test1 = "Car @13 17.2 ^ 45 %1#red \"Friker\" { %1 ^ 90 '  S }"
+test1 = "Car @13 17.2 ^ 45 *1#red \"Friker\" { *1 ^ 90 '  S }"
 test2 = "Car @13 17.2; "
 test3 = "Car &13 17.2;"
-test4 = "Car @13 17.2 ^ 45 %1 #slateblue \"Friker\" {  %1 ^ 90'  S} ; "
+test4 = "Car @13 17.2 ^ 45 *1 #slateblue \"Friker\" {  *1 ^ 90'  S} ; "
 test5 = "Blub"
-test6 = "Car @15.5 10.5 ^135 %0.5 #yellow \"foo\" {^0 %1 'N} ;\n\n"
-    ++ "Car @16.5 10.5 ^160 %0.5 #magenta \"bar\" {^0 %1 'E};\n"
-    ++ "Split 1 @22 11 ^N %5 #magenta 'N;\n"
-    ++ "Split 1 @22 \n    11 ^N %5 #green 'N;\n"
-    ++ "Split 1 @22 11 ^N %5 #aliceblue 'N"
-    ++ "Split 1 %5 #white @22 11 ^N 'N;\n"
-    ++ "Seg @16.5 10.5 ^160 %0.5 #magenta \"bar\" {^0 %1 'E};\n"
-    ++ "Seg @16.5 10.5 ^160 %0.5 #red \"bar\" {^0 %1 'E}"
-test7 = "Split 1 @22 11 ^N %5 #magenta 'N;"
+test6 = "Car @15.5 10.5 ^135 *0.5 #yellow \"foo\" {^0 *1 'N} ;\n\n"
+    ++ "Car @16.5 10.5 ^160 *0.5 #magenta \"bar\" {^0 *1 'E};\n"
+    ++ "Split 1 @22 11 ^N *5 #magenta 'N;\n"
+    ++ "Split 1 @22 \n    11 ^N *5 #green 'N;\n"
+    ++ "Split 1 @22 11 ^N *5 #aliceblue 'N"
+    ++ "Split 1 *5 #white @22 11 ^N 'N;\n"
+    ++ "Seg @16.5 10.5 ^160 *0.5 #magenta \"bar\" {^0 *1 'E};\n"
+    ++ "Seg @16.5 10.5 ^160 *0.5 #red \"bar\" {^0 *1 'E}"
+test7 = "Split 1 @22 11 ^N *5 #magenta 'N;"
 
 runTests :: CartoM [[Annotation]]
 runTests = mapM parseAnnotations $
