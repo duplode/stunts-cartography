@@ -15,7 +15,10 @@ Animate
 Sandbox
 Interface
 Viewer
+Scratchpad
 laptrace/hackparser
+src/Misc/Scratchpad.hs
+build-scratchpad.sh
 
 sandbox/**
 movie/*
@@ -23,6 +26,8 @@ demos/*
 laptrace/z70-demo
 dist/**
 _hsbuild/**
+.hsenv_carto-xp/**
+dist_carto-xp/**
 
 laptrace/*.ods
 laptrace/*.dat
