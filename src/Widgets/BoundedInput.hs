@@ -16,6 +16,7 @@ module Widgets.BoundedInput
     , requestValue
     , getValueEvent
     , refresh
+    , resetValue
     ) where
 
 import qualified Graphics.UI.Threepenny as UI
@@ -35,7 +36,6 @@ data BoundedInput a = BoundedInput
     { _itxValue :: Element
     , _strRange :: Element
 
-    , _defaultValue :: a
     , _minimumValue :: a
     , _maximumValue :: a
 
@@ -52,6 +52,9 @@ data BoundedInput a = BoundedInput
 
     , _refreshEvent :: Reg.Event ()
     , _refresh :: () -> IO ()
+
+    , _resetValueEvent :: Reg.Event ()
+    , _resetValue :: () -> IO ()
     }
 
 setValue :: BoundedInput a -> a -> IO ()
@@ -69,15 +72,20 @@ getValueEvent = _getValueEvent
 refresh :: BoundedInput a -> IO ()
 refresh bi = _refresh bi ()
 
+resetValue :: BoundedInput a -> IO ()
+resetValue bi = _resetValue bi ()
+
 new :: (Ord a, Show a, Read a)
     => (a, a) -> a -> IO (BoundedInput a)
-new (_minimumValue, _maximumValue) _defaultValue = do
+new (_minimumValue, _maximumValue) defaultValue = do
 
     _itxValue <- UI.input # set UI.type_ "text" # set UI.size "5"
         #. "bounded-input-value"
     _strRange <- string
         (" (" ++ show _minimumValue ++ " - " ++ show _maximumValue ++ ")")
         #. "bounded-input-caption"
+
+    let _defaultValue = quietlyEnforceBounds defaultValue
 
     (_setValueEvent, _setValue) <- Reg.newEvent
 
@@ -88,6 +96,8 @@ new (_minimumValue, _maximumValue) _defaultValue = do
 
     (_refreshEvent, _refresh) <- Reg.newEvent
 
+    (_resetValueEvent, _resetValue) <- Reg.newEvent
+
     let networkDescription :: forall t. Frameworks t => Moment t ()
         networkDescription = do
 
@@ -96,26 +106,31 @@ new (_minimumValue, _maximumValue) _defaultValue = do
             let (eInvalidInput, eUserValue) = split $
                     maybe (Left ()) Right . readMaybe <$> eUserInput
 
-            eSetValue <- fromAddHandler (register _setValueEvent)
+            eSetValue <- (quietlyEnforceBounds <$>)
+                <$> fromAddHandler (register _setValueEvent)
+
+            eResetValue <- (_defaultValue <$)
+                <$> fromAddHandler (register _resetValueEvent)
 
             eBlur <- fromAddHandler (register $ UI.blur _itxValue)
             eRequestValue <- fromAddHandler (register _requestValueEvent)
             eRefresh <- fromAddHandler (register _refreshEvent)
 
-            let (eBoundSetValue, eInBoundsSetValue) = split $
-                    enforceBounds <$> eSetValue
-
-                (eBoundUserValue, eInBoundsUserValue) = split $
+            let (eBoundUserValue, eInBoundsUserValue) = split $
                     enforceBounds <$> eUserValue
 
-                eBoundValue = eBoundUserValue `union` eBoundSetValue
-                eInBoundsValue = eInBoundsUserValue `union` eInBoundsSetValue
+                -- Note that programatically set values are silently constrained
+                -- to the bounds.
+                eProgramaticallySetValue = eSetValue `union` eResetValue
+
+                eInBoundsValue = eInBoundsUserValue
+                    `union` eProgramaticallySetValue
 
                 -- Left, in this passage, means "no correction is necessary".
                 eSync = eBlur `union` eRefresh
 
                 bCorrectValue = Left () `stepper` union
-                    (Right <$> eBoundValue) (Left () <$ eInBoundsValue)
+                    (Right <$> eBoundUserValue) (Left () <$ eInBoundsValue)
                 (_, eCorrectOnSync) = split $ bCorrectValue <@ eSync
 
                 bUndoInput = Left () `stepper` union
@@ -140,8 +155,8 @@ new (_minimumValue, _maximumValue) _defaultValue = do
 
                 eUndoValue = eUndoOnSync `union` eUndoOnRequest
 
-                eSetTextValue = eUndoValue
-                    `union` eCorrectedValue `union` eInBoundsSetValue
+                eSetTextValue = eUndoValue `union` eCorrectedValue
+                    `union` eProgramaticallySetValue
 
             reactimate $ _valueChanged <$> eValue
 
@@ -162,6 +177,8 @@ new (_minimumValue, _maximumValue) _defaultValue = do
         | x < _minimumValue = Left _minimumValue
         | x > _maximumValue = Left _maximumValue
         | otherwise         = Right x
+
+    quietlyEnforceBounds = max _minimumValue . min _maximumValue
 
     addTagToCorrection corr tag = case corr of
         Left () -> Left (tag, ())

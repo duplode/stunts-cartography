@@ -87,7 +87,7 @@ setup w = void $ do
 
     btnPreset <- UI.button #. "button" #+ [string "Set"]
 
-    -- The true initial values are set with later with fillDrawingRatioFields.
+    -- The true initial values are set later, with fillDrawingRatioFields.
     bidRoadW <- BI.new (0.1, 0.5) 0
     bidBridgeH <- BI.new (0, 0.5) 0
     bidBridgeRelW <- BI.new (1, 3) 0
