@@ -118,7 +118,7 @@ setup w = void $ do
             # set UI.id_ "ann-input"
             # set UI.cols "25" # set UI.rows "5"
 
-    imgMap <- UI.img # set UI.id_ "track-map"
+    imgMap <- UI.img # set UI.id_ "track-map" # set UI.src "static/images/welcome.png"
 
     txaLog <-
         UI.textarea # set UI.id_ "log-text"
@@ -273,15 +273,14 @@ setup w = void $ do
                     trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
                     trkUri <- loadTmpTrk w postRender
                     terrainUri <- loadTmpTerrainTrk w postRender
-                    runFunction w $ setTrackMapVisibility True
-                    (fromJust <$> getElementById w "track-map") # set UI.src trackImage
+                    element imgMap # set UI.src trackImage
                     setLinkHref w "save-trk-link" trkUri
                     setLinkHref w "save-terrain-link" terrainUri
 
                     return (st', fileCheckLog `mappend` logW)
                 else do
                     applyClassToBody w "blank-horizon"
-                    runFunction w $ setTrackMapVisibility False
+                    element imgMap # set UI.src "static/images/failure.png"
                     runFunction w $ unsetSaveLinksHref
 
                     return (st, fileCheckLog)

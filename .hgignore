@@ -7,7 +7,6 @@ syntax:glob
 *.swp
 
 *.svg
-*.png
 
 activate
 Main
