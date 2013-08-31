@@ -7,6 +7,7 @@ module Output
 import Data.Array
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.RWS hiding ((<>))
+import Control.Monad.Error
 import Control.Exception (catch, SomeException)
 import System.Directory (getTemporaryDirectory)
 import System.FilePath (takeBaseName, (</>))
@@ -27,18 +28,20 @@ import Types.CartoM
 import Types.Diagrams
 
 -- TODO: We probably should convert these write functions into CartoT IO.
-writePngFromTrk :: FilePath -> CartoT IO Pm.PostRenderInfo
+writePngFromTrk :: FilePath -> CartoT (ErrorT String IO) Pm.PostRenderInfo
 writePngFromTrk trkPath =
     liftIO (LB.readFile trkPath)
         >>= writePngOutput (takeBaseName trkPath)
 
-writePngFromRpl :: FilePath -> CartoT IO Pm.PostRenderInfo
+writePngFromRpl :: FilePath -> CartoT (ErrorT String IO) Pm.PostRenderInfo
 writePngFromRpl rplPath = do
     rplData <- liftIO $ LB.readFile rplPath
-    let (trkName, trkData) = trkFromRplSimple rplData
-    writePngOutput trkName trkData
+    if trackDataHasTheCorrectSize rplData
+        then uncurry writePngOutput $ trkFromRplSimple rplData
+        else lift $ throwError "No track data in RPL file."
 
-writePngOutput :: String -> LB.ByteString -> CartoT IO Pm.PostRenderInfo
+writePngOutput :: String -> LB.ByteString
+               -> CartoT (ErrorT String IO) Pm.PostRenderInfo
 writePngOutput trackName trkBS = do
     params <- ask
     st <- get

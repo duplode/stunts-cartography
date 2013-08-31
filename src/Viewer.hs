@@ -7,6 +7,7 @@ module Main
 
 import Control.Monad
 import qualified Control.Monad.RWS as RWS
+import Control.Monad.Error
 import Control.Exception (catch, SomeException)
 import Data.Maybe (fromJust, fromMaybe)
 import Text.Read (readMaybe)
@@ -227,44 +228,42 @@ setup w = void $ do
             trkRelPath <- itxTrkPath # get value
             basePath <- itxBasePath # get value
             let trkPath = basePath </> trkRelPath
-            trkExists <- doesFileExist trkPath
-            mFileSize <- retrieveFileSize trkPath
-            let sizeIsCorrect = mFileSize == Just 1802
-                fileExt = map toUpper $ takeExtension trkPath
-                extIsKnown = fileExt == ".TRK" || fileExt == ".RPL"
-                -- No size checks for .RPL at this point.
-                badTRKSize = fileExt == ".TRK" && not sizeIsCorrect
 
-                fileCheckLog = Pm.logFromList $
-                    if not trkExists
-                    then "File does not exist."
-                    else
-                        if not extIsKnown
-                        then "Bad file extension (should be .TRK or .RPL, in upper or lower case)."
-                        else
-                            if badTRKSize
-                            then "Bad file size (.TRK files must have 1802 bytes)."
-                            else ""
+            outcome <- runErrorT $ do
 
-                proceedWithLoading = trkExists && extIsKnown && not badTRKSize
+                trkExists <- liftIO $ doesFileExist trkPath
+                unless trkExists . void $
+                    throwError "File does not exist."
 
-            if proceedWithLoading
-                then do
-                    -- Decide on input format.
-                    let pngWriter = case fileExt of
-                            ".TRK" -> writePngFromTrk
-                            ".RPL" -> writePngFromRpl
-                            _      -> error "Unrecognized input extension."
+                let fileExt = map toUpper $ takeExtension trkPath
+                    extIsKnown = fileExt == ".TRK" || fileExt == ".RPL"
+                unless extIsKnown . void $
+                    throwError "Bad file extension (should be .TRK or .RPL, in upper or lower case)."
 
-                    -- Parse annotations and render the map.
-                    let goCarto :: CartoT IO Pm.PostRenderInfo
-                        goCarto = do
-                            anns <- liftIO (txaAnns # get value) >>= parseAnnotations
-                            RWS.local (\p -> p{ Pm.annotationSpecs = anns}) $
-                                pngWriter trkPath
-                    (postRender,st',logW) <- RWS.runRWST goCarto params st
+                mFileSize <- liftIO $ retrieveFileSize trkPath
+                let sizeIsCorrect = mFileSize == Just 1802
+                    badTRKSize = fileExt == ".TRK" && not sizeIsCorrect
+                when badTRKSize . void $
+                    throwError "Bad file size (.TRK files must have 1802 bytes)."
 
-                    -- Update the UI.
+                -- Decide on input format.
+                let pngWriter :: FilePath -> CartoT (ErrorT String IO) Pm.PostRenderInfo
+                    pngWriter = case fileExt of
+                        ".TRK" -> writePngFromTrk
+                        ".RPL" -> writePngFromRpl
+                        _      -> error "Unrecognized input extension."
+
+                -- Parse annotations and render the map.
+                let goCarto :: CartoT (ErrorT String IO) Pm.PostRenderInfo
+                    goCarto = do
+                        anns <- liftIO (txaAnns # get value)
+                            >>=  parseAnnotations
+                        RWS.local (\p -> p{ Pm.annotationSpecs = anns}) $
+                            pngWriter trkPath
+                (postRender,st',logW) <- RWS.runRWST goCarto params st
+
+                -- Update the UI.
+                liftIO $ do
                     element theBody #. horizonClass (Pm.renderedTrackHorizon postRender)
                     let outType = Pm.outputType params
                     trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
@@ -274,13 +273,18 @@ setup w = void $ do
                     element lnkTrk # set UI.href trkUri
                     element lnkTerrTrk # set UI.href terrainUri
 
-                    return (st', fileCheckLog `mappend` logW)
-                else do
-                    element theBody #. "blank-horizon"
-                    element imgMap # set UI.src "static/images/failure.png"
-                    runFunction w $ unsetSaveLinksHref
+                    return (st', logW)
 
-                    return (st, fileCheckLog)
+                `catchError` \errorMsg -> do
+
+                    liftIO $ do
+                        element theBody #. "blank-horizon"
+                        element imgMap # set UI.src "static/images/failure.png"
+                        runFunction w $ unsetSaveLinksHref
+
+                    throwError errorMsg
+
+            return $ either ((,) st . Pm.logFromList) id outcome
 
     -- The event network.
 

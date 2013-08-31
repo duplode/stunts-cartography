@@ -1,5 +1,6 @@
 module Replay
     ( trkFromRplSimple
+    , trackDataHasTheCorrectSize
     ) where
 
 import Control.Applicative ((<$>))
@@ -20,12 +21,9 @@ data ReplayFormat = OneNil
 trkFromRplSimple :: LB.ByteString -> (String, LB.ByteString)
 trkFromRplSimple fileData = (trackName, trackData)
     where
-    trackOffset = case detectRplFormat fileData of
-        OneNil -> 0x18
-        OneOne -> 0x1A
     trackName = map (chr . fromIntegral) . LB.unpack
         . LB.takeWhile (/= 0) . LB.drop 0xD $ fileData
-    trackData = LB.take 1802 . LB.drop trackOffset $ fileData
+    trackData = rplTrackData fileData
 
 detectRplFormat :: LB.ByteString -> ReplayFormat
 detectRplFormat fileData
@@ -39,6 +37,17 @@ detectRplFormat fileData
     -- Point of failure: a Nothing means there is no Word16 to read.
     declaredSizeOldFormat = fromMaybe 0 . fmap (0x722 +)
         . crudeTwoBytesLeToUInt . LB.drop 0x16 $ fileData
+
+rplTrackData :: LB.ByteString -> LB.ByteString
+rplTrackData fileData = LB.take 1802 . LB.drop trackOffset $ fileData
+    where
+    trackOffset = case detectRplFormat fileData of
+        OneNil -> 0x18
+        OneOne -> 0x1A
+
+-- Basic validation. TODO: Consider integrating this into trkFromRplSimple .
+trackDataHasTheCorrectSize :: LB.ByteString -> Bool
+trackDataHasTheCorrectSize = (== 1802) . LB.length . rplTrackData
 
 -- Just so that we don't have to import Data.Binary .
 crudeTwoBytesLeToUInt :: LB.ByteString -> Maybe Int
