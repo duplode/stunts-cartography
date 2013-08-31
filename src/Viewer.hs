@@ -126,7 +126,7 @@ setup w = void $ do
 
     -- Assembling the interface HTML.
 
-    getBody w # set UI.id_ "the-body" # set UI.class_ "blank-horizon" #+
+    theBody <- getBody w # set UI.id_ "the-body" #. "blank-horizon" #+
         [ UI.div # set UI.id_ "left-bar" #+
             [ UI.p #+
                 [ element btnGo, string " as ", element selOutput ]
@@ -224,10 +224,8 @@ setup w = void $ do
                      -> IO (Pm.RenderingState, Pm.RenderingLog)
         runRenderMap params st = do
 
-            trkRelPath <- join $ get value . fromJust
-                <$> getElementById w "trk-input"
-            basePath <- join $ get value . fromJust
-                <$> getElementById w "base-path-input"
+            trkRelPath <- itxTrkPath # get value
+            basePath <- itxBasePath # get value
             let trkPath = basePath </> trkRelPath
             trkExists <- doesFileExist trkPath
             mFileSize <- retrieveFileSize trkPath
@@ -261,25 +259,24 @@ setup w = void $ do
                     -- Parse annotations and render the map.
                     let goCarto :: CartoT IO Pm.PostRenderInfo
                         goCarto = do
-                        anns <- selectedAnnotations w
-                        postRender <- RWS.local (\p -> p{ Pm.annotationSpecs = anns}) $
-                            pngWriter trkPath
-                        return postRender
+                            anns <- liftIO (txaAnns # get value) >>= parseAnnotations
+                            RWS.local (\p -> p{ Pm.annotationSpecs = anns}) $
+                                pngWriter trkPath
                     (postRender,st',logW) <- RWS.runRWST goCarto params st
 
                     -- Update the UI.
-                    applyHorizonClass w $ Pm.renderedTrackHorizon postRender
+                    element theBody #. horizonClass (Pm.renderedTrackHorizon postRender)
                     let outType = Pm.outputType params
                     trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
                     trkUri <- loadTmpTrk w postRender
                     terrainUri <- loadTmpTerrainTrk w postRender
                     element imgMap # set UI.src trackImage
-                    setLinkHref w "save-trk-link" trkUri
-                    setLinkHref w "save-terrain-link" terrainUri
+                    element lnkTrk # set UI.href trkUri
+                    element lnkTerrTrk # set UI.href terrainUri
 
                     return (st', fileCheckLog `mappend` logW)
                 else do
-                    applyClassToBody w "blank-horizon"
+                    element theBody #. "blank-horizon"
                     element imgMap # set UI.src "static/images/failure.png"
                     runFunction w $ unsetSaveLinksHref
 
@@ -428,7 +425,7 @@ setup w = void $ do
 
             -- Firing the main action.
 
-            -- TODO: Ensure it is safe to run appendToLog and then renderLog
+            -- TODO: Ensure it is okay to run appendToLog and then renderLog
             -- like this.
             reactimate $
                 (\(p, st) -> runRenderMap p st
@@ -438,15 +435,6 @@ setup w = void $ do
 
     compile networkDescription >>= actuate
 
-
-setTrackMapVisibility :: Bool -> JSFunction ()
-setTrackMapVisibility visible
-    | visible   = ffi "document.getElementById('track-map').style.display='block';"
-    | otherwise = ffi "document.getElementById('track-map').style.display='none';"
-
-setLinkHref :: Window -> String -> String -> IO Element
-setLinkHref w linkId uri =
-    (fromJust <$> getElementById w linkId) # set UI.href uri
 
 unsetSaveLinksHref :: JSFunction ()
 unsetSaveLinksHref = ffi $ unlines
@@ -471,19 +459,14 @@ loadTmpTerrainTrk :: Window -> Pm.PostRenderInfo -> IO String
 loadTmpTerrainTrk =
     loadTmpTrkBase ((++ "-T") . take 6) terrainTrkSimple
 
-applyHorizonClass :: Window -> Horizon -> IO ()
-applyHorizonClass w horizon = do
-    let horizonClass = case horizon of
-            Desert   -> "desert-horizon"
-            Alpine   -> "alpine-horizon"
-            City     -> "city-horizon"
-            Country  -> "country-horizon"
-            Tropical -> "tropical-horizon"
-            _        -> "unknown-horizon"
-    applyClassToBody w horizonClass
-
-applyClassToBody :: Window -> String -> IO ()
-applyClassToBody w klass = void $ getBody w # set UI.class_ klass
+horizonClass :: Horizon -> String
+horizonClass horizon = case horizon of
+    Desert   -> "desert-horizon"
+    Alpine   -> "alpine-horizon"
+    City     -> "city-horizon"
+    Country  -> "country-horizon"
+    Tropical -> "tropical-horizon"
+    _        -> "unknown-horizon"
 
 loadTrackImage :: Window -> OutputType -> FilePath -> IO String
 loadTrackImage w outType outPath = case outType of
@@ -505,15 +488,6 @@ intToPresetRenderingParams n = case n of
     2 -> Pm.slopingRampsRenderingParameters
     3 -> Pm.classicRenderingParameters
     _ -> error "Unknown preset."
-
-selectedAnnotations :: Window -> CartoT IO [Annotation]
-selectedAnnotations w = do
-    annInput <- RWS.liftIO $ selectedAnnotationsInput w
-    parseAnnotations annInput
-
-selectedAnnotationsInput :: Window -> IO String
-selectedAnnotationsInput w = do
-    join $ get value . fromJust <$> getElementById w "ann-input"
 
 ensureBoundOrder :: (Int, Int) -> (Int, Int)
 ensureBoundOrder bounds@(z, w) = if z > w then (w, z) else bounds
@@ -539,4 +513,12 @@ selectedNumFromTextInput elemId minVal defVal maxVal = \w -> do
 selectedBoolFromCheckbox :: String -> Window -> IO Bool
 selectedBoolFromCheckbox elemId = \w ->
     join $ get UI.checked . fromJust <$> getElementById w elemId
+-}
+
+-- Other unused utility functions we do not want to throw away (yet).
+{-
+setTrackMapVisibility :: Bool -> JSFunction ()
+setTrackMapVisibility visible
+    | visible   = ffi "document.getElementById('track-map').style.display='block';"
+    | otherwise = ffi "document.getElementById('track-map').style.display='none';"
 -}
