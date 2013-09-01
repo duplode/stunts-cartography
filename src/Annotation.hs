@@ -152,12 +152,11 @@ renderCaption colour captBgOpacity captAlign captAngle captSize caption =
     in (
         --alignedText xAlign yAlign caption
         text caption
-        # rotate (Deg captAngle)
         # fc colour # applyStyle captionStyle
         <> uncurry rect (textBounds caption)
         # fcA (computeBgColour colour `withOpacity` captBgOpacity) # lw 0
     )
-    # align dirAlign # scale captSize
+    # align dirAlign # scale captSize # rotate (Deg captAngle)
     where
     captionStyle = mempty # bold
     -- The font metric corrections were defined by trial-and-error.
