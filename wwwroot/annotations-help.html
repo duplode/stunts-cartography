@@ -64,10 +64,12 @@ class="anns-fixed">underlined</span></code>.</p>
   </tr>
   <tr>
     <td>#</td><td>Colour</td>
-    <td>Colour of the body of the car. The colour name must be one of the 147
-      listed <a href=
+    <td>Colour of the body of the car. Must be either one of the 147 colour
+      names listed <a href=
         "http://hackage.haskell.org/packages/archive/colour/2.3.3/doc/html/Data-Colour-Names.html">
-        here</a>, and should be typed as shown there (lower case, no spaces).</td>
+        here</a> and typed as shown there (lower case, no spaces) or a hex
+      RGB triplet (thus <code>#yellow</code> and <code>#ff00ff</code> are
+      equivalent).</td>
   </tr>
   <tr>
     <td>"..." { }</td><td>Caption</td>
@@ -114,7 +116,7 @@ class="anns-fixed">underlined</span></code>.</p>
  <span class="anns-mandatory">@17.5 10.25</span>
  <span class="anns-mandatory">^90</span>
  <span class="anns-mandatory">*3.5</span>
- #orange "Start of braking zone" { #orange $25 ^30 *0.5 'N }</code>
+ #orange "Start of braking zone" { #ffa500 $25 ^30 *0.5 'N }</code>
 
 <p><code>Seg</code> adds a line segment over the map.</p>
 

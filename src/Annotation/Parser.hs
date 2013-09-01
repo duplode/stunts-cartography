@@ -9,12 +9,14 @@ import qualified Text.Parsec.Token as P
 import Text.Parsec.Language (haskellDef)
 import Text.Parsec.Perm
 
+import Control.Monad (replicateM)
 import Control.Applicative ((<$>), (<*))
 import Data.Maybe (fromMaybe)
 
 import Annotation
-import Data.Colour
+import Data.Colour (Colour)
 import Data.Colour.Names (readColourName, yellow)
+import Data.Colour.SRGB (sRGB24read)
 import Types.CartoM
 import Control.Monad.RWS (tell)
 import qualified Parameters as Pm
@@ -130,7 +132,8 @@ angle = do
 -- It is convenient that readColourName fails with fail.
 colour = do
     symbol "#"
-    many1 alphaNum >>= ((skipMany space >>) . readColourName)
+    try (replicateM 6 hexDigit >>= ((skipMany space >>) . return . sRGB24read))
+        <|> (many1 alphaNum >>= ((skipMany space >>) . readColourName))
 
 -- For the moment, this only parses the background opacity.
 bg = do
