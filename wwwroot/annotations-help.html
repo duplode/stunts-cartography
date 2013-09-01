@@ -36,7 +36,7 @@ class="anns-fixed">underlined</span></code>.</p>
 <code><span class="anns-fixed anns-mandatory">Car</span>
  <span class="anns-mandatory">@15.5 10</span>
  ^45 *0.5 #orange
- "Mark Nailwood" { #yellow ^0 *0.5 'N }</code>
+ "Mark Nailwood" { #yellow $50 ^0 *0.5 'N }</code>
 
 <p><code>Car</code> adds a car annotation, similar to the one used for the
 0x02/0x03 ghost car track elements.</p>
@@ -87,21 +87,24 @@ class="anns-fixed">underlined</span></code>.</p>
         </td>
   </tr>
   <tr>
+    <td>$</td><td>Background opacity</td>
+    <td>Opacity of the caption background, from 0 to 100 (percent). The default
+      is zero, thus making the background invisible. Set a higher value in case
+      the map colours make the caption hard to read.</td>
+  </tr>
+  <tr>
     <td>^</td><td>Angle</td>
-    <td>Angle in degrees of the direction the text goes.
-      </td>
+    <td>Angle in degrees of the direction the text goes.</td>
   </tr>
   <tr>
     <td>*</td><td>Size</td>
-    <td>Font size, relative to the tile size.
-      </td>
+    <td>Font size, relative to the tile size.</td>
   </tr>
   <tr>
     <td>'</td><td>Caption and car alignment</td>
     <td>Alignment of the caption in relation to the car. The value must be one
       of <code>E</code>, <code>N</code>, <code>W</code> and <code>S</code>
-      (which stand for the four cardinal directions).
-      </td>
+      (which stand for the four cardinal directions).</td>
   </tr>
 </table>
 
@@ -111,7 +114,7 @@ class="anns-fixed">underlined</span></code>.</p>
  <span class="anns-mandatory">@17.5 10.25</span>
  <span class="anns-mandatory">^90</span>
  <span class="anns-mandatory">*3.5</span>
- #orange "Start of braking zone" { #orange ^30 *0.5 'N }</code>
+ #orange "Start of braking zone" { #orange $25 ^30 *0.5 'N }</code>
 
 <p><code>Seg</code> adds a line segment over the map.</p>
 
@@ -143,7 +146,7 @@ class="anns-fixed">underlined</span></code>.</p>
  <span class="anns-mandatory">@22 14</span>
  <span class="anns-mandatory">^E</span>
  <span class="anns-mandatory">*5</span>
- #yellow 'W</code>
+ #yellow $40 'W</code>
 
 <p><code>Split</code> adds a split / section marker, drawn as a segment with
 specialised properties.</p>
@@ -175,6 +178,10 @@ specialised properties.</p>
   <tr>
     <td>#</td><td>Colour</td>
     <td>Colour of the both the split line and its caption.</td>
+  </tr>
+  <tr>
+    <td>$</td><td>Caption background opacity</td>
+    <td>Opacity of the caption background, from 0 to 100 (percent).</td>
   </tr>
   <tr>
     <td>'</td><td>Caption and split alignment</td>

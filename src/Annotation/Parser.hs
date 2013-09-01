@@ -50,9 +50,9 @@ car = do
                            <|?> (yellow, colour)
                            <|?> (0, angle)
                            <|?> (0.5, size)
-                           <|?> ((Nothing, 0, E, 0.4, ""), caption))
+                           <|?> ((Nothing, 0, 0, E, 0.4, ""), caption))
     let (pos, cl, ang, sz, capt) = opt
-    let (mCpCl, cpAng, cpAl, cpSz, cpTxt) = capt
+    let (mCpCl, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
     return $ CarAnnotation
         { carAnnColour = cl
         , carAnnPosition = pos
@@ -60,6 +60,7 @@ car = do
         , carAnnSize = sz
         , carAnnCaption = cpTxt
         , carAnnCaptColour = fromMaybe cl mCpCl
+        , carAnnCaptBgOpacity = cpBg
         , carAnnCaptAlignment = cpAl
         , carAnnCaptAngle = cpAng
         , carAnnCaptSize = cpSz
@@ -71,9 +72,9 @@ seg = do
                            <|?> (yellow, colour)
                            <||> angle
                            <||> size
-                           <|?> ((Nothing, 0, E, 0.4, ""), caption))
+                           <|?> ((Nothing, 0, 0, E, 0.4, ""), caption))
     let (pos, cl, ang, len, capt) = opt
-    let (mCpCl, cpAng, cpAl, cpSz, cpTxt) = capt
+    let (mCpCl, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
     return $ SegAnnotation
         { segAnnColour = cl
         , segAnnPosition = pos
@@ -81,6 +82,7 @@ seg = do
         , segAnnLength = len
         , segAnnCaption = cpTxt
         , segAnnCaptColour = fromMaybe cl mCpCl
+        , segAnnCaptBgOpacity = cpBg
         , segAnnCaptAlignment = cpAl
         , segAnnCaptAngle = cpAng
         , segAnnCaptSize = cpSz
@@ -89,12 +91,13 @@ seg = do
 splitSeg = do
     symbol "Split"
     ix <- fromIntegral <$> integer
-    opt <- permute ((,,,,) <$$> xyInt
+    opt <- permute ((,,,,,) <$$> xyInt
                            <|?> (yellow, colour)
+                           <|?> (0, bg)
                            <||> splitDir
                            <||> sizeInt
                            <|?> (Nothing, Just <$> alignment))
-    let (pos, cl, splD, len, mCaptAl) = opt
+    let (pos, cl, captBg, splD, len, mCaptAl) = opt
     let captAl = fromMaybe splD mCaptAl
     return $ SplitAnnotation
         { splAnnColour = cl
@@ -102,6 +105,7 @@ splitSeg = do
         , splAnnPosition = pos
         , splAnnDirection = splD
         , splAnnLength = len
+        , splAnnCaptBgOpacity = captBg
         , splAnnCaptAlignment = fromMaybe splD mCaptAl
         }
 
@@ -128,6 +132,11 @@ colour = do
     symbol "#"
     many1 alphaNum >>= ((skipMany space >>) . readColourName)
 
+-- For the moment, this only parses the background opacity.
+bg = do
+    symbol "$"
+    (/100) <$> floatOrInteger
+
 size = do
     symbol "*"
     floatOrInteger
@@ -138,16 +147,17 @@ sizeInt = do
 
 -- On the Maybe (Colour Double): Nothing means "use a default from somewhere".
 caption :: Parsec String u
-               ( Maybe (Colour Double), Double, CardinalDirection
+               ( Maybe (Colour Double), Double, Double, CardinalDirection
                , Double, String )
 caption = do
     txt <- stringLiteral
-    (al, sz, ang, mCl) <- option (E, 0.4, 0, Nothing) . try . braces $
-        permute ((,,,) <$?> (E, alignment)
-                       <|?> (0.4, size)
-                       <|?> (0, angle)
-                       <|?> (Nothing, Just <$> colour))
-    return (mCl, ang, al, sz, txt)
+    (al, sz, ang, mCl, bg) <- option (E, 0.4, 0, Nothing, 0) . try . braces $
+        permute ((,,,,) <$?> (E, alignment)
+                        <|?> (0.4, size)
+                        <|?> (0, angle)
+                        <|?> (Nothing, Just <$> colour)
+                        <|?> (0, bg))
+    return (mCl, bg, ang, al, sz, txt)
 
 cardinalDir :: String -> Parsec String u CardinalDirection
 cardinalDir leading = do

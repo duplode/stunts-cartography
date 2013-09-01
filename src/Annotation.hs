@@ -1,10 +1,21 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE Rank2Types #-}
-module Annotation where
+module Annotation
+    ( CardinalDirection(..)
+    , Annotation(..)
+    , IsAnnotation
+    , annotation
+    , CarAnnotation(..)
+    , SegAnnotation(..)
+    , SplitAnnotation(..)
+    ) where
 
 -- It seems sensible to import this qualified if you need the raw constructors.
 
 import Diagrams.Prelude
+import qualified Diagrams.Backend.Cairo.Text as CairoText
+import Data.Colour.SRGB
+import Data.Colour.RGBSpace.HSV
 import Types.Diagrams (BEDia)
 import Pics.MM
 
@@ -30,6 +41,7 @@ data CarAnnotation
      , carAnnSize :: Double
      , carAnnCaption :: String
      , carAnnCaptColour :: Colour Double
+     , carAnnCaptBgOpacity :: Double
      , carAnnCaptAlignment :: CardinalDirection
      , carAnnCaptAngle :: Double
      , carAnnCaptSize :: Double
@@ -43,6 +55,7 @@ data SegAnnotation
      , segAnnLength :: Double
      , segAnnCaption :: String
      , segAnnCaptColour :: Colour Double
+     , segAnnCaptBgOpacity :: Double
      , segAnnCaptAlignment :: CardinalDirection
      , segAnnCaptAngle :: Double
      , segAnnCaptSize :: Double
@@ -55,6 +68,7 @@ data SplitAnnotation
      , splAnnDirection :: CardinalDirection
      , splAnnLength :: Int
      , splAnnIndex :: Int
+     , splAnnCaptBgOpacity :: Double
      , splAnnCaptAlignment :: CardinalDirection
      } deriving (Show)
 
@@ -65,7 +79,8 @@ instance IsAnnotation CarAnnotation where
             # scale (carAnnSize ann)
             # (flip $ beside (cardinalDirToR2 $ carAnnCaptAlignment ann))
                 (renderCaption
-                    (carAnnCaptColour ann) (carAnnCaptAlignment ann)
+                    (carAnnCaptColour ann) (carAnnCaptBgOpacity ann)
+                    (carAnnCaptAlignment ann)
                     (carAnnCaptAngle ann - carAnnAngle ann) (carAnnCaptSize ann)
                     (carAnnCaption ann)
                 )
@@ -83,7 +98,8 @@ instance IsAnnotation SegAnnotation where
             # lw 0.25 # lc (segAnnColour ann)
             # (flip $ beside (cardinalDirToR2 $ segAnnCaptAlignment ann))
                 (renderCaption
-                    (segAnnCaptColour ann) (segAnnCaptAlignment ann)
+                    (segAnnCaptColour ann) (segAnnCaptBgOpacity ann)
+                    (segAnnCaptAlignment ann)
                     (segAnnCaptAngle ann - segAnnAngle ann) (segAnnCaptSize ann)
                     (segAnnCaption ann))
             # rotate (Deg $ segAnnAngle ann)
@@ -102,7 +118,8 @@ instance IsAnnotation SplitAnnotation where
             # lw 0.25 # lc (splAnnColour ann)
             # (flip $ beside (cardinalDirToR2 $ splAnnCaptAlignment ann))
                 (renderCaption
-                    (splAnnColour ann) (splAnnCaptAlignment ann)
+                    (splAnnColour ann) (splAnnCaptBgOpacity ann)
+                    (splAnnCaptAlignment ann)
                     0 0.75
                     (show $ splAnnIndex ann))
             # translate (r2 pos)
@@ -128,19 +145,29 @@ instance IsAnnotation SplitAnnotation where
         }
 -}
 
-renderCaption colour captAlign captAngle captSize caption =
+renderCaption colour captBgOpacity captAlign captAngle captSize caption =
     let dirAlign = - cardinalDirToR2 captAlign
         adjustAlignments (x, y) = ((x + 1) / 2, (y + 1) / 2)
         (xAlign, yAlign) = adjustAlignments $ unr2 dirAlign
     in (
-        alignedText xAlign yAlign caption
-        # scale captSize # rotate (Deg captAngle)
-        # fc colour # bold
-    -- In effect, this sets the separation between caption and annotation at
-    -- (captSize / 2).
-        <> rect captSize captSize # lw 0
+        --alignedText xAlign yAlign caption
+        text caption
+        # rotate (Deg captAngle)
+        # fc colour # applyStyle captionStyle
+        <> uncurry rect (textBounds caption)
+        # fcA (computeBgColour colour `withOpacity` captBgOpacity) # lw 0
     )
-    # align dirAlign
+    # align dirAlign # scale captSize
+    where
+    captionStyle = mempty # bold
+    -- The font metric corrections were defined by trial-and-error.
+    extentsToBounds (fe, te) =
+        let (_, h) = unr2 $ CairoText.textSize te
+            (xa, _) = unr2 $ CairoText.advance te
+            fh = CairoText.height fe
+        in ((xa + h) / (0.8 * fh), 2 * h / fh)
+    textBounds = extentsToBounds
+        . CairoText.unsafeCairo . CairoText.getExtents captionStyle
 
 cardinalDirToR2 :: CardinalDirection -> R2
 cardinalDirToR2 x = case x of
@@ -149,11 +176,37 @@ cardinalDirToR2 x = case x of
     W -> unit_X
     S -> unit_Y
 
-
-
 cardinalDirToAngle :: CardinalDirection -> Double
 cardinalDirToAngle x = case x of
     E -> 0
     N -> 90
     W -> 180
     S -> 270
+
+computeBgColour :: Colour Double -> Colour Double
+computeBgColour c = sRGB r' g' b'
+    where
+    cRgb = toSRGB c
+    (h, s, v) = hsvView cRgb
+    h' = if h > 180 then h - 180 else h + 180
+    (s', v') = monochromeSV (s, v)
+    cHsv' = hsv h' s' v'
+    r' = channelRed cHsv'
+    g' = channelGreen cHsv'
+    b' = channelBlue cHsv'
+
+monochromeSV, polychromeSV, limitedPolychromeSV :: (Double, Double)
+                                                -> (Double, Double)
+monochromeSV (s, v) =
+    if v > 0.65 || (v > 0.55 && s > 0.25)
+       then (0, 0)
+       else (0, 1)
+
+polychromeSV = const (1, 1)
+
+limitedPolychromeSV sv@(s, _) =
+    if s > 0.25
+        then polychromeSV sv
+        else monochromeSV sv
+
+
