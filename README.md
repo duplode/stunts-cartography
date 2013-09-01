@@ -7,10 +7,9 @@ Power tools for track map rendering and analysis for the classic racing game
 [Threepenny](http://hackage.haskell.org/package/threepenny-gui)
 (browser-hosted frontend).
 
-This suite is still pretty coarse, interface-wise in particular, and there is
-currently just one executable which is ready to run out of the box, the track
-viewer. Nonetheless, the core functionality of track map rendering is fully
-functional.
+This suite currently just one executable ready to run out of the box, the track
+viewer. Nonetheless, despite being somewhat unpolished, the viewer is fully
+functional, and supports a number of advanced features.
 
 ## Suite components
 
@@ -32,9 +31,13 @@ functional.
   allows for extracting tracks from replays. For that purpose, both replay
   formats of Stunts are accepted.
 * To save the track map, right click the image and choose "Save image as...",
-  as it would be done in any regular page.
+  as it would be done in any regular web page.
 * The interface background colour changes according to the horizon of the track
   being displayed.
+* The annotations box allows users to add some kinds of annotations to the maps
+  by specifying them with a simple syntax, described in the help page linked
+  from the program interface, without needing to use an image editor. It is
+  specially convenient for preparing race analysis maps.
 
 ## Repository content highlights
 
@@ -66,6 +69,9 @@ functional.
   an instance of Stunts running under DOSBox. Recent developments provide an
   alternative, less complicated, way of getting hold of the paths; it will
   eventually be included in the suite.
+* wwwroot: HTML, CSS, images and other files used to compose the interface.
+  Includes some in-program documenation, such as the annotation syntax
+  description.
 
 ## In closing...
 

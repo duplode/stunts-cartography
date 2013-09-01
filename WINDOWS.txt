@@ -13,6 +13,6 @@
   mainstream GUI browsers. The only exception currently is SVG display in
   Internet Explorer 8 or earlier.
 
-* Source repository: http://code.google.com/p/stunts-cartography
+* Source repository: https://bitbucket.org/duplode/stunts-cartography .
 
-* Reporsitory changeset of this release: tagged as preview-20130810 .
+* Reporsitory changeset of this release: tagged as 0.3.0.0 .

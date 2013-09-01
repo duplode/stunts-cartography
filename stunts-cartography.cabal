@@ -1,5 +1,5 @@
 Name:                stunts-cartography
-Version:             0.2.0.1
+Version:             0.3.0.0
 Synopsis:            Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
 Description:         Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
 Category:            Game, Graphics
@@ -14,6 +14,8 @@ Data-Dir:            .
 Data-Files:          wwwroot/css/viewer.css
                      wwwroot/css/help.css
                      wwwroot/annotations-help.html
+                     wwwroot/images/welcome.png
+                     wwwroot/images/failure.png
 
 flag resourcesWithExecutables
     description: Retrieve resources (i.e. files listed under Data-Files in the
