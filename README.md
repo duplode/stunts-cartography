@@ -7,9 +7,9 @@ Power tools for track map rendering and analysis for the classic racing game
 [Threepenny](http://hackage.haskell.org/package/threepenny-gui)
 (browser-hosted frontend).
 
-This suite currently just one executable ready to run out of the box, the track
-viewer. Nonetheless, despite being somewhat unpolished, the viewer is fully
-functional, and supports a number of advanced features.
+This suite currently has just one executable ready to run out of the box, the
+track viewer. Nonetheless, despite being somewhat unpolished, the viewer is
+fully functional, and supports a number of advanced features.
 
 ## Suite components
 
