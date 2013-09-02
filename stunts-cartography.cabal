@@ -25,7 +25,7 @@ flag resourcesWithExecutables
 
 Source-Repository head
   type: hg
-  location: https://duplode@bitbucket.org/duplode/stunts-cartography
+  location: https://bitbucket.org/duplode/stunts-cartography
 
 
 Executable sc-trk-viewer
