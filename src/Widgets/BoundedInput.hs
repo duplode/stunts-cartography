@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
 module Widgets.BoundedInput
@@ -19,16 +19,12 @@ module Widgets.BoundedInput
     , resetValue
     ) where
 
-import qualified Graphics.UI.Threepenny as UI
-import Graphics.UI.Threepenny.Core hiding (Event, newEvent, filterJust)
-import qualified Graphics.UI.Threepenny.Core as Reg
-    (Event, newEvent, newEventsTagged)
-
-import Reactive.Banana
-import Reactive.Banana.Threepenny
-
 import Text.Read (readMaybe)
 import Control.Monad (void)
+
+import qualified Graphics.UI.Threepenny as UI
+import Graphics.UI.Threepenny.Core
+import Util.Reactive.Threepenny
 
 type TagGet = String
 
@@ -39,34 +35,34 @@ data BoundedInput a = BoundedInput
     , _minimumValue :: a
     , _maximumValue :: a
 
-    , _setValueEvent :: Reg.Event a
+    , _setValueEvent :: Event a
     , _setValue :: a -> IO ()
 
-    , _valueChangedEvent :: Reg.Event a
+    , _valueChangedEvent :: Event a
     , _valueChanged :: a -> IO ()
 
-    , _requestValueEvent :: Reg.Event TagGet
+    , _requestValueEvent :: Event TagGet
     , _requestValue :: TagGet -> IO ()
-    , _getValueEvent :: TagGet -> Reg.Event a
+    , _getValueEvent :: TagGet -> Event a
     , _getValue :: (TagGet, a) -> IO ()
 
-    , _refreshEvent :: Reg.Event ()
+    , _refreshEvent :: Event ()
     , _refresh :: () -> IO ()
 
-    , _resetValueEvent :: Reg.Event ()
+    , _resetValueEvent :: Event ()
     , _resetValue :: () -> IO ()
     }
 
 setValue :: BoundedInput a -> a -> IO ()
 setValue = _setValue
 
-valueChangedEvent :: BoundedInput a -> Reg.Event a
+valueChangedEvent :: BoundedInput a -> Event a
 valueChangedEvent = _valueChangedEvent
 
 requestValue :: BoundedInput a -> TagGet -> IO ()
 requestValue = _requestValue
 
-getValueEvent :: BoundedInput a -> TagGet -> Reg.Event a
+getValueEvent :: BoundedInput a -> TagGet -> Event a
 getValueEvent = _getValueEvent
 
 refresh :: BoundedInput a -> IO ()
@@ -77,7 +73,7 @@ resetValue bi = _resetValue bi ()
 
 new :: (Ord a, Show a, Read a)
     => (a, a) -> a -> IO (BoundedInput a)
-new (_minimumValue, _maximumValue) defaultValue = do
+new (_minimumValue, _maximumValue) defaultValue = mdo
 
     _itxValue <- UI.input # set UI.type_ "text" # set UI.size "5"
         #. "bounded-input-value"
@@ -87,86 +83,81 @@ new (_minimumValue, _maximumValue) defaultValue = do
 
     let _defaultValue = quietlyEnforceBounds defaultValue
 
-    (_setValueEvent, _setValue) <- Reg.newEvent
+    (_setValueEvent, _setValue) <- newEvent
 
-    (_valueChangedEvent, _valueChanged) <- Reg.newEvent
+    (_valueChangedEvent, _valueChanged) <- newEvent
 
-    (_requestValueEvent, _requestValue) <- Reg.newEvent
-    (_getValueEvent, _getValue) <- Reg.newEventsTagged
+    (_requestValueEvent, _requestValue) <- newEvent
+    (_getValueEvent, _getValue) <- newEventsTagged
 
-    (_refreshEvent, _refresh) <- Reg.newEvent
+    (_refreshEvent, _refresh) <- newEvent
 
-    (_resetValueEvent, _resetValue) <- Reg.newEvent
+    (_resetValueEvent, _resetValue) <- newEvent
 
-    let networkDescription :: forall t. Frameworks t => Moment t ()
-        networkDescription = do
+    let eUserInput = UI.valueChange _itxValue
 
-            eUserInput <- eventValue _itxValue
+        (eInvalidInput, eUserValue) = split $
+            maybe (Left ()) Right . readMaybe <$> eUserInput
 
-            let (eInvalidInput, eUserValue) = split $
-                    maybe (Left ()) Right . readMaybe <$> eUserInput
+        eSetValue = quietlyEnforceBounds <$> _setValueEvent
 
-            eSetValue <- (quietlyEnforceBounds <$>)
-                <$> fromAddHandler (register _setValueEvent)
+        eResetValue = _defaultValue <$ _resetValueEvent
 
-            eResetValue <- (_defaultValue <$)
-                <$> fromAddHandler (register _resetValueEvent)
+    let eBlur = UI.blur _itxValue
+        eRequestValue = _requestValueEvent
+        eRefresh = _refreshEvent
 
-            eBlur <- fromAddHandler (register $ UI.blur _itxValue)
-            eRequestValue <- fromAddHandler (register _requestValueEvent)
-            eRefresh <- fromAddHandler (register _refreshEvent)
+    let (eBoundUserValue, eInBoundsUserValue) = split $
+            enforceBounds <$> eUserValue
 
-            let (eBoundUserValue, eInBoundsUserValue) = split $
-                    enforceBounds <$> eUserValue
+        -- Note that programatically set values are silently constrained
+        -- to the bounds.
+        eProgramaticallySetValue = eSetValue `union` eResetValue
 
-                -- Note that programatically set values are silently constrained
-                -- to the bounds.
-                eProgramaticallySetValue = eSetValue `union` eResetValue
+        eInBoundsValue = eInBoundsUserValue
+            `union` eProgramaticallySetValue
 
-                eInBoundsValue = eInBoundsUserValue
-                    `union` eProgramaticallySetValue
+        -- Left, in this passage, means "no correction is necessary".
+        eSync = eBlur `union` eRefresh
 
-                -- Left, in this passage, means "no correction is necessary".
-                eSync = eBlur `union` eRefresh
+    bCorrectValue <- Left () `stepper` union
+        (Right <$> eBoundUserValue) (Left () <$ eInBoundsValue)
+    let (_, eCorrectOnSync) = split $ bCorrectValue <@ eSync
 
-                bCorrectValue = Left () `stepper` union
-                    (Right <$> eBoundUserValue) (Left () <$ eInBoundsValue)
-                (_, eCorrectOnSync) = split $ bCorrectValue <@ eSync
+    bUndoInput <- Left () `stepper` union
+        (Right <$> (bValue <@ eInvalidInput)) (Left () <$ eUserValue)
+    let (_, eUndoOnSync) = split $ bUndoInput <@ eSync
+        (_, eUndoOnRequest) = split $ bUndoInput <@ eRequestValue
 
-                bUndoInput = Left () `stepper` union
-                    (Right <$> (bValue <@ eInvalidInput)) (Left () <$ eUserValue)
-                (_, eUndoOnSync) = split $ bUndoInput <@ eSync
-                (_, eUndoOnRequest) = split $ bUndoInput <@ eRequestValue
+        -- These complications are needed because we cannot rely on the
+        -- value of bValue as-is - eRequestValue may trigger changes to
+        -- it in case there is a correction to be made.
+        (eDontCorrectOnRequest, eCorrectOnRequest) = split $
+            (addTagToCorrection <$> bCorrectValue) <@> eRequestValue
+        eValidOnRequest = ((<$) <$> bValue) <@> eDontCorrectOnRequest
+        eGetValue = eCorrectOnRequest `union` eValidOnRequest
 
-                -- These complications are needed because we cannot rely on the
-                -- value of bValue as-is - eRequestValue may trigger changes to
-                -- it in case there is a correction to be made.
-                (eDontCorrectOnRequest, eCorrectOnRequest) = split $
-                    (addTagToCorrection <$> bCorrectValue) <@> eRequestValue
-                eValidOnRequest = ((<$) <$> bValue) <@> eDontCorrectOnRequest
-                eGetValue = eCorrectOnRequest `union` eValidOnRequest
+        eCorrectedValue = eCorrectOnSync
+            `union` (snd <$> eCorrectOnRequest)
 
-                eCorrectedValue = eCorrectOnSync
-                    `union` (snd <$> eCorrectOnRequest)
+        eValue = eInBoundsValue `union` eCorrectedValue
 
-                eValue = eInBoundsValue `union` eCorrectedValue
+    bValue <- _defaultValue `stepper` eValue
 
-                bValue = _defaultValue `stepper` eValue
+    let eUndoValue = eUndoOnSync `union` eUndoOnRequest
 
-                eUndoValue = eUndoOnSync `union` eUndoOnRequest
+        eSetTextValue = eUndoValue `union` eCorrectedValue
+            `union` eProgramaticallySetValue
 
-                eSetTextValue = eUndoValue `union` eCorrectedValue
-                    `union` eProgramaticallySetValue
+    reactimate $ _valueChanged <$> eValue
 
-            reactimate $ _valueChanged <$> eValue
+    reactimate $ _getValue <$> eGetValue
 
-            reactimate $ _getValue <$> eGetValue
+    reactimate $
+        (void . (element _itxValue #) . set UI.value . show)
+            <$> eSetTextValue
 
-            reactimate $
-                (void . (element _itxValue #) . set UI.value . show)
-                    <$> eSetTextValue
-
-    compile networkDescription >>= actuate
+    -- Completing the initialization.
 
     _setValue _defaultValue
 
