@@ -104,8 +104,6 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
         eResetValue = _defaultValue <$ _resetValueEvent
 
     let eBlur = UI.blur _itxValue
-        eRequestValue = _requestValueEvent
-        eRefresh = _refreshEvent
 
     let (eBoundUserValue, eInBoundsUserValue) = split $
             enforceBounds <$> eUserValue
@@ -118,22 +116,22 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
             `union` eProgramaticallySetValue
 
         -- Left, in this passage, means "no correction is necessary".
-        eSync = eBlur `union` eRefresh
+        eSync = eBlur `union` _refreshEvent
 
     bCorrectValue <- Left () `stepper` union
         (Right <$> eBoundUserValue) (Left () <$ eInBoundsValue)
     let (_, eCorrectOnSync) = split $ bCorrectValue <@ eSync
 
     bUndoInput <- Left () `stepper` union
-        (Right <$> (bValue <@ eInvalidInput)) (Left () <$ eUserValue)
+        (Right <$> bValue <@ eInvalidInput) (Left () <$ eUserValue)
     let (_, eUndoOnSync) = split $ bUndoInput <@ eSync
-        (_, eUndoOnRequest) = split $ bUndoInput <@ eRequestValue
+        (_, eUndoOnRequest) = split $ bUndoInput <@ _requestValueEvent
 
-        -- These complications are needed because we cannot rely on the
-        -- value of bValue as-is - eRequestValue may trigger changes to
-        -- it in case there is a correction to be made.
+        -- These complications are needed because we cannot rely on the value
+        -- of bValue as-is - _requestValueEvent may trigger changes to it in
+        -- case there is a correction to be made.
         (eDontCorrectOnRequest, eCorrectOnRequest) = split $
-            (addTagToCorrection <$> bCorrectValue) <@> eRequestValue
+            addTagToCorrection <$> bCorrectValue <@> _requestValueEvent
         eValidOnRequest = ((<$) <$> bValue) <@> eDontCorrectOnRequest
         eGetValue = eCorrectOnRequest `union` eValidOnRequest
 
@@ -154,7 +152,7 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
     reactimate $ _getValue <$> eGetValue
 
     reactimate $
-        (void . (element _itxValue #) . set UI.value . show)
+        void . (element _itxValue #) . set UI.value . show
             <$> eSetTextValue
 
     -- Completing the initialization.

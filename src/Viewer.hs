@@ -301,8 +301,7 @@ setup w = void $ mdo
             in toPxPtText <$> eOutType
 
     reactimate $
-        (\capt -> void $ element strPxPtPerTile
-            # set UI.text capt) <$> ePxPtText
+        void . (element strPxPtPerTile #) . set UI.text <$> ePxPtText
 
     -- Preset selection.
 
@@ -312,8 +311,7 @@ setup w = void $ mdo
 
     let eConfirmPreset = bPreset <@ UI.click btnPreset
 
-    reactimate $ (\preset -> fillDrawingRatiosFields preset)
-        <$> eConfirmPreset
+    reactimate $ fillDrawingRatiosFields <$> eConfirmPreset
 
     -- The main action, in several parts.
 
@@ -359,31 +357,29 @@ setup w = void $ mdo
     -- What comes below is just an unsightly way to state we listen to
     -- changes in all of the rendering parameter fields (bar the
     -- annotations one) and propagate these changes to bRenParams.
-    bRenParams <- do
-        let mkLstn = BI.valueChangedEvent
-        Pm.def `accumB` concatE
+    bRenParams <- Pm.def `accumB` concatE
             [ (\x -> \p -> p {Pm.roadWidth = x})
-                <$> mkLstn bidRoadW
+                <$> BI.valueChangedEvent bidRoadW
             , (\x -> \p -> p {Pm.bridgeHeight = x})
-                <$> mkLstn bidBridgeH
+                <$> BI.valueChangedEvent bidBridgeH
             , (\x -> \p -> p {Pm.bridgeRelativeWidth = x})
-                <$> mkLstn bidBridgeRelW
+                <$> BI.valueChangedEvent bidBridgeRelW
             , (\x -> \p -> p {Pm.bankingRelativeHeight = x})
-                <$> mkLstn bidBankingRelH
+                <$> BI.valueChangedEvent bidBankingRelH
             , (\x -> \p -> p {Pm.pixelsPerTile = x})
-                <$> mkLstn bidPxPtPerTile
+                <$> BI.valueChangedEvent bidPxPtPerTile
             , (\x -> \p -> p {Pm.xTileBounds =
                 ensureBoundOrder $ (x, snd $ Pm.xTileBounds p)})
-                <$> mkLstn biiBMinX
+                <$> BI.valueChangedEvent biiBMinX
             , (\x -> \p -> p {Pm.xTileBounds =
                 ensureBoundOrder $ (fst $ Pm.xTileBounds p, x)})
-                <$> mkLstn biiBMaxX
+                <$> BI.valueChangedEvent biiBMaxX
             , (\x -> \p -> p {Pm.yTileBounds =
                 ensureBoundOrder $ (x, snd $ Pm.yTileBounds p)})
-                <$> mkLstn biiBMinY
+                <$> BI.valueChangedEvent biiBMinY
             , (\x -> \p -> p {Pm.yTileBounds =
                 ensureBoundOrder $ (fst $ Pm.yTileBounds p, x)})
-                <$> mkLstn biiBMaxY
+                <$> BI.valueChangedEvent biiBMaxY
             , (\x -> \p -> p {Pm.drawGridLines = x})
                 <$> eDrawGrid
             , (\x -> \p -> p {Pm.drawIndices = x})
