@@ -322,13 +322,15 @@ setup w = void $ mdo
     (eAppendToLog, appendToLog) <- newEvent
     (eStringToLog, stringToLog) <- newEvent
 
-    let ePutLnLog = flip mappend . flip mappend (Pm.logFromList "\r\n")
-            <$> (eAppendToLog `union` (Pm.logFromList <$> eStringToLog))
+    let appendLnTo = flip mappend . flip mappend (Pm.logFromList "\r\n")
+        ePutLnLog = concatE . map (appendLnTo <$>) $
+            [ eAppendToLog, Pm.logFromList <$> eStringToLog ]
 
         -- The log is cleared at the beginning of the chain.
         eClearLog = const mempty <$ eBtnGo
 
-    -- TODO: Simultaneity may matter here.
+    -- Note that if an eClearLog is simultaneous with an ePutLnLog the line
+    -- will not be appended.
     bLogContents <- mempty `accumB` (eClearLog `union` ePutLnLog)
 
     -- Displaying the whole log at once, at the end.
