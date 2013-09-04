@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
 module Main
@@ -10,6 +10,7 @@ import qualified Control.Monad.RWS as RWS
 import Control.Monad.Error
 import Control.Exception (catch, SomeException)
 import Data.Maybe (fromJust, fromMaybe)
+import Data.Monoid
 import Text.Read (readMaybe)
 import Text.Printf (printf)
 import System.Directory ( doesFileExist, doesDirectoryExist
@@ -18,10 +19,8 @@ import System.FilePath ((</>), takeExtension, addExtension)
 import Data.Char (toUpper)
 
 import qualified Graphics.UI.Threepenny as UI
-import Graphics.UI.Threepenny.Core hiding (Event, newEvent, filterJust)
-import qualified Graphics.UI.Threepenny.Core as Reg (Event, newEvent)
-import Reactive.Banana
-import Reactive.Banana.Threepenny
+import Graphics.UI.Threepenny.Core
+import Util.Reactive.Threepenny
 import Diagrams.Backend.Cairo (OutputType(..))
 
 import Output
@@ -45,7 +44,7 @@ main = do
         } setup
 
 setup :: Window -> IO ()
-setup w = void $ do
+setup w = void $ mdo
 
     -- Prolegomena.
 
@@ -288,156 +287,150 @@ setup w = void $ do
 
     -- The event network.
 
-    let networkDescription :: forall t. Frameworks t => Moment t ()
-        networkDescription = do
+    -- Output type and tile resolution caption
 
-            -- Output type and tile resolution caption
+    let eOutType = intToOutputType . fromMaybe (-1)
+            <$> UI.selectionChange selOutput
+    bOutType <- intToOutputType 0 `stepper` eOutType
 
-            eOutType <- ((intToOutputType . fromMaybe (-1)) <$>)
-                <$> eventSelection selOutput
-            let bOutType = intToOutputType 0 `stepper` eOutType
+    let ePxPtText =
+            let toPxPtText x =
+                    case x of
+                        SVG -> "Points per tile:"
+                        _   -> "Pixels per tile:" -- PNG
+            in toPxPtText <$> eOutType
 
-            let ePxPtText =
-                    let toPxPtText x =
-                            case x of
-                                SVG -> "Points per tile:"
-                                _   -> "Pixels per tile:" -- PNG
-                    in toPxPtText <$> eOutType
+    reactimate $
+        (\capt -> void $ element strPxPtPerTile
+            # set UI.text capt) <$> ePxPtText
 
-            reactimate $
-                (\capt -> void $ element strPxPtPerTile
-                    # set UI.text capt) <$> ePxPtText
+    -- Preset selection.
 
-            -- Preset selection.
+    let ePreset = intToPresetRenderingParams . fromMaybe (-1)
+            <$> UI.selectionChange selPreset
+    bPreset <- intToPresetRenderingParams 0 `stepper` ePreset
 
-            ePreset <- ((intToPresetRenderingParams . fromMaybe (-1)) <$>)
-                <$> eventSelection selPreset
-            let bPreset = intToPresetRenderingParams 0 `stepper` ePreset
+    let eConfirmPreset = bPreset <@ UI.click btnPreset
 
-            eConfirmPreset <- (bPreset <@)
-                <$> event UI.click btnPreset
+    reactimate $ (\preset -> fillDrawingRatiosFields preset)
+        <$> eConfirmPreset
 
-            reactimate $ (\preset -> fillDrawingRatiosFields preset)
-                <$> eConfirmPreset
+    -- The main action, in several parts.
 
-            -- The main action, in several parts.
+    let eBtnGo = UI.click btnGo
 
-            eBtnGo <- event UI.click btnGo
+    -- Log handling
 
-            -- Log handling
+    (eAppendToLog, appendToLog) <- newEvent
+    (eStringToLog, stringToLog) <- newEvent
 
-            (eAppendToLog, appendToLog) <- newEvent
-            (eStringToLog, stringToLog) <- newEvent
+    let ePutLnLog = flip mappend . flip mappend (Pm.logFromList "\r\n")
+            <$> (eAppendToLog `union` (Pm.logFromList <$> eStringToLog))
 
-            let bLogContents :: Behavior t Pm.RenderingLog
-                bLogContents = mempty `accumB` (eClearLog `union` ePutLnLog)
+        -- The log is cleared at the beginning of the chain.
+        eClearLog = const mempty <$ eBtnGo
 
-                ePutLnLog = flip mappend . flip mappend (Pm.logFromList "\r\n")
-                    <$> (eAppendToLog `union` (Pm.logFromList <$> eStringToLog))
+    -- TODO: Simultaneity may matter here.
+    bLogContents <- mempty `accumB` (eClearLog `union` ePutLnLog)
 
-                -- The log is cleared at the beginning of the chain.
-                eClearLog = const mempty <$ eBtnGo
+    -- Displaying the whole log at once, at the end.
+    -- We will have to reconsider should the log have to be used before
+    -- the start of the chain.
+    (eRenderLog, renderLog) <- newEvent
+    reactimate $ void . (element txaLog #) . set value . Pm.logToList
+        <$> bLogContents <@ eRenderLog
 
-            -- Displaying the whole log at once, at the end.
-            -- We will have to reconsider should the log have to be used before
-            -- the start of the chain.
-            (eRenderLog, renderLog) <- newEvent
-            reactimate $ void . (element txaLog #) . set value . Pm.logToList
-                <$> bLogContents <@ eRenderLog
+    -- Rendering parameters.
+    -- Note that the annotations are parsed in a separate step.
+    -- TODO: Make this less of an eyesore.
 
-            -- Rendering parameters.
-            -- Note that the annotations are parsed in a separate step.
-            -- TODO: Make this less of an eyesore.
+    (eDrawGrid, fireDrawGrid) <- newEvent
+    let eDrawGridClick = UI.click chkDrawGrid
+    reactimate $
+        (get UI.checked chkDrawGrid >>= fireDrawGrid)
+            <$ eDrawGridClick
 
-            (eDrawGrid, fireDrawGrid) <- newEvent
-            eDrawGridClick <- event UI.click chkDrawGrid
-            reactimate $
-                (get UI.checked chkDrawGrid >>= fireDrawGrid)
-                    <$ eDrawGridClick
+    (eDrawIndices, fireDrawIndices) <- newEvent
+    let eDrawIndicesClick = UI.click chkDrawIndices
+    reactimate $
+        (get UI.checked chkDrawIndices >>= fireDrawIndices)
+            <$ eDrawIndicesClick
 
-            (eDrawIndices, fireDrawIndices) <- newEvent
-            eDrawIndicesClick <- event UI.click chkDrawIndices
-            reactimate $
-                (get UI.checked chkDrawIndices >>= fireDrawIndices)
-                    <$ eDrawIndicesClick
+    -- What comes below is just an unsightly way to state we listen to
+    -- changes in all of the rendering parameter fields (bar the
+    -- annotations one) and propagate these changes to bRenParams.
+    bRenParams <- do
+        let mkLstn = BI.valueChangedEvent
+        Pm.def `accumB` concatE
+            [ (\x -> \p -> p {Pm.roadWidth = x})
+                <$> mkLstn bidRoadW
+            , (\x -> \p -> p {Pm.bridgeHeight = x})
+                <$> mkLstn bidBridgeH
+            , (\x -> \p -> p {Pm.bridgeRelativeWidth = x})
+                <$> mkLstn bidBridgeRelW
+            , (\x -> \p -> p {Pm.bankingRelativeHeight = x})
+                <$> mkLstn bidBankingRelH
+            , (\x -> \p -> p {Pm.pixelsPerTile = x})
+                <$> mkLstn bidPxPtPerTile
+            , (\x -> \p -> p {Pm.xTileBounds =
+                ensureBoundOrder $ (x, snd $ Pm.xTileBounds p)})
+                <$> mkLstn biiBMinX
+            , (\x -> \p -> p {Pm.xTileBounds =
+                ensureBoundOrder $ (fst $ Pm.xTileBounds p, x)})
+                <$> mkLstn biiBMaxX
+            , (\x -> \p -> p {Pm.yTileBounds =
+                ensureBoundOrder $ (x, snd $ Pm.yTileBounds p)})
+                <$> mkLstn biiBMinY
+            , (\x -> \p -> p {Pm.yTileBounds =
+                ensureBoundOrder $ (fst $ Pm.yTileBounds p, x)})
+                <$> mkLstn biiBMaxY
+            , (\x -> \p -> p {Pm.drawGridLines = x})
+                <$> eDrawGrid
+            , (\x -> \p -> p {Pm.drawIndices = x})
+                <$> eDrawIndices
+            , (\x -> \p -> p {Pm.outputType = x})
+                <$> eOutType
+            ]
 
-            -- What comes below is just an unsightly way to state we listen to
-            -- changes in all of the rendering parameter fields (bar the
-            -- annotations one) and propagate these changes to bRenParams.
-            bRenParams <- do
-                let mkLstn = fromAddHandler . register . BI.valueChangedEvent
-                pure accumB <*> pure Pm.def <*> (fmap unions . sequence)
-                    [ ((\x -> \p -> p {Pm.roadWidth = x}) <$>)
-                        <$> mkLstn bidRoadW
-                    , ((\x -> \p -> p {Pm.bridgeHeight = x}) <$>)
-                        <$> mkLstn bidBridgeH
-                    , ((\x -> \p -> p {Pm.bridgeRelativeWidth = x}) <$>)
-                        <$> mkLstn bidBridgeRelW
-                    , ((\x -> \p -> p {Pm.bankingRelativeHeight = x}) <$>)
-                        <$> mkLstn bidBankingRelH
-                    , ((\x -> \p -> p {Pm.pixelsPerTile = x}) <$>)
-                        <$> mkLstn bidPxPtPerTile
-                    , ((\x -> \p -> p {Pm.xTileBounds =
-                        ensureBoundOrder $ (x, snd $ Pm.xTileBounds p)}) <$>)
-                        <$> mkLstn biiBMinX
-                    , ((\x -> \p -> p {Pm.xTileBounds =
-                        ensureBoundOrder $ (fst $ Pm.xTileBounds p, x)}) <$>)
-                        <$> mkLstn biiBMaxX
-                    , ((\x -> \p -> p {Pm.yTileBounds =
-                        ensureBoundOrder $ (x, snd $ Pm.yTileBounds p)}) <$>)
-                        <$> mkLstn biiBMinY
-                    , ((\x -> \p -> p {Pm.yTileBounds =
-                        ensureBoundOrder $ (fst $ Pm.yTileBounds p, x)}) <$>)
-                        <$> mkLstn biiBMaxY
-                    , ((\x -> \p -> p {Pm.drawGridLines = x}) <$>)
-                        <$> return eDrawGrid
-                    , ((\x -> \p -> p {Pm.drawIndices = x}) <$>)
-                        <$> return eDrawIndices
-                    , ((\x -> \p -> p {Pm.outputType = x}) <$>)
-                        <$> return eOutType
-                    ]
+    (eRequestParams, requestParams) <- newEvent
 
-            (eRequestParams, requestParams) <- newEvent
+    -- The event fired here indirectly triggers the main action.
+    reactimate $ requestParams () <$ eBtnGo
+    let eRenParams = bRenParams <@ eRequestParams
 
-            -- The event fired here indirectly triggers the main action.
-            reactimate $ requestParams () <$ eBtnGo
-            let eRenParams = bRenParams <@ eRequestParams
+    -- Output from the main action, input for the next run.
 
-            -- Output from the main action, input for the next run.
+    (eRenState, fireRenState) <- newEvent
+    bRenState <- Pm.def `stepper` eRenState
 
-            (eRenState, fireRenState) <- newEvent
-            let bRenState = Pm.def `stepper` eRenState
+    let (eRenParamsDiffEStyle, eRenParamsSameEStyle) = split $
+            (\es -> \p -> if Pm.toElemStyle p /= es
+                then Left p else Right p) <$> bRenEStyle <@> eRenParams
 
-            -- Element style used in the *previous* run.
-            -- Worth pointing out that we have no reason to care what
-            -- it is before the first rendering.
-            let bRenEStyle = Pm.toElemStyle Pm.def `stepper` eRenEStyle
+        -- The immediate trigger of the main action.
+        eParamsAndStateAfterEStyleCheck =
+            (flip (,) . Pm.clearElementCache <$> bRenState
+                <@> eRenParamsDiffEStyle)
+            `union` (flip (,) <$> bRenState
+                <@> eRenParamsSameEStyle)
 
-                (eRenParamsDiffEStyle, eRenParamsSameEStyle) = split $
-                    (\es -> \p -> if Pm.toElemStyle p /= es
-                        then Left p else Right p) <$> bRenEStyle <@> eRenParams
+        eRenEStyle = Pm.toElemStyle . fst
+            <$> eParamsAndStateAfterEStyleCheck
 
-                -- The immediate trigger of the main action.
-                eParamsAndStateAfterEStyleCheck =
-                    (flip (,) . Pm.clearElementCache <$> bRenState
-                        <@> eRenParamsDiffEStyle)
-                    `union` (flip (,) <$> bRenState
-                        <@> eRenParamsSameEStyle)
+    -- Element style used in the *previous* run.
+    -- Worth pointing out that we have no reason to care what
+    -- it is before the first rendering.
+    bRenEStyle <- Pm.toElemStyle Pm.def `stepper` eRenEStyle
 
-                eRenEStyle = Pm.toElemStyle . fst
+    -- Firing the main action.
+
+    -- TODO: Ensure it is okay to run appendToLog and then renderLog
+    -- like this.
+    reactimate $
+        (\(p, st) -> runRenderMap p st
+            >>= \(st', w) -> fireRenState st'
+                >> appendToLog w >> renderLog ())
                     <$> eParamsAndStateAfterEStyleCheck
-
-            -- Firing the main action.
-
-            -- TODO: Ensure it is okay to run appendToLog and then renderLog
-            -- like this.
-            reactimate $
-                (\(p, st) -> runRenderMap p st
-                    >>= \(st', w) -> fireRenState st'
-                        >> appendToLog w >> renderLog ())
-                            <$> eParamsAndStateAfterEStyleCheck
-
-    compile networkDescription >>= actuate
 
 
 unsetSaveLinksHref :: JSFunction ()
