@@ -291,7 +291,6 @@ setup w = void $ mdo
 
     let eOutType = intToOutputType . fromMaybe (-1)
             <$> UI.selectionChange selOutput
-    bOutType <- intToOutputType 0 `stepper` eOutType
 
     let ePxPtText =
             let toPxPtText x =
@@ -356,6 +355,9 @@ setup w = void $ mdo
         (get UI.checked chkDrawIndices >>= fireDrawIndices)
             <$ eDrawIndicesClick
 
+    eBoundsX <- BI.listenAsPair biiBMinX biiBMaxX
+    eBoundsY <- BI.listenAsPair biiBMinY biiBMaxY
+
     -- What comes below is just an unsightly way to state we listen to
     -- changes in all of the rendering parameter fields (bar the
     -- annotations one) and propagate these changes to bRenParams.
@@ -370,18 +372,10 @@ setup w = void $ mdo
                 <$> BI.valueChangedEvent bidBankingRelH
             , (\x -> \p -> p {Pm.pixelsPerTile = x})
                 <$> BI.valueChangedEvent bidPxPtPerTile
-            , (\x -> \p -> p {Pm.xTileBounds =
-                ensureBoundOrder $ (x, snd $ Pm.xTileBounds p)})
-                <$> BI.valueChangedEvent biiBMinX
-            , (\x -> \p -> p {Pm.xTileBounds =
-                ensureBoundOrder $ (fst $ Pm.xTileBounds p, x)})
-                <$> BI.valueChangedEvent biiBMaxX
-            , (\x -> \p -> p {Pm.yTileBounds =
-                ensureBoundOrder $ (x, snd $ Pm.yTileBounds p)})
-                <$> BI.valueChangedEvent biiBMinY
-            , (\x -> \p -> p {Pm.yTileBounds =
-                ensureBoundOrder $ (fst $ Pm.yTileBounds p, x)})
-                <$> BI.valueChangedEvent biiBMaxY
+            , (\x -> \p -> p {Pm.xTileBounds = ensureBoundOrder x})
+                <$> eBoundsX
+            , (\x -> \p -> p {Pm.yTileBounds = ensureBoundOrder x})
+                <$> eBoundsY
             , (\x -> \p -> p {Pm.drawGridLines = x})
                 <$> eDrawGrid
             , (\x -> \p -> p {Pm.drawIndices = x})

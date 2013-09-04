@@ -17,6 +17,8 @@ module Widgets.BoundedInput
     , getValueEvent
     , refresh
     , resetValue
+    -- Miscellanea
+    , listenAsPair
     ) where
 
 import Text.Read (readMaybe)
@@ -34,6 +36,7 @@ data BoundedInput a = BoundedInput
 
     , _minimumValue :: a
     , _maximumValue :: a
+    , _defaultValue :: a
 
     , _setValueEvent :: Event a
     , _setValue :: a -> IO ()
@@ -191,4 +194,12 @@ toElement :: BoundedInput a -> IO Element
 toElement bi =
     UI.span #. "bounded-input" #+
         map element [ _itxValue bi, _strRange bi ]
+
+-- This approach might be extended to make a full compound widget.
+listenAsPair :: BoundedInput a -> BoundedInput a -> IO (Event (a, a))
+listenAsPair fstBI sndBI =
+    (_defaultValue fstBI, _defaultValue sndBI) `accumE` concatE
+        [ (\z -> \(_, y) -> (z, y)) <$> _valueChangedEvent fstBI
+        , (\w -> \(x, _) -> (x, w)) <$> _valueChangedEvent sndBI
+        ]
 
