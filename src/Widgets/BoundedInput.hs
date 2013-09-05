@@ -26,7 +26,7 @@ import Control.Monad (void)
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
-import Util.Reactive.Threepenny
+import Util.Reactive.Threepenny (concatE, union, reactimate, newEventsTagged)
 
 type TagGet = String
 

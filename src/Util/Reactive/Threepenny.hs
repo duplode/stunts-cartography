@@ -28,5 +28,3 @@ unionDot = unionWith (.)
 concatE :: [Event (a -> a)] ->  Event (a -> a)
 concatE = foldr unionDot never
 
-unions :: [Event a] -> Event [a]
-unions = foldr (unionWith (++)) never . map (fmap (:[]))

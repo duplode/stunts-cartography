@@ -20,7 +20,7 @@ import Data.Char (toUpper)
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
-import Util.Reactive.Threepenny
+import Util.Reactive.Threepenny (concatE, union, reactimate)
 import Diagrams.Backend.Cairo (OutputType(..))
 
 import Output
