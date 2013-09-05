@@ -343,18 +343,6 @@ setup w = void $ mdo
     -- Note that the annotations are parsed in a separate step.
     -- TODO: Make this less of an eyesore.
 
-    (eDrawGrid, fireDrawGrid) <- newEvent
-    let eDrawGridClick = UI.click chkDrawGrid
-    reactimate $
-        (get UI.checked chkDrawGrid >>= fireDrawGrid)
-            <$ eDrawGridClick
-
-    (eDrawIndices, fireDrawIndices) <- newEvent
-    let eDrawIndicesClick = UI.click chkDrawIndices
-    reactimate $
-        (get UI.checked chkDrawIndices >>= fireDrawIndices)
-            <$ eDrawIndicesClick
-
     eBoundsX <- BI.listenAsPair biiBMinX biiBMaxX
     eBoundsY <- BI.listenAsPair biiBMinY biiBMaxY
 
@@ -377,9 +365,9 @@ setup w = void $ mdo
             , (\x -> \p -> p {Pm.yTileBounds = ensureBoundOrder x})
                 <$> eBoundsY
             , (\x -> \p -> p {Pm.drawGridLines = x})
-                <$> eDrawGrid
+                <$> UI.checkedChange chkDrawGrid
             , (\x -> \p -> p {Pm.drawIndices = x})
-                <$> eDrawIndices
+                <$> UI.checkedChange chkDrawIndices
             , (\x -> \p -> p {Pm.outputType = x})
                 <$> eOutType
             ]
