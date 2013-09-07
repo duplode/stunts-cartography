@@ -37,10 +37,10 @@ import qualified Widgets.BoundedInput as BI
 main :: IO ()
 main = do
     staticDir <- (</> "wwwroot") <$> getDataDir
-    startGUI Config
+    startGUI defaultConfig
         { tpPort = 10000
         , tpCustomHTML = Nothing
-        , tpStatic = staticDir
+        , tpStatic = Just staticDir
         } setup
 
 setup :: Window -> IO ()
