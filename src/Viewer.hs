@@ -107,11 +107,11 @@ setup w = void $ mdo
         (defBMinY, defBMaxY) = Pm.yTileBounds Pm.def
         styleBoundsInput = BI.setTextInputSize 2 . BI.formatBoundsCaption (const "")
 
-    biiBMinX <- BI.new (0, 30) defBMinX # styleBoundsInput
-    biiBMaxX <- BI.new (0, 30) defBMaxX # styleBoundsInput
+    biiBMinX <- BI.new (0, 29) defBMinX # styleBoundsInput
+    biiBMaxX <- BI.new (0, 29) defBMaxX # styleBoundsInput
 
-    biiBMinY <- BI.new (0, 30) defBMinY # styleBoundsInput
-    biiBMaxY <- BI.new (0, 30) defBMaxY # styleBoundsInput
+    biiBMinY <- BI.new (0, 29) defBMinY # styleBoundsInput
+    biiBMaxY <- BI.new (0, 29) defBMaxY # styleBoundsInput
 
     txaAnns <-
         UI.textarea # set UI.name "ann-input"
