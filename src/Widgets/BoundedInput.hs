@@ -35,19 +35,11 @@ data BoundedInput a = BoundedInput
     , _maximumValue :: a
     , _defaultValue :: a
 
-    , _setValueEvent :: Event a
-    , _setValue :: a -> IO ()
-
+    , _setValue          :: a -> IO ()
     , _valueChangedEvent :: Event a
-    , _valueChanged :: a -> IO ()
-
-    , _getValue :: Event () -> IO (Event a)
-
-    , _refreshEvent :: Event ()
-    , _refresh :: () -> IO ()
-
-    , _resetValueEvent :: Event ()
-    , _resetValue :: () -> IO ()
+    , _getValue          :: Event () -> IO (Event a)
+    , _refresh           :: () -> IO ()
+    , _resetValue        :: () -> IO ()
     }
 
 setValue :: BoundedInput a -> a -> IO ()
@@ -77,13 +69,13 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
 
     let _defaultValue = quietlyEnforceBounds defaultValue
 
-    (_setValueEvent, _setValue) <- newEvent
+    (eSet, _setValue) <- newEvent
 
-    (_valueChangedEvent, _valueChanged) <- newEvent
+    (_valueChangedEvent, fireValueChanged) <- newEvent
 
-    (_refreshEvent, _refresh) <- newEvent
+    (eRefresh, _refresh) <- newEvent
 
-    (_resetValueEvent, _resetValue) <- newEvent
+    (eReset, _resetValue) <- newEvent
 
     (eRequest, acknowledgeRequest) <- newEvent
 
@@ -93,9 +85,9 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
 
         eUserValue = filterJust $ readMaybe <$> eUserInput
 
-        eSetValue = quietlyEnforceBounds <$> _setValueEvent
+        eSetValue = quietlyEnforceBounds <$> eSet
 
-        eResetValue = _defaultValue <$ _resetValueEvent
+        eResetValue = _defaultValue <$ eReset
 
         eBlur = UI.blur _itxValue
 
@@ -106,7 +98,7 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
         eInBoundsValue = eInBoundsUserValue `union` eProgSetValue
 
         eSync = () <$ unions
-            [ eBlur, eSyncOnSet, eRequest, _refreshEvent ]
+            [ eBlur, eSyncOnSet, eRequest, eRefresh ]
 
     bValue <- _defaultValue `stepper` eInBoundsValue
 
@@ -114,7 +106,7 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
             reactimate $ acknowledgeRequest <$> e
             return $ bValue <@ e
 
-    reactimate $ _valueChanged <$> eInBoundsValue
+    reactimate $ fireValueChanged <$> eInBoundsValue
 
     reactimate $ acknowledgeProgSet <$> (() <$ eProgSetValue)
 
