@@ -13,8 +13,7 @@ module Widgets.BoundedInput
     -- Event interface
     , setValue
     , valueChangedEvent
-    , requestValue
-    , getValueEvent
+    , getValue
     , refresh
     , resetValue
     -- Miscellanea
@@ -26,9 +25,7 @@ import Control.Monad (void)
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
-import Util.Reactive.Threepenny (concatE, union, reactimate, newEventsTagged)
-
-type TagGet = String
+import Util.Reactive.Threepenny (concatE, union, reactimate)
 
 data BoundedInput a = BoundedInput
     { _itxValue :: Element
@@ -44,10 +41,7 @@ data BoundedInput a = BoundedInput
     , _valueChangedEvent :: Event a
     , _valueChanged :: a -> IO ()
 
-    , _requestValueEvent :: Event TagGet
-    , _requestValue :: TagGet -> IO ()
-    , _getValueEvent :: TagGet -> Event a
-    , _getValue :: (TagGet, a) -> IO ()
+    , _getValue :: Event () -> IO (Event a)
 
     , _refreshEvent :: Event ()
     , _refresh :: () -> IO ()
@@ -62,11 +56,8 @@ setValue = _setValue
 valueChangedEvent :: BoundedInput a -> Event a
 valueChangedEvent = _valueChangedEvent
 
-requestValue :: BoundedInput a -> TagGet -> IO ()
-requestValue = _requestValue
-
-getValueEvent :: BoundedInput a -> TagGet -> Event a
-getValueEvent = _getValueEvent
+getValue :: BoundedInput a -> Event () -> IO (Event a)
+getValue = _getValue
 
 refresh :: BoundedInput a -> IO ()
 refresh bi = _refresh bi ()
@@ -90,73 +81,46 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
 
     (_valueChangedEvent, _valueChanged) <- newEvent
 
-    (_requestValueEvent, _requestValue) <- newEvent
-    (_getValueEvent, _getValue) <- newEventsTagged
-
     (_refreshEvent, _refresh) <- newEvent
 
     (_resetValueEvent, _resetValue) <- newEvent
 
+    (eRequest, acknowledgeRequest) <- newEvent
+
+    (eSyncOnSet, acknowledgeProgSet) <- newEvent
+
     let eUserInput = UI.valueChange _itxValue
 
-        (eInvalidInput, eUserValue) = split $
-            maybe (Left ()) Right . readMaybe <$> eUserInput
+        eUserValue = filterJust $ readMaybe <$> eUserInput
 
         eSetValue = quietlyEnforceBounds <$> _setValueEvent
 
         eResetValue = _defaultValue <$ _resetValueEvent
 
-    let eBlur = UI.blur _itxValue
+        eBlur = UI.blur _itxValue
 
-    let (eBoundUserValue, eInBoundsUserValue) = split $
-            enforceBounds <$> eUserValue
+        eInBoundsUserValue = quietlyEnforceBounds <$> eUserValue
 
-        -- Note that programatically set values are silently constrained
-        -- to the bounds.
-        eProgramaticallySetValue = eSetValue `union` eResetValue
+        eProgSetValue = eSetValue `union` eResetValue
 
-        eInBoundsValue = eInBoundsUserValue
-            `union` eProgramaticallySetValue
+        eInBoundsValue = eInBoundsUserValue `union` eProgSetValue
 
-        -- Left, in this passage, means "no correction is necessary".
-        eSync = eBlur `union` _refreshEvent
+        eSync = () <$ unions
+            [ eBlur, eSyncOnSet, eRequest, _refreshEvent ]
 
-    bCorrectValue <- Left () `stepper` union
-        (Right <$> eBoundUserValue) (Left () <$ eInBoundsValue)
-    let (_, eCorrectOnSync) = split $ bCorrectValue <@ eSync
+    bValue <- _defaultValue `stepper` eInBoundsValue
 
-    bUndoInput <- Left () `stepper` union
-        (Right <$> bValue <@ eInvalidInput) (Left () <$ eUserValue)
-    let (_, eUndoOnSync) = split $ bUndoInput <@ eSync
-        (_, eUndoOnRequest) = split $ bUndoInput <@ _requestValueEvent
+    let _getValue e = do
+            reactimate $ acknowledgeRequest <$> e
+            return $ bValue <@ e
 
-        -- These complications are needed because we cannot rely on the value
-        -- of bValue as-is - _requestValueEvent may trigger changes to it in
-        -- case there is a correction to be made.
-        (eDontCorrectOnRequest, eCorrectOnRequest) = split $
-            addTagToCorrection <$> bCorrectValue <@> _requestValueEvent
-        eValidOnRequest = ((<$) <$> bValue) <@> eDontCorrectOnRequest
-        eGetValue = eCorrectOnRequest `union` eValidOnRequest
+    reactimate $ _valueChanged <$> eInBoundsValue
 
-        eCorrectedValue = eCorrectOnSync
-            `union` (snd <$> eCorrectOnRequest)
-
-        eValue = eInBoundsValue `union` eCorrectedValue
-
-    bValue <- _defaultValue `stepper` eValue
-
-    let eUndoValue = eUndoOnSync `union` eUndoOnRequest
-
-        eSetTextValue = eUndoValue `union` eCorrectedValue
-            `union` eProgramaticallySetValue
-
-    reactimate $ _valueChanged <$> eValue
-
-    reactimate $ _getValue <$> eGetValue
+    reactimate $ acknowledgeProgSet <$> (() <$ eProgSetValue)
 
     reactimate $
         void . (element _itxValue #) . set UI.value . show
-            <$> eSetTextValue
+            <$> (bValue <@ eSync)
 
     -- Completing the initialization.
 
@@ -165,11 +129,6 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
     return BoundedInput {..}
 
     where
-    enforceBounds x
-        | x < _minimumValue = Left _minimumValue
-        | x > _maximumValue = Left _maximumValue
-        | otherwise         = Right x
-
     quietlyEnforceBounds = max _minimumValue . min _maximumValue
 
     addTagToCorrection corr tag = case corr of

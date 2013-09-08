@@ -7,15 +7,6 @@ import Reactive.Threepenny
 reactimate :: Event (IO ()) -> IO ()
 reactimate e = void $ register e id
 
-newEventsTagged :: Ord tag => IO (tag -> Event a, (tag, a) -> IO ())
-newEventsTagged = do
-    (eTrigger, fireTrigger) <- newEvent
-    let tagHandler (tag, _, fire) =
-            -- reactimate $ fire . snd <$> filterE ((== tag) . fst) eTrigger
-            void $ register (filterE ((== tag) . fst) eTrigger) (fire . snd)
-    e <- newEventsNamed tagHandler
-    return (e, fireTrigger)
-
 union :: Event a -> Event a -> Event a
 union = unionWith const
 
@@ -27,4 +18,13 @@ unionDot = unionWith (.)
 
 concatE :: [Event (a -> a)] ->  Event (a -> a)
 concatE = foldr unionDot never
+
+-- Deprecated. There is no need at all to use this function to make getters.
+newEventsTagged :: Ord tag => IO (tag -> Event a, (tag, a) -> IO ())
+newEventsTagged = do
+    (eTrigger, fireTrigger) <- newEvent
+    let tagHandler (tag, _, fire) =
+            void $ register (filterE ((== tag) . fst) eTrigger) (fire . snd)
+    e <- newEventsNamed tagHandler
+    return (e, fireTrigger)
 
