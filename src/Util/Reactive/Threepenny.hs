@@ -19,6 +19,9 @@ unionDot = unionWith (.)
 concatE :: [Event (a -> a)] ->  Event (a -> a)
 concatE = foldr unionDot never
 
+setter :: Event a -> Event (a -> a)
+setter = fmap const
+
 -- Deprecated. There is no need at all to use this function to make getters.
 newEventsTagged :: Ord tag => IO (tag -> Event a, (tag, a) -> IO ())
 newEventsTagged = do

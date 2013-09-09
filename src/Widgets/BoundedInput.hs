@@ -11,11 +11,12 @@ module Widgets.BoundedInput
     , formatBoundsCaption
     , setTextInputSize
     -- Event interface
-    , setValue
-    , valueChangedEvent
+    , resetter
+    , valueChange
+    , progValueChange
+    , anyValueChange
     , getValue
     , refresh
-    , resetValue
     -- Miscellanea
     , listenAsPair
     ) where
@@ -25,7 +26,7 @@ import Control.Monad (void)
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
-import Util.Reactive.Threepenny (concatE, union, reactimate)
+import Util.Reactive.Threepenny (concatE, union, reactimate, setter)
 
 data BoundedInput a = BoundedInput
     { _itxValue :: Element
@@ -35,18 +36,25 @@ data BoundedInput a = BoundedInput
     , _maximumValue :: a
     , _defaultValue :: a
 
-    , _setValue          :: a -> IO ()
-    , _valueChangedEvent :: Event a
-    , _getValue          :: Event () -> IO (Event a)
-    , _refresh           :: () -> IO ()
-    , _resetValue        :: () -> IO ()
+    , _valueChange     :: Event a
+    , _progValueChange :: Event a
+    , _anyValueChange  :: Event a
+    , _getValue        :: Event () -> IO (Event a)
+    , _refresh         :: () -> IO ()
     }
 
-setValue :: BoundedInput a -> a -> IO ()
-setValue = _setValue
+-- This is a little clumsy.
+resetter :: BoundedInput a -> Event () -> Event (a -> a)
+resetter bi = setter . (_defaultValue bi <$)
 
-valueChangedEvent :: BoundedInput a -> Event a
-valueChangedEvent = _valueChangedEvent
+valueChange :: BoundedInput a -> Event a
+valueChange = _valueChange
+
+progValueChange :: BoundedInput a -> Event a
+progValueChange = _progValueChange
+
+anyValueChange :: BoundedInput a -> Event a
+anyValueChange = _anyValueChange
 
 getValue :: BoundedInput a -> Event () -> IO (Event a)
 getValue = _getValue
@@ -54,12 +62,9 @@ getValue = _getValue
 refresh :: BoundedInput a -> IO ()
 refresh bi = _refresh bi ()
 
-resetValue :: BoundedInput a -> IO ()
-resetValue bi = _resetValue bi ()
-
 new :: (Ord a, Show a, Read a)
-    => (a, a) -> a -> IO (BoundedInput a)
-new (_minimumValue, _maximumValue) defaultValue = mdo
+    => (a, a) -> (a, Event (a -> a)) -> IO (BoundedInput a)
+new (_minimumValue, _maximumValue) (defaultValue, eSet) = mdo
 
     _itxValue <- UI.input # set UI.type_ "text" # set UI.size "5"
         #. "bounded-input-value"
@@ -67,15 +72,10 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
         (" (" ++ show _minimumValue ++ " - " ++ show _maximumValue ++ ")")
         #. "bounded-input-caption"
 
-    let _defaultValue = quietlyEnforceBounds defaultValue
-
-    (eSet, _setValue) <- newEvent
-
-    (_valueChangedEvent, fireValueChanged) <- newEvent
+    let enforceBounds = min _maximumValue . max _minimumValue
+        _defaultValue = enforceBounds defaultValue
 
     (eRefresh, _refresh) <- newEvent
-
-    (eReset, _resetValue) <- newEvent
 
     (eRequest, acknowledgeRequest) <- newEvent
 
@@ -83,32 +83,30 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
 
     let eUserInput = UI.valueChange _itxValue
 
-        eUserValue = filterJust $ readMaybe <$> eUserInput
+        eUserValue = enforceBounds <$> (filterJust $ readMaybe <$> eUserInput)
 
-        eSetValue = quietlyEnforceBounds <$> eSet
+        eSetValue = enforceBounds <$> (flip ($) <$> bValue <@> eSet)
 
-        eResetValue = _defaultValue <$ eReset
+        eValue = eSetValue `union` eUserValue
 
         eBlur = UI.blur _itxValue
-
-        eInBoundsUserValue = quietlyEnforceBounds <$> eUserValue
-
-        eProgSetValue = eSetValue `union` eResetValue
-
-        eInBoundsValue = eInBoundsUserValue `union` eProgSetValue
 
         eSync = () <$ unions
             [ eBlur, eSyncOnSet, eRequest, eRefresh ]
 
-    bValue <- _defaultValue `stepper` eInBoundsValue
+    bValue <- _defaultValue `stepper` eValue
 
     let _getValue e = do
             reactimate $ acknowledgeRequest <$> e
             return $ bValue <@ e
 
-    reactimate $ fireValueChanged <$> eInBoundsValue
+        -- Does this make the event fire *before* the value has actually
+        -- changed?
+        _valueChange = eUserValue
+        _progValueChange = eSetValue
+        _anyValueChange = eValue
 
-    reactimate $ acknowledgeProgSet <$> (() <$ eProgSetValue)
+    reactimate $ acknowledgeProgSet <$> (() <$ eSetValue)
 
     reactimate $
         void . (element _itxValue #) . set UI.value . show
@@ -116,16 +114,10 @@ new (_minimumValue, _maximumValue) defaultValue = mdo
 
     -- Completing the initialization.
 
-    _setValue _defaultValue
+    _refresh ()
 
     return BoundedInput {..}
 
-    where
-    quietlyEnforceBounds = max _minimumValue . min _maximumValue
-
-    addTagToCorrection corr tag = case corr of
-        Left () -> Left (tag, ())
-        Right x -> Right (tag, x)
 
 formatBoundsCaption :: ((a, a) -> String)
                     -> IO (BoundedInput a) -> IO (BoundedInput a)
@@ -150,7 +142,7 @@ toElement bi =
 listenAsPair :: BoundedInput a -> BoundedInput a -> IO (Event (a, a))
 listenAsPair fstBI sndBI =
     (_defaultValue fstBI, _defaultValue sndBI) `accumE` concatE
-        [ (\z -> \(_, y) -> (z, y)) <$> _valueChangedEvent fstBI
-        , (\w -> \(x, _) -> (x, w)) <$> _valueChangedEvent sndBI
+        [ (\z -> \(_, y) -> (z, y)) <$> _anyValueChange fstBI
+        , (\w -> \(x, _) -> (x, w)) <$> _anyValueChange sndBI
         ]
 
