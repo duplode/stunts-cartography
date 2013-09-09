@@ -360,10 +360,7 @@ setup w = void $ do
     -- Collecting the parameters and firing the main action.
 
     mdo
-        (eRequestParams, requestParams) <- newEvent
-        let eRenParams = bRenParams <@ eRequestParams
-
-        reactimate $ requestParams () <$ eGo
+        let eRenParams = bRenParams <@ eGo
 
         -- Output from the main action, input for the next run.
         (eRenState, fireRenState) <- newEvent
