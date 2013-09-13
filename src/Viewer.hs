@@ -75,16 +75,16 @@ setup w = void $ do
     let (defMinX, defMaxX) = Pm.xTileBounds Pm.def
         (defMinY, defMaxY) = Pm.yTileBounds Pm.def
 
-        styleBoundsCaption = BI.setTextInputSize 2
+        styleBoundsInput = BI.setTextInputSize 2
             . BI.formatBoundsCaption (const "")
 
-    biiMinX <- BI.new (0, 29) # styleBoundsCaption
+    biiMinX <- BI.new (0, 29) # styleBoundsInput
     bMinX   <- defMinX `BI.userModel` biiMinX
-    biiMaxX <- BI.new (0, 29) # styleBoundsCaption
+    biiMaxX <- BI.new (0, 29) # styleBoundsInput
     bMaxX   <- defMaxX `BI.userModel` biiMaxX
-    biiMinY <- BI.new (0, 29) # styleBoundsCaption
+    biiMinY <- BI.new (0, 29) # styleBoundsInput
     bMinY   <- defMinY `BI.userModel` biiMinY
-    biiMaxY <- BI.new (0, 29) # styleBoundsCaption
+    biiMaxY <- BI.new (0, 29) # styleBoundsInput
     bMaxY   <- defMaxY `BI.userModel` biiMaxY
 
     let ensureBoundOrder bounds@(z, w) = if z > w then (w, z) else bounds
