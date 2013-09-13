@@ -54,54 +54,66 @@ setup w = void $ do
                 , UI.option #+ [string "SVG"]
                 ]
 
-    let eOutType = intToOutputType . fromMaybe (-1)
-            <$> UI.selectionChange selOutput
+    let eSelOutput = UI.selectionChange selOutput
+    bOutType <- (intToOutputType . fromMaybe (-1) <$>)
+        <$> (Just 0 `stepper` eSelOutput)
 
-    let ePxPtText =
+    let bPxPtText =
             let toPxPtText x =
                     case x of
                         SVG -> "Points per tile:"
                         _   -> "Pixels per tile:" -- PNG
-            in toPxPtText <$> eOutType
+            in toPxPtText <$> bOutType
 
-    strPxPtPerTile <- string "Pixels per tile:"
-    bidPxPtPerTile <- BI.new (8, 128) (Pm.pixelsPerTile Pm.def, never)
+    strPxPtPerTile <- string "" # sink text bPxPtText
 
-    reactimate $
-        void . (element strPxPtPerTile #) . set UI.text <$> ePxPtText
+    bidPxPtPerTile <- BI.new (8, 128)
+    bPxPtPerTile   <- Pm.pixelsPerTile Pm.def `BI.userModel` bidPxPtPerTile
 
     -- Map bounds, grid and indices.
 
-    let (defBMinX, defBMaxX) = Pm.xTileBounds Pm.def
-        (defBMinY, defBMaxY) = Pm.yTileBounds Pm.def
-        styleBoundsInput = BI.setTextInputSize 2 . BI.formatBoundsCaption (const "")
+    let (defMinX, defMaxX) = Pm.xTileBounds Pm.def
+        (defMinY, defMaxY) = Pm.yTileBounds Pm.def
 
-    biiBMinX <- BI.new (0, 29) (defBMinX, never) # styleBoundsInput
-    biiBMaxX <- BI.new (0, 29) (defBMaxX, never) # styleBoundsInput
-    biiBMinY <- BI.new (0, 29) (defBMinY, never) # styleBoundsInput
-    biiBMaxY <- BI.new (0, 29) (defBMaxY, never) # styleBoundsInput
+        styleBoundsCaption = BI.setTextInputSize 2
+            . BI.formatBoundsCaption (const "")
 
-    eBoundsX <- BI.listenAsPair biiBMinX biiBMaxX
-    eBoundsY <- BI.listenAsPair biiBMinY biiBMaxY
+    biiMinX <- BI.new (0, 29) # styleBoundsCaption
+    bMinX   <- defMinX `BI.userModel` biiMinX
+    biiMaxX <- BI.new (0, 29) # styleBoundsCaption
+    bMaxX   <- defMaxX `BI.userModel` biiMaxX
+    biiMinY <- BI.new (0, 29) # styleBoundsCaption
+    bMinY   <- defMinY `BI.userModel` biiMinY
+    biiMaxY <- BI.new (0, 29) # styleBoundsCaption
+    bMaxY   <- defMaxY `BI.userModel` biiMaxY
+
+    let ensureBoundOrder bounds@(z, w) = if z > w then (w, z) else bounds
+        bBoundsX = ensureBoundOrder <$> (pure (,) <*> bMinX <*> bMaxX)
+        bBoundsY = ensureBoundOrder <$> (pure (,) <*> bMinY <*> bMaxY)
 
     chkDrawGrid <-
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-lines-chk"
-            # set UI.id_ "grid-lines-chk" # set UI.checked_ True
+            # set UI.id_ "grid-lines-chk"
+    bDrawGrid <- True `stepper` UI.checkedChange chkDrawGrid
+    currentValue bDrawGrid >>= (element chkDrawGrid #) . set UI.checked_
+
     chkDrawIndices <-
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
-            # set UI.id_ "grid-indices-chk" # set UI.checked_ True
+            # set UI.id_ "grid-indices-chk"
+    bDrawIndices <- True `stepper` UI.checkedChange chkDrawIndices
+    currentValue bDrawIndices >>= (element chkDrawIndices #) . set UI.checked_
 
     -- Preset selection and ratio field initialization.
     let presetDefAndSetter :: (Pm.RenderingParameters -> a)
                            -> Event (Pm.RenderingParameters)
                            -> (a, Event (a -> a))
-        presetDefAndSetter fProj eParams =
-            (fProj Pm.def, setter $ fProj <$> eParams)
+        presetDefAndSetter fParam eParams =
+            (fParam Pm.def, setter $ fParam <$> eParams)
 
         trimFracPart n = (/ 10^n) . realToFrac . truncate . (* 10^n)
-        presetDefAndSetterD fProj =
+        presetDefAndSetterD fParam =
             (\(x, e) -> (trimFracPart 3 x, (trimFracPart 3 .) <$> e))
-                . presetDefAndSetter fProj
+                . presetDefAndSetter fParam
 
     selPreset <-
         UI.select # set UI.name "style-preset-select"
@@ -112,53 +124,44 @@ setup w = void $ do
                 , UI.option #+ [string "Traditional"]
                 ]
 
-    btnPreset <- UI.button #. "button" #+ [string "Set"]
+    let eSelPreset = UI.selectionChange selPreset
+    bPreset <- (intToPresetRenderingParams . fromMaybe (-1) <$>)
+        <$> (Just 0 `stepper` eSelPreset)
 
-    let eSelPreset = intToPresetRenderingParams . fromMaybe (-1)
-            <$> UI.selectionChange selPreset
-    bPreset <- intToPresetRenderingParams 0 `stepper` eSelPreset
+    btnPreset <- UI.button #. "button" #+ [string "Set"]
 
     let ePreset = bPreset <@ UI.click btnPreset
 
     -- Rendering ratios
+    let ratioModel fParam bi = do
+            let (defRatio, eRatio) = presetDefAndSetterD fParam ePreset
+            eRatio' <- BI.withRefresh bi eRatio
+            BI.simpleModel defRatio eRatio' bi
 
-    bidRoadW <- BI.new (0.1, 0.5) $
-        presetDefAndSetterD Pm.roadWidth ePreset
-    bidBridgeH <- BI.new (0, 0.5) $
-        presetDefAndSetterD Pm.bridgeHeight ePreset
-    bidBridgeRelW <- BI.new (1, 3) $
-        presetDefAndSetterD Pm.bridgeRelativeWidth ePreset
-    bidBankingRelH <- BI.new (0.25, 1) $
-        presetDefAndSetterD Pm.bankingRelativeHeight ePreset
+    bidRoadW       <- BI.new (0.1, 0.5)
+    bRoadW         <- Pm.roadWidth `ratioModel` bidRoadW
+    bidBridgeH     <- BI.new (0, 0.5)
+    bBridgeH       <- Pm.bridgeHeight `ratioModel` bidBridgeH
+    bidBridgeRelW  <- BI.new (1, 3)
+    bBridgeRelW    <- Pm.bridgeRelativeWidth `ratioModel` bidBridgeRelW
+    bidBankingRelH <- BI.new (0.25, 1)
+    bBankingRelH   <- Pm.bankingRelativeHeight `ratioModel` bidBankingRelH
 
     -- Rendering parameters.
     -- Note that the annotations are parsed in a separate step.
 
-    -- What comes below is just an unsightly way to state we listen to
-    -- changes in all of the rendering parameter fields (bar the
-    -- annotations one) and propagate these changes to bRenParams.
-    bRenParams <- Pm.def `accumB` concatE
-            [ (\x -> \p -> p {Pm.roadWidth = x})
-                <$> BI.anyValueChange bidRoadW
-            , (\x -> \p -> p {Pm.bridgeHeight = x})
-                <$> BI.anyValueChange bidBridgeH
-            , (\x -> \p -> p {Pm.bridgeRelativeWidth = x})
-                <$> BI.anyValueChange bidBridgeRelW
-            , (\x -> \p -> p {Pm.bankingRelativeHeight = x})
-                <$> BI.anyValueChange bidBankingRelH
-            , (\x -> \p -> p {Pm.pixelsPerTile = x})
-                <$> BI.anyValueChange bidPxPtPerTile
-            , (\x -> \p -> p {Pm.xTileBounds = ensureBoundOrder x})
-                <$> eBoundsX
-            , (\x -> \p -> p {Pm.yTileBounds = ensureBoundOrder x})
-                <$> eBoundsY
-            , (\x -> \p -> p {Pm.drawGridLines = x})
-                <$> UI.checkedChange chkDrawGrid
-            , (\x -> \p -> p {Pm.drawIndices = x})
-                <$> UI.checkedChange chkDrawIndices
-            , (\x -> \p -> p {Pm.outputType = x})
-                <$> eOutType
-            ]
+    let bRenParams = pure Pm.def
+            <**> ((\x -> \p -> p {Pm.roadWidth = x}) <$> bRoadW)
+            <**> ((\x -> \p -> p {Pm.bridgeHeight = x}) <$> bBridgeH)
+            <**> ((\x -> \p -> p {Pm.bridgeRelativeWidth = x}) <$> bBridgeRelW)
+            <**> ((\x -> \p -> p {Pm.bankingRelativeHeight = x})
+                <$> bBankingRelH)
+            <**> ((\x -> \p -> p {Pm.pixelsPerTile = x}) <$> bPxPtPerTile)
+            <**> ((\x -> \p -> p {Pm.xTileBounds = x}) <$> bBoundsX)
+            <**> ((\x -> \p -> p {Pm.yTileBounds = x}) <$> bBoundsY)
+            <**> ((\x -> \p -> p {Pm.drawGridLines = x}) <$> bDrawGrid)
+            <**> ((\x -> \p -> p {Pm.drawIndices = x}) <$> bDrawIndices)
+            <**> ((\x -> \p -> p {Pm.outputType = x}) <$> bOutType)
 
     -- The go button.
 
@@ -266,10 +269,10 @@ setup w = void $ do
                 ]
             , UI.p #+
                 [ string "Map bounds (0 - 29):", UI.br
-                , string "x from ", BI.toElement biiBMinX
-                , string " to ", BI.toElement biiBMaxX, UI.br
-                , string "y from ", BI.toElement biiBMinY
-                , string " to ", BI.toElement biiBMaxY
+                , string "x from ", BI.toElement biiMinX
+                , string " to ", BI.toElement biiMaxX, UI.br
+                , string "y from ", BI.toElement biiMinY
+                , string " to ", BI.toElement biiMaxY
                 ]
             , UI.p #+
                 [ string "Annotations - "
@@ -449,10 +452,7 @@ intToPresetRenderingParams n = case n of
     3 -> Pm.classicRenderingParameters
     _ -> error "Unknown preset."
 
-ensureBoundOrder :: (Int, Int) -> (Int, Int)
-ensureBoundOrder bounds@(z, w) = if z > w then (w, z) else bounds
-
--- Reading of fields without reactive-banana. Currently unused.
+-- Reading of fields without FRP. Currently unused.
 {-
 selectedFromSelect :: (Int -> a) -> String -> Window -> IO a
 selectedFromSelect fSel selId = \w -> do

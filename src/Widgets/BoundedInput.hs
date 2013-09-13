@@ -1,24 +1,22 @@
-{-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
 module Widgets.BoundedInput
     ( BoundedInput
-    -- Pseudo-constructors
+    -- Construction
     , new
+    -- Model definition and setup
+    , plugModel
+    , simpleModel
+    , userModel
     -- Default renderer
     , toElement
     -- Appearance modifiers
     , formatBoundsCaption
     , setTextInputSize
-    -- Event interface
-    , resetter
-    , valueChange
-    , progValueChange
-    , anyValueChange
-    , getValue
-    , refresh
-    -- Miscellanea
-    , listenAsPair
+    -- Raw events
+    , userValueChange
+    -- Widget state manipulation
+    , withRefresh
     ) where
 
 import Text.Read (readMaybe)
@@ -26,7 +24,7 @@ import Control.Monad (void)
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
-import Util.Reactive.Threepenny (concatE, union, reactimate, setter)
+import Util.Reactive.Threepenny (sinkWhen)
 
 data BoundedInput a = BoundedInput
     { _itxValue :: Element
@@ -34,37 +32,26 @@ data BoundedInput a = BoundedInput
 
     , _minimumValue :: a
     , _maximumValue :: a
-    , _defaultValue :: a
 
-    , _valueChange     :: Event a
-    , _progValueChange :: Event a
-    , _anyValueChange  :: Event a
-    , _getValue        :: Event () -> IO (Event a)
+    , _userValueChange :: Event a
+    , _eRefresh        :: Event ()
     , _refresh         :: () -> IO ()
     }
 
--- This is a little clumsy.
-resetter :: BoundedInput a -> Event () -> Event (a -> a)
-resetter bi = setter . (_defaultValue bi <$)
+userValueChange :: BoundedInput a -> Event a
+userValueChange = _userValueChange
 
-valueChange :: BoundedInput a -> Event a
-valueChange = _valueChange
+withRefresh :: BoundedInput a -> Event b -> IO (Event b)
+withRefresh bi e = do
+    void $ register e $ \_ -> _refresh bi ()
+    return e
 
-progValueChange :: BoundedInput a -> Event a
-progValueChange = _progValueChange
-
-anyValueChange :: BoundedInput a -> Event a
-anyValueChange = _anyValueChange
-
-getValue :: BoundedInput a -> Event () -> IO (Event a)
-getValue = _getValue
-
-refresh :: BoundedInput a -> IO ()
-refresh bi = _refresh bi ()
+enforceBounds :: (Ord a) => BoundedInput a -> a -> a
+enforceBounds bi = min (_maximumValue bi) . max (_minimumValue bi)
 
 new :: (Ord a, Show a, Read a)
-    => (a, a) -> (a, Event (a -> a)) -> IO (BoundedInput a)
-new (_minimumValue, _maximumValue) (defaultValue, eSet) = mdo
+    => (a, a) -> IO (BoundedInput a)
+new (_minimumValue, _maximumValue) = do
 
     _itxValue <- UI.input # set UI.type_ "text" # set UI.size "5"
         #. "bounded-input-value"
@@ -72,64 +59,52 @@ new (_minimumValue, _maximumValue) (defaultValue, eSet) = mdo
         (" (" ++ show _minimumValue ++ " - " ++ show _maximumValue ++ ")")
         #. "bounded-input-caption"
 
-    let enforceBounds = min _maximumValue . max _minimumValue
-        _defaultValue = enforceBounds defaultValue
+    let _userValueChange = filterJust $ readMaybe <$> UI.valueChange _itxValue
 
-    (eRefresh, _refresh) <- newEvent
-
-    (eRequest, acknowledgeRequest) <- newEvent
-
-    (eSyncOnSet, acknowledgeProgSet) <- newEvent
-
-    let eUserInput = UI.valueChange _itxValue
-
-        eUserValue = enforceBounds <$> (filterJust $ readMaybe <$> eUserInput)
-
-        eSetValue = enforceBounds <$> (flip ($) <$> bValue <@> eSet)
-
-        eValue = eSetValue `union` eUserValue
-
-        eBlur = UI.blur _itxValue
-
-        eSync = () <$ unions
-            [ eBlur, eSyncOnSet, eRequest, eRefresh ]
-
-    bValue <- _defaultValue `stepper` eValue
-
-    let _getValue e = do
-            reactimate $ acknowledgeRequest <$> e
-            return $ bValue <@ e
-
-        -- Does this make the event fire *before* the value has actually
-        -- changed?
-        _valueChange = eUserValue
-        _progValueChange = eSetValue
-        _anyValueChange = eValue
-
-    reactimate $ acknowledgeProgSet <$> (() <$ eSetValue)
-
-    reactimate $
-        void . (element _itxValue #) . set UI.value . show
-            <$> (bValue <@ eSync)
-
-    -- Completing the initialization.
-
-    _refresh ()
+    (_eRefresh, _refresh) <- newEvent
 
     return BoundedInput {..}
 
+plugModel :: (Ord a, Show a, Read a)
+          => BoundedInput a -> Behavior a -> IO (Behavior a)
+plugModel bi bModel = do
+
+    let itx = _itxValue bi
+        bValue = enforceBounds bi <$> bModel
+    _defaultValue <- currentValue bValue
+
+    let eBlur = UI.blur itx
+    bEditing <- stepper False $ and <$>
+        unions [ True <$ UI.domEvent "focus" itx, False <$ eBlur ]
+    void $ element itx # sinkWhen (not <$> bEditing) value (show <$> bValue)
+
+    let eSync = bValue <@ unionWith const eBlur (_eRefresh bi)
+    void $ register eSync $ void . (element itx #) . set value . show
+
+    return bValue
+
+simpleModel :: (Ord a, Show a, Read a)
+           => a -> Event (a -> a)
+           -> BoundedInput a -> IO (Behavior a)
+simpleModel initialValue eSet bi = do
+    let eValue = unionWith const eSet $ const <$> _userValueChange bi
+    initialValue `accumB` eValue >>= plugModel bi
+
+userModel :: (Ord a, Show a, Read a)
+         => a -> BoundedInput a -> IO (Behavior a)
+userModel = (`simpleModel` never)
 
 formatBoundsCaption :: ((a, a) -> String)
                     -> IO (BoundedInput a) -> IO (BoundedInput a)
-formatBoundsCaption fFormat mBI = do
-    bi <- mBI
+formatBoundsCaption fFormat biM = do
+    bi <- biM
     _strRange <- element (_strRange bi)
         # set text (' ' : fFormat (_minimumValue bi, _maximumValue bi))
     return bi { _strRange }
 
 setTextInputSize :: Int -> IO (BoundedInput a) -> IO (BoundedInput a)
-setTextInputSize sz mBI = do
-    bi <- mBI
+setTextInputSize sz biM = do
+    bi <- biM
     _itxValue <- element (_itxValue bi) # set UI.size (show sz)
     return bi { _itxValue }
 
@@ -137,12 +112,4 @@ toElement :: BoundedInput a -> IO Element
 toElement bi =
     UI.span #. "bounded-input" #+
         map element [ _itxValue bi, _strRange bi ]
-
--- This approach might be extended to make a full compound widget.
-listenAsPair :: BoundedInput a -> BoundedInput a -> IO (Event (a, a))
-listenAsPair fstBI sndBI =
-    (_defaultValue fstBI, _defaultValue sndBI) `accumE` concatE
-        [ (\z -> \(_, y) -> (z, y)) <$> _anyValueChange fstBI
-        , (\w -> \(x, _) -> (x, w)) <$> _anyValueChange sndBI
-        ]
 
