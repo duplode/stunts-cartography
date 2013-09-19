@@ -13,9 +13,9 @@ import Data.Maybe (fromJust, fromMaybe)
 import Data.Monoid
 import Text.Read (readMaybe)
 import Text.Printf (printf)
-import System.Directory ( doesFileExist, doesDirectoryExist
-                        , getTemporaryDirectory)
+import System.Directory (doesFileExist)
 import System.FilePath ((</>), takeExtension, addExtension)
+import System.IO.Temp (withSystemTempDirectory)
 import Data.Char (toUpper)
 
 import qualified Graphics.UI.Threepenny as UI
@@ -35,16 +35,16 @@ import Paths
 import qualified Widgets.BoundedInput as BI
 
 main :: IO ()
-main = do
+main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
     staticDir <- (</> "wwwroot") <$> getDataDir
     startGUI defaultConfig
         { tpPort = 10000
         , tpCustomHTML = Nothing
         , tpStatic = Just staticDir
-        } setup
+        } $ setup tmpDir
 
-setup :: Window -> IO ()
-setup w = void $ do
+setup :: FilePath -> Window -> IO ()
+setup tmpDir w = void $ do
 
     -- Output type and tile resolution caption.
     selOutput <-
@@ -150,7 +150,7 @@ setup w = void $ do
     -- Rendering parameters.
     -- Note that the annotations are parsed in a separate step.
 
-    let bRenParams = pure Pm.def
+    let bRenParams = pure Pm.def {Pm.temporaryDirectory = tmpDir}
             <**> ((\x -> \p -> p {Pm.roadWidth = x}) <$> bRoadW)
             <**> ((\x -> \p -> p {Pm.bridgeHeight = x}) <$> bBridgeH)
             <**> ((\x -> \p -> p {Pm.bridgeRelativeWidth = x}) <$> bBridgeRelW)
@@ -340,8 +340,8 @@ setup w = void $ do
                     element theBody #. horizonClass (Pm.renderedTrackHorizon postRender)
                     let outType = Pm.outputType params
                     trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
-                    trkUri <- loadTmpTrk w postRender
-                    terrainUri <- loadTmpTerrainTrk w postRender
+                    trkUri <- loadTmpTrk tmpDir w postRender
+                    terrainUri <- loadTmpTerrainTrk tmpDir w postRender
                     element imgMap # set UI.src trackImage
                     element lnkTrk # set UI.href trkUri
                     element lnkTerrTrk # set UI.href terrainUri
@@ -406,19 +406,17 @@ unsetSaveLinksHref = ffi $ unlines
     ]
 
 loadTmpTrkBase :: (String -> String) -> (LB.ByteString -> LB.ByteString)
-               -> Window -> Pm.PostRenderInfo -> IO String
-loadTmpTrkBase fName fTrk w postRender = do
-    tmpDir <- getTemporaryDirectory
-        `catch` ((\_ -> return ".") :: SomeException -> IO String)
+               -> FilePath -> Window -> Pm.PostRenderInfo -> IO String
+loadTmpTrkBase fName fTrk tmpDir w postRender = do
     let trkName = "_" ++ fName (Pm.trackName postRender)
         tmpTrkPath = addExtension (tmpDir </> trkName) ".TRK"
     LB.writeFile tmpTrkPath . fTrk $ Pm.trackData postRender
     loadFile w "application/octet-stream" tmpTrkPath
 
-loadTmpTrk :: Window -> Pm.PostRenderInfo -> IO String
+loadTmpTrk :: FilePath -> Window -> Pm.PostRenderInfo -> IO String
 loadTmpTrk = loadTmpTrkBase id id
 
-loadTmpTerrainTrk :: Window -> Pm.PostRenderInfo -> IO String
+loadTmpTerrainTrk :: FilePath -> Window -> Pm.PostRenderInfo -> IO String
 loadTmpTerrainTrk =
     loadTmpTrkBase ((++ "-T") . take 6) terrainTrkSimple
 

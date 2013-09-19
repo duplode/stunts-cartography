@@ -67,4 +67,5 @@ Executable sc-trk-viewer
                     ,mtl
                     ,directory
                     ,filepath
+                    ,temporary
 

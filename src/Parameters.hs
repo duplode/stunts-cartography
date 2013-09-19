@@ -47,6 +47,8 @@ data RenderingParameters = RenderingParameters
 
     , pixelsPerTile :: Double
     , outputType :: OutputType
+
+    , temporaryDirectory :: FilePath
     }
 
 defaultRenderingParameters = RenderingParameters
@@ -61,6 +63,7 @@ defaultRenderingParameters = RenderingParameters
     , xTileBounds = (0, 29)
     , yTileBounds = (0, 29)
     , annotationSpecs = []
+    , temporaryDirectory = "." -- TODO: Does this really belong here?
     }
 
 instance Default RenderingParameters where

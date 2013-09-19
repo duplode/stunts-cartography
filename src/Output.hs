@@ -9,7 +9,6 @@ import Control.Monad.Identity (runIdentity)
 import Control.Monad.RWS hiding ((<>))
 import Control.Monad.Error
 import Control.Exception (catch, SomeException)
-import System.Directory (getTemporaryDirectory)
 import System.FilePath (takeBaseName, (</>))
 import System.CPUTime
 import Text.Printf (printf)
@@ -57,9 +56,8 @@ writePngOutput trackName trkBS = do
             PNG -> "stunts-cartography-map.png"
             SVG -> "stunts-cartography-map.svg"
             _   -> error "Unsupported output format."
-    tmpDir <- liftIO $ getTemporaryDirectory
-        `catch` ((\_ -> return ".") :: SomeException -> IO String)
-    let outFile = tmpDir </> outRelPath
+        tmpDir = Pm.temporaryDirectory params
+        outFile = tmpDir </> outRelPath
 
     startTime <- liftIO getCPUTime
     wholeMap <- wholeMapDiagram tiles
