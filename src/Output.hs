@@ -42,21 +42,20 @@ writePngFromRpl rplPath = do
 writePngOutput :: String -> LB.ByteString
                -> CartoT (ErrorT String IO) Pm.PostRenderInfo
 writePngOutput trackName trkBS = do
-    params <- ask
-    st <- get
     let rawTrk = veryRawReadTrack trkBS
         horizon = horizonFromRawTrack rawTrk
         tilArr = rawTrackToTileArray rawTrk
         tiles = map snd $ assocs tilArr
-    let renWidthInTiles = (if Pm.drawIndices params then (2+) else id)
-            . fst $ Pm.deltaTileBounds params
-        renWidth = renWidthInTiles * Pm.pixelsPerTile params
-        outType = Pm.outputType params
-        outRelPath = case outType of
+
+    renWidthInTiles <- pure (\drawIx -> if drawIx then (2+) else id)
+        <*> asks Pm.drawIndices <*> asks (fst . Pm.deltaTileBounds)
+    renWidth <- pure (renWidthInTiles *) <*> asks Pm.pixelsPerTile
+    tmpDir <- asks Pm.temporaryDirectory
+    outType <- asks Pm.outputType
+    let outRelPath = case outType of
             PNG -> "stunts-cartography-map.png"
             SVG -> "stunts-cartography-map.svg"
             _   -> error "Unsupported output format."
-        tmpDir = Pm.temporaryDirectory params
         outFile = tmpDir </> outRelPath
 
     startTime <- liftIO getCPUTime
