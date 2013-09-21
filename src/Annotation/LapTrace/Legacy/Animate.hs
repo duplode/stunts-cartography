@@ -8,7 +8,7 @@ import Diagrams.Prelude
 import Diagrams.Backend.Cairo.CmdLine
 import Track (veryRawReadTrack, rawTrackToTileArray)
 import Util.Misc
-import LapTrace.Legacy.LapTrace
+import Annotation.LapTrace.Legacy.LapTrace
 import Composition
 import qualified Parameters as Pm
 import Data.Ratio ((%))

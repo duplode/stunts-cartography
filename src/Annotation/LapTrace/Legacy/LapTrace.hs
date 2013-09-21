@@ -1,5 +1,5 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
-module LapTrace.Legacy.LapTrace
+module Annotation.LapTrace.Legacy.LapTrace
     ( pathFromTrace
     , simpleRenderTracePath
     , renderTracePathWithCars

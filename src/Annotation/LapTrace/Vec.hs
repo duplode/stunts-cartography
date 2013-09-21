@@ -1,4 +1,4 @@
-module LapTrace.Vec
+module Annotation.LapTrace.Vec
     ( VecWide
     , VecDouble
     , scaleRawCoords

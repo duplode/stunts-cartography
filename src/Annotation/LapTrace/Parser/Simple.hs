@@ -1,5 +1,5 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
-module LapTrace.Parser.Simple
+module Annotation.LapTrace.Parser.Simple
     ( rawtrace
     , laptrace
     ) where
@@ -10,7 +10,7 @@ import Text.Parsec
 import Text.Parsec.Char
 import Text.Parsec.Prim
 
-import LapTrace.Vec
+import Annotation.LapTrace.Vec
 
 -- Parser for raw coordinates extracted from game data. The format is very
 -- simple: each line is a frame; six integers per line, with the first
