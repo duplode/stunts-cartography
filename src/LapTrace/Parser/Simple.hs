@@ -1,6 +1,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 module LapTrace.Parser.Simple
-    ( laptrace
+    ( rawtrace
+    , laptrace
     ) where
 
 import Control.Monad
@@ -9,12 +10,12 @@ import Text.Parsec
 import Text.Parsec.Char
 import Text.Parsec.Prim
 
+import LapTrace.Vec
+
 -- Parser for raw coordinates extracted from game data. The format is very
 -- simple: each line is a frame; six integers per line, with the first
 -- three being the player position vector and the other ones the car
 -- orientation vector.
-
-type VecWide = (Integer, Integer, Integer)
 
 eol = oneOf "\n\r"
 
@@ -29,4 +30,8 @@ vecWide =  pure (,,) <*> colInteger <*> colInteger <*> colInteger
 
 frame = pure (,) <*> vecWide <*> vecWide <* eol
 
-laptrace = frame `manyTill` eof
+rawtrace = frame `manyTill` eof
+
+laptrace = map processFrame <$> rawtrace
+    where
+    processFrame (xyz, rot) = (scaleRawCoords xyz, vecToDegs rot)
