@@ -106,7 +106,7 @@ splitSeg = do
                 <*> optionPerm 0 bg
                 <*> oncePerm splitDir
                 <*> oncePerm sizeInt
-                <*> optionPerm Nothing (Just <$> alignment)
+                <*> optionMaybePerm alignment
     let (pos, cl, captBg, splD, len, mCaptAl) = opt
     let captAl = fromMaybe splD mCaptAl
     return $ SplitAnnotation
@@ -169,7 +169,7 @@ caption = do
         runPermParser $ (,,,,) <$> optionPerm E alignment
                                <*> optionPerm 0.4 size
                                <*> optionPerm 0 angle
-                               <*> optionPerm Nothing (Just <$> colour)
+                               <*> optionMaybePerm colour
                                <*> optionPerm 0 bg
     return (mCl, bg, ang, al, sz, txt)
 
