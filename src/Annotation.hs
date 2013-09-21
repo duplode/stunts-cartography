@@ -82,6 +82,14 @@ instance IsAnnotation CarAnnotation where
             # translate (r2 $ carAnnPosition ann)
         }
 
+instance LocatableAnnotation CarAnnotation where
+    annPosition = carAnnPosition
+    locateAnnotation pos ann = ann { carAnnPosition = pos }
+
+instance OrientableAnnotation CarAnnotation where
+    annAngle = carAnnAngle
+    orientAnnotation ang ann = ann { carAnnAngle = ang }
+
 data SegAnnotation
      = SegAnnotation
      { segAnnColour :: Colour Double
@@ -107,6 +115,14 @@ instance IsAnnotation SegAnnotation where
             # rotate (Deg $ segAnnAngle ann)
             # translate (r2 $ segAnnPosition ann)
         }
+
+instance LocatableAnnotation SegAnnotation where
+    annPosition = segAnnPosition
+    locateAnnotation pos ann = ann { segAnnPosition = pos }
+
+instance OrientableAnnotation SegAnnotation where
+    annAngle = segAnnAngle
+    orientAnnotation ang ann = ann { segAnnAngle = ang }
 
 data SplitAnnotation
      = SplitAnnotation
