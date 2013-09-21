@@ -1,3 +1,4 @@
+{-# LANGUAGE NoMonomorphismRestriction #-}
 module Annotation.Parser
     ( parseAnnotations
     , annotations
@@ -7,10 +8,10 @@ module Annotation.Parser
 import Text.Parsec
 import qualified Text.Parsec.Token as P
 import Text.Parsec.Language (haskellDef)
-import Text.Parsec.Perm
+import Text.Parsec.Permutation
 
 import Control.Monad (replicateM)
-import Control.Applicative ((<$>), (<*))
+import Control.Applicative ((<$>), (<*), (<*>))
 import Data.Maybe (fromMaybe)
 
 import Annotation
@@ -21,11 +22,9 @@ import Types.CartoM
 import Control.Monad.RWS (tell)
 import qualified Parameters as Pm
 
--- Note that the combinators in Text.Parsec.Perm have types built around
--- Parsec and not ParsecT.
 parseAnnotations :: (Monad m) => String -> CartoT m [Annotation]
 parseAnnotations input = do
-    let result = runP annotations () "" input
+    result <- runPT annotations () "" input
     case result of
         Left err   -> do
             tell . Pm.logFromList $
@@ -48,11 +47,12 @@ detectAnnStart = choice . map (lookAhead . try . symbol) $ ["Car", "Seg", "Split
 
 car = do
     symbol "Car"
-    opt <- permute ((,,,,) <$$> xy
-                           <|?> (yellow, colour)
-                           <|?> (0, angle)
-                           <|?> (0.5, size)
-                           <|?> ((Nothing, 0, 0, E, 0.4, ""), caption))
+    opt <- runPermParser $
+        (,,,,) <$> oncePerm xy
+               <*> optionPerm yellow colour
+               <*> optionPerm 0 angle
+               <*> optionPerm 0.5 size
+               <*> optionPerm (Nothing, 0, 0, E, 0.4, "") caption
     let (pos, cl, ang, sz, capt) = opt
     let (mCpCl, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
     return $ CarAnnotation
@@ -73,11 +73,12 @@ car = do
 
 seg = do
     symbol "Seg"
-    opt <- permute ((,,,,) <$$> xy
-                           <|?> (yellow, colour)
-                           <||> angle
-                           <||> size
-                           <|?> ((Nothing, 0, 0, E, 0.4, ""), caption))
+    opt <- runPermParser $
+        (,,,,) <$> oncePerm xy
+               <*> optionPerm yellow colour
+               <*> oncePerm angle
+               <*> oncePerm size
+               <*> optionPerm (Nothing, 0, 0, E, 0.4, "") caption
     let (pos, cl, ang, len, capt) = opt
     let (mCpCl, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
     return $ SegAnnotation
@@ -99,12 +100,13 @@ seg = do
 splitSeg = do
     symbol "Split"
     ix <- fromIntegral <$> integer
-    opt <- permute ((,,,,,) <$$> xyInt
-                            <|?> (yellow, colour)
-                            <|?> (0, bg)
-                            <||> splitDir
-                            <||> sizeInt
-                            <|?> (Nothing, Just <$> alignment))
+    opt <- runPermParser $
+        (,,,,,) <$> oncePerm xyInt
+                <*> optionPerm yellow colour
+                <*> optionPerm 0 bg
+                <*> oncePerm splitDir
+                <*> oncePerm sizeInt
+                <*> optionPerm Nothing (Just <$> alignment)
     let (pos, cl, captBg, splD, len, mCaptAl) = opt
     let captAl = fromMaybe splD mCaptAl
     return $ SplitAnnotation
@@ -158,20 +160,20 @@ sizeInt = do
 -- On the Maybe (Colour Double): Nothing means "use a default from somewhere".
 -- TODO: Stop returning a 6-uple, ideally as soon as a clean way of handling
 -- the optional colour is found.
-caption :: Parsec String u
+caption :: (Monad m) => ParsecT String u m
                ( Maybe (Colour Double), Double, Double, CardinalDirection
                , Double, String )
 caption = do
     txt <- stringLiteral
     (al, sz, ang, mCl, bg) <- option (E, 0.4, 0, Nothing, 0) . try . braces $
-        permute ((,,,,) <$?> (E, alignment)
-                        <|?> (0.4, size)
-                        <|?> (0, angle)
-                        <|?> (Nothing, Just <$> colour)
-                        <|?> (0, bg))
+        runPermParser $ (,,,,) <$> optionPerm E alignment
+                               <*> optionPerm 0.4 size
+                               <*> optionPerm 0 angle
+                               <*> optionPerm Nothing (Just <$> colour)
+                               <*> optionPerm 0 bg
     return (mCl, bg, ang, al, sz, txt)
 
-cardinalDir :: String -> Parsec String u CardinalDirection
+cardinalDir :: (Monad m) => String -> ParsecT String u m CardinalDirection
 cardinalDir leading = do
     symbol leading
     read <$> (
@@ -180,14 +182,28 @@ cardinalDir leading = do
         <|> try (symbol "W")
         <|> symbol "S")
 
-
 alignment = cardinalDir "'"
 
 splitDir = cardinalDir "^"
 
 floatOrInteger = try float <|> fromIntegral <$> integer
 
-lexer = P.makeTokenParser haskellDef
+lexer = P.makeTokenParser annDef
+
+-- Mostly copied from the doc; doesn't really matter for now.
+annDef = P.LanguageDef
+    { P.commentStart = "" -- TODO: Might be useful.
+    , P.commentEnd = ""
+    , P.commentLine = ""
+    , P.nestedComments = False
+    , P.identStart = letter <|> char '_'
+    , P.identLetter = alphaNum <|> char '_'
+    , P.opStart = P.opLetter annDef
+    , P.opLetter = oneOf ":!#$%&*+./<=>?@\\^|-~"
+    , P.reservedOpNames = []
+    , P.reservedNames = []
+    , P.caseSensitive = True
+    }
 
 float = P.float lexer
 integer = P.integer lexer
