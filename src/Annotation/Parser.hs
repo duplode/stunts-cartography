@@ -60,12 +60,15 @@ car = do
         , carAnnPosition = pos
         , carAnnAngle = ang
         , carAnnSize = sz
-        , carAnnCaption = cpTxt
-        , carAnnCaptColour = fromMaybe cl mCpCl
-        , carAnnCaptBgOpacity = cpBg
-        , carAnnCaptAlignment = cpAl
-        , carAnnCaptAngle = cpAng
-        , carAnnCaptSize = cpSz
+        , carAnnCaption = CaptAnnotation
+            { captAnnPosition = (0, 0) -- Doesn't matter.
+            , captAnnText = cpTxt
+            , captAnnColour = fromMaybe cl mCpCl
+            , captAnnBgOpacity = cpBg
+            , captAnnAlignment = cpAl
+            , captAnnAngle = cpAng
+            , captAnnSize = cpSz
+            }
         }
 
 seg = do
@@ -82,23 +85,26 @@ seg = do
         , segAnnPosition = pos
         , segAnnAngle = ang
         , segAnnLength = len
-        , segAnnCaption = cpTxt
-        , segAnnCaptColour = fromMaybe cl mCpCl
-        , segAnnCaptBgOpacity = cpBg
-        , segAnnCaptAlignment = cpAl
-        , segAnnCaptAngle = cpAng
-        , segAnnCaptSize = cpSz
+        , segAnnCaption = CaptAnnotation
+            { captAnnPosition = (0, 0) -- Doesn't matter.
+            , captAnnText = cpTxt
+            , captAnnColour = fromMaybe cl mCpCl
+            , captAnnBgOpacity = cpBg
+            , captAnnAlignment = cpAl
+            , captAnnAngle = cpAng
+            , captAnnSize = cpSz
+            }
         }
 
 splitSeg = do
     symbol "Split"
     ix <- fromIntegral <$> integer
     opt <- permute ((,,,,,) <$$> xyInt
-                           <|?> (yellow, colour)
-                           <|?> (0, bg)
-                           <||> splitDir
-                           <||> sizeInt
-                           <|?> (Nothing, Just <$> alignment))
+                            <|?> (yellow, colour)
+                            <|?> (0, bg)
+                            <||> splitDir
+                            <||> sizeInt
+                            <|?> (Nothing, Just <$> alignment))
     let (pos, cl, captBg, splD, len, mCaptAl) = opt
     let captAl = fromMaybe splD mCaptAl
     return $ SplitAnnotation
@@ -148,7 +154,10 @@ sizeInt = do
     symbol "*"
     fromIntegral <$> integer
 
+-- Captions associated to another annotation.
 -- On the Maybe (Colour Double): Nothing means "use a default from somewhere".
+-- TODO: Stop returning a 6-uple, ideally as soon as a clean way of handling
+-- the optional colour is found.
 caption :: Parsec String u
                ( Maybe (Colour Double), Double, Double, CardinalDirection
                , Double, String )
