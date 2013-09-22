@@ -32,5 +32,5 @@ vecToDegs (x, y, z) = (toPositiveDeg xzPhs, toPositiveDeg aerialPhs)
     where
     (xzMag, xzPhs) = polar $ fi x  :+ fi z
     (_, aerialPhs) = polar $ xzMag :+ fi y
-    toPositiveDeg  = (\d -> if d < 0 then d + 180 else d) . ((180 / pi) *)
+    toPositiveDeg  = (\d -> if d < 0 then d + 360 else d) . ((180 / pi) *)
 
