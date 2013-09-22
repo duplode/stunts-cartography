@@ -34,4 +34,4 @@ rawtrace = frame `manyTill` eof
 
 laptrace = map processFrame <$> rawtrace
     where
-    processFrame (xyz, rot) = (scaleRawCoords xyz, vecToDegs rot)
+    processFrame (xyz, rot) = (scaleRawCoords xyz, scaleRawRot rot)
