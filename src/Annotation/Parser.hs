@@ -65,9 +65,8 @@ car = do
         , carAnnPosition = pos
         , carAnnAngle = ang
         , carAnnSize = sz
-        , carAnnCaption = CaptAnnotation
-            { captAnnPosition = (0, 0) -- Doesn't matter.
-            , captAnnText = cpTxt
+        , carAnnCaption = defAnn
+            { captAnnText = cpTxt
             , captAnnColour = fromMaybe cl mCpCl
             , captAnnBgOpacity = cpBg
             , captAnnAlignment = cpAl
@@ -91,9 +90,8 @@ seg = do
         , segAnnPosition = pos
         , segAnnAngle = ang
         , segAnnLength = len
-        , segAnnCaption = CaptAnnotation
-            { captAnnPosition = (0, 0) -- Doesn't matter.
-            , captAnnText = cpTxt
+        , segAnnCaption = defAnn
+            { captAnnText = cpTxt
             , captAnnColour = fromMaybe cl mCpCl
             , captAnnBgOpacity = cpBg
             , captAnnAlignment = cpAl
@@ -209,9 +207,8 @@ traceSpec = do
         let eDat = runP laptrace () path rawData
         case eDat of
             Left e    -> fail $ show e
-            Right dat -> return $ initializeTrace dat emptyTraceAnn
-                { traceAnnPoints = []
-                , traceAnnOverlays = emptyTraceOverlays
+            Right dat -> return $ initializeTrace dat defAnn
+                { traceAnnOverlays = defAnn
                     { carsOverTrace = map
                         (fmap $ overrideCarAnnColours cl) cars
                     }
@@ -244,14 +241,10 @@ carOnTrace = (symbol "+" >>) $ braces $ do
     let (moment, sz, capt) = opt
     -- TODO: Stop ignoring the caption colour.
     let (_, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
-    return $ (truncate $ 20 * moment, CarAnnotation
-        { carAnnColour = yellow
-        , carAnnPosition = (0, 0)
-        , carAnnAngle = 0
-        , carAnnSize = sz
-        , carAnnCaption = CaptAnnotation
-            { captAnnPosition = (0, 0)
-            , captAnnText = cpTxt
+    return $ (truncate $ 20 * moment, defAnn
+        { carAnnSize = sz
+        , carAnnCaption = defAnn
+            { captAnnText = cpTxt
             , captAnnColour = yellow
             , captAnnBgOpacity = cpBg
             , captAnnAlignment = cpAl

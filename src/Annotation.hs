@@ -6,6 +6,7 @@ module Annotation
     , IsAnnotation
     , annotation
     , renderAnnotation
+    , defAnn
     , LocatableAnnotation
     , annPosition
     , locateAnnotation
@@ -23,6 +24,7 @@ module Annotation
 
 -- It might be sensible to import this qualified if you need the constructors.
 
+import Data.Default
 import Diagrams.Prelude
 import qualified Diagrams.Backend.Cairo.Text as CairoText
 import Data.Colour.SRGB
@@ -46,6 +48,9 @@ class IsAnnotation a where
     renderAnnotation :: a -> Diagram BEDia R2
 
     renderAnnotation = annotationDiagram . annotation
+
+defAnn :: (Default a, IsAnnotation a) => a
+defAnn = def
 
 class (IsAnnotation a) => LocatableAnnotation a where
     annPosition :: a -> (Double, Double)
@@ -72,6 +77,15 @@ data CarAnnotation
      , carAnnSize :: Double
      , carAnnCaption :: CaptAnnotation
      } deriving (Show)
+
+instance Default CarAnnotation where
+    def = CarAnnotation
+        { carAnnColour = yellow
+        , carAnnPosition = (0, 0)
+        , carAnnAngle = 0
+        , carAnnSize = 0.5
+        , carAnnCaption = defAnn
+        }
 
 instance IsAnnotation CarAnnotation where
     annotation ann = Annotation
@@ -182,6 +196,17 @@ data CaptAnnotation = CaptAnnotation
     , captAnnSize :: Double
     , captAnnText :: String
     } deriving (Show)
+
+instance Default CaptAnnotation where
+    def = CaptAnnotation
+        { captAnnPosition = (0, 0)
+        , captAnnColour = yellow
+        , captAnnBgOpacity = 0
+        , captAnnAlignment = E
+        , captAnnAngle = 0
+        , captAnnSize = 0.4
+        , captAnnText = ""
+        }
 
 instance IsAnnotation CaptAnnotation where
     annotation ann = Annotation

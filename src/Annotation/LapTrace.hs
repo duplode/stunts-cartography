@@ -1,12 +1,11 @@
 module Annotation.LapTrace
     ( TraceOverlays(..)
-    , emptyTraceOverlays
     , TraceAnnotation(..)
-    , emptyTraceAnn
     , initializeTrace
     ) where
 
 import qualified Data.Map as M
+import Data.Default
 
 import Annotation
 import Annotation.LapTrace.Vec
@@ -28,10 +27,10 @@ data TraceOverlays = TraceOverlays
     { carsOverTrace :: [(FrameIndex, CarAnnotation)]
     }
 
-emptyTraceOverlays :: TraceOverlays
-emptyTraceOverlays = TraceOverlays
-    { carsOverTrace = []
-    }
+instance Default TraceOverlays where
+    def = TraceOverlays
+        { carsOverTrace = []
+        }
 
 -- TODO: Curb the massive ammounts of boilerplate to render an annotation.
 instance IsAnnotation TraceOverlays where
@@ -48,13 +47,13 @@ data TraceAnnotation = TraceAnnotation
     , traceAnnVisible :: Bool
     }
 
-emptyTraceAnn :: TraceAnnotation
-emptyTraceAnn = TraceAnnotation
-    { traceAnnPoints = []
-    , traceAnnOverlays = emptyTraceOverlays
-    , traceAnnColour = yellow
-    , traceAnnVisible = True
-    }
+instance Default TraceAnnotation where
+    def = TraceAnnotation
+        { traceAnnPoints = []
+        , traceAnnOverlays = defAnn
+        , traceAnnColour = yellow
+        , traceAnnVisible = True
+        }
 
 arrangeOverlays :: TraceAnnotation -> TraceAnnotation
 arrangeOverlays ann = ann { traceAnnOverlays = arrangeOverlays' tovs }
