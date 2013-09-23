@@ -54,20 +54,18 @@ car = do
     symbol "Car"
     opt <- runPermParser $
         (,,,,) <$> oncePerm xy
-               <*> optionPerm yellow colour
+               <*> optionMaybePerm colour
                <*> optionPerm 0 angle
                <*> optionPerm 0.5 size
                <*> optionPerm (Nothing, 0, 0, E, 0.4, "") caption
-    let (pos, cl, ang, sz, capt) = opt
+    let (pos, mCl, ang, sz, capt) = opt
     let (mCpCl, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
-    return $ CarAnnotation
-        { carAnnColour = cl
-        , carAnnPosition = pos
+    return $ maybeDeepOverrideAnnColour mCl defAnn
+        { carAnnPosition = pos
         , carAnnAngle = ang
         , carAnnSize = sz
-        , carAnnCaption = defAnn
+        , carAnnCaption = maybeCustomiseAnnColour mCpCl defAnn
             { captAnnText = cpTxt
-            , captAnnColour = fromMaybe cl mCpCl
             , captAnnBgOpacity = cpBg
             , captAnnAlignment = cpAl
             , captAnnAngle = cpAng
@@ -79,20 +77,18 @@ seg = do
     symbol "Seg"
     opt <- runPermParser $
         (,,,,) <$> oncePerm xy
-               <*> optionPerm yellow colour
+               <*> optionMaybePerm colour
                <*> oncePerm angle
                <*> oncePerm size
                <*> optionPerm (Nothing, 0, 0, E, 0.4, "") caption
-    let (pos, cl, ang, len, capt) = opt
+    let (pos, mCl, ang, len, capt) = opt
     let (mCpCl, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
-    return $ SegAnnotation
-        { segAnnColour = cl
-        , segAnnPosition = pos
+    return $ maybeDeepOverrideAnnColour mCl defAnn
+        { segAnnPosition = pos
         , segAnnAngle = ang
         , segAnnLength = len
-        , segAnnCaption = defAnn
+        , segAnnCaption = maybeCustomiseAnnColour mCpCl defAnn
             { captAnnText = cpTxt
-            , captAnnColour = fromMaybe cl mCpCl
             , captAnnBgOpacity = cpBg
             , captAnnAlignment = cpAl
             , captAnnAngle = cpAng
@@ -210,7 +206,7 @@ traceSpec = do
             Right dat -> return $ initializeTrace dat defAnn
                 { traceAnnOverlays = defAnn
                     { carsOverTrace = map
-                        (fmap $ overrideCarAnnColours cl) cars
+                        (fmap $ deepOverrideAnnColour cl) cars
                     }
                 , traceAnnColour = cl
                 , traceAnnVisible = vis
@@ -235,23 +231,24 @@ lapMoment = do
 carOnTrace = (symbol "+" >>) $ braces $ do
     symbol "Car"
     opt <- runPermParser $
-        (,,) <$> oncePerm lapMoment
-             <*> optionPerm 0.5 size
-             <*> optionPerm (Nothing, 0, 0, E, 0.4, "") caption
-    let (moment, sz, capt) = opt
-    -- TODO: Stop ignoring the caption colour.
-    let (_, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
-    return $ (truncate $ 20 * moment, defAnn
-        { carAnnSize = sz
-        , carAnnCaption = defAnn
-            { captAnnText = cpTxt
-            , captAnnColour = yellow
-            , captAnnBgOpacity = cpBg
-            , captAnnAlignment = cpAl
-            , captAnnAngle = cpAng
-            , captAnnSize = cpSz
+        (,,,) <$> oncePerm lapMoment
+              <*> optionMaybePerm colour
+              <*> optionPerm 0.5 size
+              <*> optionPerm (Nothing, 0, 0, E, 0.4, "") caption
+    let (moment, mCl, sz, capt) = opt
+    let (mCpCl, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
+    return $ (truncate $ 20 * moment
+        , maybeDeepOverrideAnnColour mCl defAnn
+            { carAnnSize = sz
+            , carAnnCaption = maybeCustomiseAnnColour mCpCl defAnn
+                { captAnnText = cpTxt
+                , captAnnBgOpacity = cpBg
+                , captAnnAlignment = cpAl
+                , captAnnAngle = cpAng
+                , captAnnSize = cpSz
+                }
             }
-        })
+        )
 
 
 floatOrInteger = try float <|> fromIntegral <$> integer

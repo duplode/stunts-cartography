@@ -3,20 +3,28 @@
 module Annotation
     ( CardinalDirection(..)
     , Annotation(..)
-    , IsAnnotation
-    , annotation
+    , IsAnnotation (annotation)
     , renderAnnotation
     , defAnn
     , LocatableAnnotation
-    , annPosition
-    , locateAnnotation
-    , translateAnnotation
+        ( annPosition
+        , locateAnnotation
+        , translateAnnotation
+        )
     , OrientableAnnotation
-    , annAngle
-    , orientAnnotation
-    , rotateAnnotation
+        ( annAngle
+        , orientAnnotation
+        , rotateAnnotation
+        )
+    , ColourAnnotation
+        ( annColour
+        , customiseAnnColour
+        , overrideAnnColour
+        , deepOverrideAnnColour
+        )
+    , maybeCustomiseAnnColour
+    , maybeDeepOverrideAnnColour
     , CarAnnotation(..)
-    , overrideCarAnnColours
     , SegAnnotation(..)
     , SplitAnnotation(..)
     , CaptAnnotation(..)
@@ -69,9 +77,40 @@ class (IsAnnotation a) => OrientableAnnotation a where
 
     rotateAnnotation da ann = orientAnnotation (da + annAngle ann) ann
 
+-- Colour overriding for nested annotations.
+class (IsAnnotation a) => ColourAnnotation a where
+    annColour :: a -> Colour Double
+    setAnnColour :: Colour Double -> a -> a
+    annColourIsProtected :: a -> Bool
+    protectAnnColour :: a -> a
+    customiseAnnColour :: Colour Double -> a -> a
+    overrideAnnColour :: Colour Double -> a -> a
+    deepOverrideAnnColour :: Colour Double -> a -> a
+
+    customiseAnnColour cl = protectAnnColour . setAnnColour cl
+    -- Using an override implemented in terms of customise means that no deep
+    -- colour definition by the user can be overriden. That appears to be
+    -- adequate for the typical use cases.
+    overrideAnnColour cl ann =
+        if not (annColourIsProtected ann)
+            then customiseAnnColour cl ann
+            else ann
+    -- The following default implementation is meant to be overriden if the
+    -- annotation contains other ColourAnnotations.
+    deepOverrideAnnColour = overrideAnnColour
+
+maybeCustomiseAnnColour :: (ColourAnnotation a)
+                        => Maybe (Colour Double) -> a -> a
+maybeCustomiseAnnColour = maybe id customiseAnnColour
+
+maybeDeepOverrideAnnColour :: (ColourAnnotation a)
+                           => Maybe (Colour Double) -> a -> a
+maybeDeepOverrideAnnColour = maybe id deepOverrideAnnColour
+
 data CarAnnotation
      = CarAnnotation
      { carAnnColour :: Colour Double
+     , carAnnColourIsProtected :: Bool
      , carAnnPosition :: (Double, Double)
      , carAnnAngle :: Double
      , carAnnSize :: Double
@@ -81,6 +120,7 @@ data CarAnnotation
 instance Default CarAnnotation where
     def = CarAnnotation
         { carAnnColour = yellow
+        , carAnnColourIsProtected = False
         , carAnnPosition = (0, 0)
         , carAnnAngle = 0
         , carAnnSize = 0.5
@@ -108,23 +148,33 @@ instance OrientableAnnotation CarAnnotation where
     annAngle = carAnnAngle
     orientAnnotation ang ann = ann { carAnnAngle = ang }
 
-overrideCarAnnColours cl ann = ann
-    { carAnnColour = cl
-    , carAnnCaption = capt
-        { captAnnColour = cl
-        }
-    }
-    where
-    capt = carAnnCaption ann
+instance ColourAnnotation CarAnnotation where
+    annColour = carAnnColour
+    setAnnColour cl ann = ann { carAnnColour = cl }
+    annColourIsProtected = carAnnColourIsProtected
+    protectAnnColour ann = ann { carAnnColourIsProtected = True }
+    deepOverrideAnnColour cl ann = overrideAnnColour cl
+        ann { carAnnCaption = deepOverrideAnnColour cl $ carAnnCaption ann }
 
 data SegAnnotation
      = SegAnnotation
      { segAnnColour :: Colour Double
+     , segAnnColourIsProtected :: Bool
      , segAnnPosition :: (Double, Double)
      , segAnnAngle :: Double
      , segAnnLength :: Double
      , segAnnCaption :: CaptAnnotation
      } deriving (Show)
+
+instance Default SegAnnotation where
+    def = SegAnnotation
+        { segAnnColour = yellow
+        , segAnnColourIsProtected = False
+        , segAnnPosition = (0, 0)
+        , segAnnAngle = 0
+        , segAnnLength = 1
+        , segAnnCaption = defAnn
+        }
 
 instance IsAnnotation SegAnnotation where
     annotation ann = Annotation
@@ -150,6 +200,14 @@ instance OrientableAnnotation SegAnnotation where
     annAngle = segAnnAngle
     orientAnnotation ang ann = ann { segAnnAngle = ang }
 
+instance ColourAnnotation SegAnnotation where
+    annColour = segAnnColour
+    setAnnColour cl ann = ann { segAnnColour = cl }
+    annColourIsProtected = segAnnColourIsProtected
+    protectAnnColour ann = ann { segAnnColourIsProtected = True }
+    deepOverrideAnnColour cl ann = overrideAnnColour cl
+        ann { segAnnCaption = deepOverrideAnnColour cl $ segAnnCaption ann }
+
 data SplitAnnotation
      = SplitAnnotation
      { splAnnColour :: Colour Double
@@ -174,12 +232,10 @@ instance IsAnnotation SplitAnnotation where
             # (flip $ beside
                 (cardinalDirToR2 . splAnnCaptAlignment $ ann))
                 (renderAnnotation $
-                    CaptAnnotation
-                        { captAnnPosition = (0, 0)
-                        , captAnnColour = splAnnColour ann
+                    defAnn
+                        { captAnnColour = splAnnColour ann
                         , captAnnBgOpacity = splAnnCaptBgOpacity ann
                         , captAnnAlignment = splAnnCaptAlignment ann
-                        , captAnnAngle = 0
                         , captAnnSize = 0.75
                         , captAnnText = show $ splAnnIndex ann
                         }
@@ -190,6 +246,7 @@ instance IsAnnotation SplitAnnotation where
 data CaptAnnotation = CaptAnnotation
     { captAnnPosition :: (Double, Double)
     , captAnnColour :: Colour Double
+    , captAnnColourIsProtected :: Bool
     , captAnnBgOpacity :: Double
     , captAnnAlignment :: CardinalDirection
     , captAnnAngle :: Double
@@ -201,6 +258,7 @@ instance Default CaptAnnotation where
     def = CaptAnnotation
         { captAnnPosition = (0, 0)
         , captAnnColour = yellow
+        , captAnnColourIsProtected = False
         , captAnnBgOpacity = 0
         , captAnnAlignment = E
         , captAnnAngle = 0
@@ -244,6 +302,12 @@ instance LocatableAnnotation CaptAnnotation where
 instance OrientableAnnotation CaptAnnotation where
     annAngle = captAnnAngle
     orientAnnotation ang ann = ann { captAnnAngle = ang }
+
+instance ColourAnnotation CaptAnnotation where
+    annColour = captAnnColour
+    setAnnColour cl ann = ann { captAnnColour = cl }
+    annColourIsProtected = captAnnColourIsProtected
+    protectAnnColour ann = ann { captAnnColourIsProtected = True }
 
 cardinalDirToR2 :: CardinalDirection -> R2
 cardinalDirToR2 x = case x of

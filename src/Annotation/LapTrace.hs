@@ -55,6 +55,12 @@ instance Default TraceAnnotation where
         , traceAnnVisible = True
         }
 
+-- TraceAnnotation is not a ColourAnnotation instance for two flimsy reasons.
+-- Firstly, it is not essential to do so, as lap traces are, at least for the
+-- current use cases, top-level annotations. Secondly, skipping the instance
+-- allows us to defer the decision on whether all overlays should be instances
+-- of ColourAnnotation as well.
+
 arrangeOverlays :: TraceAnnotation -> TraceAnnotation
 arrangeOverlays ann = ann { traceAnnOverlays = arrangeOverlays' tovs }
     where
