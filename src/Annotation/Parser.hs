@@ -12,8 +12,9 @@ import Text.Parsec.Permutation
 import Control.Monad (replicateM)
 import Control.Applicative ((<$>), (<*), (<*>))
 import Data.Maybe (fromMaybe)
-import Control.Monad.IO.Class
+import Control.Monad.Trans
 import System.Directory (doesFileExist)
+import System.FilePath ((</>))
 
 import Annotation
 import Annotation.LapTrace
@@ -22,7 +23,7 @@ import Data.Colour (Colour)
 import Data.Colour.Names (readColourName, yellow)
 import Data.Colour.SRGB (sRGB24read)
 import Types.CartoM
-import Control.Monad.RWS (tell)
+import Control.Monad.RWS (tell, asks)
 import qualified Parameters as Pm
 
 parseAnnotations :: (MonadIO m) => String -> CartoT m [Annotation]
@@ -195,12 +196,16 @@ traceSpec = do
               <*> manyPerm carOnTrace
     let (path, cl, vis, cars) = opt
     -- TODO: Add support for relative paths via CartoT
-    exists <- liftIO $ doesFileExist path
+    basePath <- lift $ asks Pm.baseDirectory
+    liftIO $ putStrLn basePath
+    let fullPath = basePath </> path
+    liftIO $ putStrLn fullPath
+    exists <- liftIO $ doesFileExist fullPath
     if not exists then
         fail "Trace data file does not exist."
     else do
-        rawData <- liftIO $ readFile path
-        let eDat = runP laptrace () path rawData
+        rawData <- liftIO $ readFile fullPath
+        let eDat = runP laptrace () fullPath rawData
         case eDat of
             Left e    -> fail $ show e
             Right dat -> return $ initializeTrace dat defAnn

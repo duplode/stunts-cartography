@@ -46,6 +46,16 @@ main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
 setup :: FilePath -> Window -> IO ()
 setup tmpDir w = void $ do
 
+    -- Base directory.
+    itxBasePath <-
+        UI.input # set UI.type_ "text" # set UI.name "base-path-input"
+            # set UI.id_ "base-path-input"
+    bBaseDir <- mdo
+        let eBaseDir = UI.valueChange itxBasePath
+        bBaseDir <- ".." `stepper` eBaseDir
+        element itxBasePath # sink value bBaseDir
+        return bBaseDir
+
     -- Output type and tile resolution caption.
     selOutput <-
         UI.select # set UI.name "output-format-select"
@@ -151,6 +161,7 @@ setup tmpDir w = void $ do
     -- Note that the annotations are parsed in a separate step.
 
     let bRenParams = pure Pm.def {Pm.temporaryDirectory = tmpDir}
+            <**> ((\x -> \p -> p {Pm.baseDirectory = x}) <$> bBaseDir)
             <**> ((\x -> \p -> p {Pm.roadWidth = x}) <$> bRoadW)
             <**> ((\x -> \p -> p {Pm.bridgeHeight = x}) <$> bBridgeH)
             <**> ((\x -> \p -> p {Pm.bridgeRelativeWidth = x}) <$> bBridgeRelW)
@@ -197,9 +208,6 @@ setup tmpDir w = void $ do
 
     -- Misc. interesting elements
 
-    itxBasePath <-
-        UI.input # set UI.type_ "text" # set UI.name "base-path-input"
-            # set UI.id_ "base-path-input" # set value ".."
     itxTrkPath <-
         UI.input # set UI.type_ "text" # set UI.name "trk-input"
             # set UI.id_ "trk-input"
@@ -299,8 +307,8 @@ setup tmpDir w = void $ do
         runRenderMap params st = do
 
             trkRelPath <- itxTrkPath # get value
-            basePath <- itxBasePath # get value
-            let trkPath = basePath </> trkRelPath
+            let basePath = Pm.baseDirectory params
+                trkPath = basePath </> trkRelPath
 
             outcome <- runErrorT $ do
 
@@ -331,7 +339,7 @@ setup tmpDir w = void $ do
                     goCarto = do
                         anns <- liftIO (txaAnns # get value)
                             >>=  parseAnnotations
-                        RWS.local (\p -> p{ Pm.annotationSpecs = anns}) $
+                        RWS.local (\p -> p { Pm.annotationSpecs = anns }) $
                             pngWriter trkPath
                 (postRender,st',logW) <- RWS.runRWST goCarto params st
 

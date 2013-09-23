@@ -49,6 +49,7 @@ data RenderingParameters = RenderingParameters
     , outputType :: OutputType
 
     , temporaryDirectory :: FilePath
+    , baseDirectory :: FilePath
     }
 
 defaultRenderingParameters = RenderingParameters
@@ -63,7 +64,8 @@ defaultRenderingParameters = RenderingParameters
     , xTileBounds = (0, 29)
     , yTileBounds = (0, 29)
     , annotationSpecs = []
-    , temporaryDirectory = "." -- TODO: Does this really belong here?
+    , temporaryDirectory = "."
+    , baseDirectory = "."
     }
 
 instance Default RenderingParameters where
