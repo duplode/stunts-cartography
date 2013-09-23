@@ -18,6 +18,9 @@ module Annotation
         )
     , ColourAnnotation
         ( annColour
+        , setAnnColour
+        , annColourIsProtected
+        , protectAnnColour
         , customiseAnnColour
         , overrideAnnColour
         , deepOverrideAnnColour

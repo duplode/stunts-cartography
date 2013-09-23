@@ -4,8 +4,11 @@ module Annotation.LapTrace
     , initializeTrace
     ) where
 
-import qualified Data.Map as M
+import qualified Data.Map as M (Map, fromList, lookup, member, size)
 import Data.Default
+import Data.List (sortBy, dropWhile, takeWhile)
+import Data.Ord (comparing)
+import Data.Maybe (fromMaybe)
 
 import Annotation
 import Annotation.LapTrace.Vec
@@ -23,16 +26,20 @@ data TracePoint = TracePoint
     }
 
 -- TODO: Add support for different overlays.
+-- TODO: Add support for multiple periodic series.
 data TraceOverlays = TraceOverlays
     { carsOverTrace :: [(FrameIndex, CarAnnotation)]
+    , periodicCarsSpec :: ((FrameIndex, Int), CarAnnotation)
     }
 
 instance Default TraceOverlays where
     def = TraceOverlays
         { carsOverTrace = []
+        -- Initial frame, frequency, base annotation. Only positive
+        -- frequencies are supported.
+        , periodicCarsSpec = ((0, 0), defAnn)
         }
 
--- TODO: Curb the massive ammounts of boilerplate to render an annotation.
 instance IsAnnotation TraceOverlays where
     annotation ann = Annotation
         { annotationDiagram =
@@ -55,31 +62,46 @@ instance Default TraceAnnotation where
         , traceAnnVisible = True
         }
 
--- TraceAnnotation is not a ColourAnnotation instance for two flimsy reasons.
--- Firstly, it is not essential to do so, as lap traces are, at least for the
--- current use cases, top-level annotations. Secondly, skipping the instance
--- allows us to defer the decision on whether all overlays should be instances
--- of ColourAnnotation as well.
-
+-- Trace initialization workhorse. Filters out overlays with invalid frames,
+-- positions each overlay according to the corresponding trace frame and
+-- generates periodic overlays.
 arrangeOverlays :: TraceAnnotation -> TraceAnnotation
-arrangeOverlays ann = ann { traceAnnOverlays = arrangeOverlays' tovs }
+arrangeOverlays ann = ann
+    { traceAnnOverlays = arrangeOverlays' tovs
+    }
     where
-    tovs = traceAnnOverlays ann
     pointMap = M.fromList $ map (\p -> (traceFrame p, p)) $ traceAnnPoints ann
+    tovs = appendPeriodic . eliminateFrameless $ traceAnnOverlays ann
     lookupPoint = flip M.lookup pointMap
 
     arrangeCar (ix, c) =
         let mp = lookupPoint ix
             fArrange p = orientAnnotation (traceRotXZ p)
                 . locateAnnotation (tracePosXZ p)
-        -- TODO: This is not a nice way to handle a missing index.
-        in maybe (ix, c) (\p -> (ix, fArrange p c)) mp
+        in (\p -> (ix, fArrange p c)) $
+            fromMaybe (error "Frameless overlay.") mp
 
     arrangeOverlays' tovs = tovs
         { carsOverTrace = map arrangeCar $ carsOverTrace tovs
         }
 
--- TODO: Add regularly spaced cars.
+    eliminateFrameless tovs = tovs
+        { carsOverTrace = framelessFilter $ carsOverTrace tovs
+        }
+    framelessFilter = takeWhile (flip M.member pointMap . fst)
+        . dropWhile (not . flip M.member pointMap . fst)
+        . sortBy (comparing fst)
+
+    nFrames = M.size pointMap
+    appendPeriodic tovs =
+        let ((ifr, freq), baseCar) = periodicCarsSpec tovs
+        in tovs
+            { carsOverTrace = carsOverTrace tovs ++
+                if freq > 0 then
+                    zip [ifr, ifr + freq .. nFrames] $ repeat baseCar
+                else
+                    []
+            }
 
 tracePointsFromData :: [(VecDouble, VecDouble)] -> [TracePoint]
 tracePointsFromData dat = map mkPoint $ zip [0..] dat
@@ -112,4 +134,20 @@ instance IsAnnotation TraceAnnotation where
             else
                 mempty
         }
+
+instance ColourAnnotation TraceAnnotation where
+    annColour = traceAnnColour
+    setAnnColour cl ann = ann { traceAnnColour = cl }
+    annColourIsProtected = const False -- TODO: Not implemented yet.
+    protectAnnColour ann = ann
+    deepOverrideAnnColour cl ann =
+        let tovs = traceAnnOverlays ann
+        in overrideAnnColour cl ann
+            { traceAnnOverlays = tovs
+                { carsOverTrace = map (fmap $ deepOverrideAnnColour cl) $
+                    carsOverTrace tovs
+                , periodicCarsSpec = fmap (deepOverrideAnnColour cl) $
+                    periodicCarsSpec tovs
+                }
+            }
 

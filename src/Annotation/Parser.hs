@@ -176,11 +176,12 @@ splitDir = cardinalDir "^"
 traceSpec = do
     symbol "Trace"
     opt <- runPermParser $
-        (,,,) <$> oncePerm rawPath
-              <*> optionPerm yellow colour
-              <*> optionPerm True visibility
-              <*> manyPerm carOnTrace
-    let (path, cl, vis, cars) = opt
+        (,,,,) <$> oncePerm rawPath
+               <*> optionMaybePerm colour
+               <*> optionMaybePerm visibility
+               <*> manyPerm (onTrace $ carOnTrace Nothing)
+               <*> optionMaybePerm (periodic $ carOnTrace (Just 0))
+    let (path, mCl, mVis, cars, mPCars) = opt
     basePath <- lift $ asks Pm.baseDirectory
     let fullPath = basePath </> path
     exists <- liftIO $ doesFileExist fullPath
@@ -191,14 +192,16 @@ traceSpec = do
         let eDat = runP laptrace () fullPath rawData
         case eDat of
             Left e    -> fail $ show e
-            Right dat -> return $ initializeTrace dat defAnn
-                { traceAnnOverlays = defAnn
-                    { carsOverTrace = map
-                        (fmap $ deepOverrideAnnColour cl) cars
+            Right dat -> return $ initializeTrace dat
+                . maybeDeepOverrideAnnColour mCl
+                . maybe id (\v tr -> tr { traceAnnVisible = v }) mVis
+                . maybe id (\pc tr -> tr
+                    { traceAnnOverlays =
+                        (traceAnnOverlays tr) { periodicCarsSpec = pc }
+                    }) mPCars
+                $ defAnn
+                    { traceAnnOverlays = defAnn { carsOverTrace = cars }
                     }
-                , traceAnnColour = cl
-                , traceAnnVisible = vis
-                }
 
 -- As the name indicates, the "path" could be anything.
 rawPath = do
@@ -213,18 +216,31 @@ lapMoment = do
     symbol "@"
     floatOrInteger
 
--- TODO: Minimize duplication in the car parsers. First step would be
--- simplifying the caption parser interface.
--- TODO: Add support for overriding the colours (trickier than it sounds).
-carOnTrace = (symbol "+" >>) $ braces $ do
+momentToFrame :: Double -> Int
+momentToFrame = truncate . (20 *)
+
+-- Trace overlays. Only cars are supported for the time being.
+onTrace ovr = do
+    symbol "+"
+    braces ovr
+
+-- Specification for overlays spread periodically over a trace.
+periodic ovr = do
+    symbol "~"
+    ifr <- momentToFrame <$> floatOrInteger
+    freq <- momentToFrame <$> floatOrInteger
+    (,) (ifr, freq) . snd <$> braces ovr
+
+-- TODO: Minimize duplication in the car parsers.
+carOnTrace mMoment = do
     symbol "Car"
     opt <- runPermParser $
-        (,,,) <$> oncePerm lapMoment
+        (,,,) <$> maybe (oncePerm lapMoment) (oncePerm . return) mMoment
               <*> optionMaybePerm colour
               <*> optionPerm 0.5 size
               <*> optionPerm defAnn caption
     let (moment, mCl, sz, capt) = opt
-    return $ (truncate $ 20 * moment
+    return $ (momentToFrame moment
         , maybeDeepOverrideAnnColour mCl defAnn
             { carAnnSize = sz
             , carAnnCaption = capt
