@@ -22,7 +22,7 @@ import Util.Misc
 import Replay
 import Composition
 import qualified Parameters as Pm
-import Annotation (renderAnnotation)
+import Annotation (annotationDiagram)
 import Types.CartoM
 import Types.Diagrams
 
@@ -90,7 +90,7 @@ wholeMapDiagram tiles = mapRWST (return . runIdentity) $ do
     wholeMap <- renderMap tiles
     indices <- renderIndicesIfRequired
     return $
-        (mconcat . map renderAnnotation $ Pm.annotationSpecs params)
+        (mconcat . map annotationDiagram $ Pm.annotationSpecs params)
         <>
         (indices # adjustPositionForClip)
         <>

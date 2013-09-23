@@ -5,6 +5,7 @@ module Annotation
     , Annotation(..)
     , IsAnnotation
     , annotation
+    , renderAnnotation
     , LocatableAnnotation
     , annPosition
     , locateAnnotation
@@ -37,11 +38,14 @@ data CardinalDirection = E
 
 data Annotation
     = Annotation
-    { renderAnnotation :: Diagram BEDia R2
+    { annotationDiagram :: Diagram BEDia R2
     }
 
 class IsAnnotation a where
     annotation :: a -> Annotation
+    renderAnnotation :: a -> Diagram BEDia R2
+
+    renderAnnotation = annotationDiagram . annotation
 
 class (IsAnnotation a) => LocatableAnnotation a where
     annPosition :: a -> (Double, Double)
@@ -71,14 +75,13 @@ data CarAnnotation
 
 instance IsAnnotation CarAnnotation where
     annotation ann = Annotation
-        { renderAnnotation =
+        { annotationDiagram =
             acura' (carAnnColour ann) 1
             # scale (carAnnSize ann)
             # (flip $ beside
                 (cardinalDirToR2 . captAnnAlignment . carAnnCaption $ ann))
-                (renderAnnotation . annotation
-                    . rotateAnnotation (- carAnnAngle ann) $
-                        carAnnCaption ann)
+                (renderAnnotation . rotateAnnotation (- carAnnAngle ann) $
+                    carAnnCaption ann)
             # rotate (Deg $ carAnnAngle ann)
             # translate (r2 $ carAnnPosition ann)
         }
@@ -111,7 +114,7 @@ data SegAnnotation
 
 instance IsAnnotation SegAnnotation where
     annotation ann = Annotation
-        { renderAnnotation =
+        { annotationDiagram =
             fromSegments
                 [ straight (r2 (segAnnLength ann, 0))
                 ]
@@ -119,9 +122,8 @@ instance IsAnnotation SegAnnotation where
             # lw 0.25 # lc (segAnnColour ann)
             # (flip $ beside
                 (cardinalDirToR2 . captAnnAlignment . segAnnCaption $ ann))
-                (renderAnnotation . annotation
-                    . rotateAnnotation (- segAnnAngle ann) $
-                        segAnnCaption ann)
+                (renderAnnotation . rotateAnnotation (- segAnnAngle ann) $
+                    segAnnCaption ann)
             # rotate (Deg $ segAnnAngle ann)
             # translate (r2 $ segAnnPosition ann)
         }
@@ -147,7 +149,7 @@ data SplitAnnotation
 
 instance IsAnnotation SplitAnnotation where
     annotation ann = Annotation
-        { renderAnnotation =
+        { annotationDiagram =
             let (posX, posY) = splAnnPosition ann
                 pos = (fromIntegral posX, fromIntegral posY)
             in fromSegments
@@ -157,7 +159,7 @@ instance IsAnnotation SplitAnnotation where
             # lw 0.25 # lc (splAnnColour ann)
             # (flip $ beside
                 (cardinalDirToR2 . splAnnCaptAlignment $ ann))
-                (renderAnnotation . annotation $
+                (renderAnnotation $
                     CaptAnnotation
                         { captAnnPosition = (0, 0)
                         , captAnnColour = splAnnColour ann
@@ -183,7 +185,7 @@ data CaptAnnotation = CaptAnnotation
 
 instance IsAnnotation CaptAnnotation where
     annotation ann = Annotation
-        { renderAnnotation =
+        { annotationDiagram =
             let dirAlign = - cardinalDirToR2 (captAnnAlignment ann)
                 adjustAlignments (x, y) = ((x + 1) / 2, (y + 1) / 2)
                 (xAlign, yAlign) = adjustAlignments $ unr2 dirAlign

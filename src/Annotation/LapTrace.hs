@@ -36,9 +36,8 @@ emptyTraceOverlays = TraceOverlays
 -- TODO: Curb the massive ammounts of boilerplate to render an annotation.
 instance IsAnnotation TraceOverlays where
     annotation ann = Annotation
-        { renderAnnotation =
-            mconcat $ map
-                (renderAnnotation . annotation . snd) (carsOverTrace ann)
+        { annotationDiagram =
+            mconcat $ map (renderAnnotation . snd) (carsOverTrace ann)
         }
 
 -- TODO: Implement an option to drop the final frames.
@@ -99,8 +98,8 @@ initializeTrace dat ann = arrangeOverlays
 
 instance IsAnnotation TraceAnnotation where
     annotation ann = Annotation
-        { renderAnnotation =
-            (renderAnnotation . annotation $ traceAnnOverlays ann)
+        { annotationDiagram =
+            (renderAnnotation $ traceAnnOverlays ann)
             <>
             if traceAnnVisible ann then
                 fromVertices (map (p2 . tracePosXZ) . traceAnnPoints $ ann)

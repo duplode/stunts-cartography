@@ -263,17 +263,17 @@ carOnTrace = (symbol "+" >>) $ braces $ do
 
 floatOrInteger = try float <|> fromIntegral <$> integer
 
-lexer = P.makeTokenParser annDef
+lexer = P.makeTokenParser annLang
 
 -- Mostly copied from the doc; doesn't really matter for now.
-annDef = P.LanguageDef
+annLang = P.LanguageDef
     { P.commentStart = "" -- TODO: Might be useful.
     , P.commentEnd = ""
     , P.commentLine = ""
     , P.nestedComments = False
     , P.identStart = letter <|> char '_'
     , P.identLetter = alphaNum <|> char '_'
-    , P.opStart = P.opLetter annDef
+    , P.opStart = P.opLetter annLang
     , P.opLetter = oneOf ":!#$%&*+./<=>?@\\^|-~"
     , P.reservedOpNames = []
     , P.reservedNames = []
