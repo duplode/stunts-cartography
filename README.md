@@ -62,7 +62,7 @@ fully functional, and supports a number of advanced features.
 ### Subdirectories
 
 * data: contains sample Stunts tracks (the .TRK files) and driving paths
-  extracted from game data to be consumed by the Animate module demo (the .dat
+  extracted from game data to be used for lap trace annotations (the .dat
   files). The paths are meant to be overlaid on the track which shares part of
   their file name.
 * laptrace: instructions for an arcane procedure driving path extraction from

@@ -23,7 +23,9 @@ scaleRawCoords = scaleVecWide (1 / 65536)
 withXZ :: ((Double, Double) -> a) -> VecDouble -> a
 withXZ f = f . (\(x,_,z) -> (x,z))
 
--- Scales a triple of angles from raw units to degrees.
+-- Scales a raw triple of angles from raw units to degrees and adjusts the xz
+-- angle to the conventions of the rest of the program (that is, zero implies
+-- alignment to the x axis (rather than to the z one).
 scaleRawRot :: VecWide -> VecDouble
-scaleRawRot = scaleVecWide (45 / 128)
+scaleRawRot = (\(x,y,z) -> (x + 90, y, z)) . scaleVecWide (45 / 128)
 

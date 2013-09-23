@@ -14,6 +14,7 @@ module Annotation
     , orientAnnotation
     , rotateAnnotation
     , CarAnnotation(..)
+    , overrideCarAnnColours
     , SegAnnotation(..)
     , SplitAnnotation(..)
     , CaptAnnotation(..)
@@ -89,6 +90,15 @@ instance LocatableAnnotation CarAnnotation where
 instance OrientableAnnotation CarAnnotation where
     annAngle = carAnnAngle
     orientAnnotation ang ann = ann { carAnnAngle = ang }
+
+overrideCarAnnColours cl ann = ann
+    { carAnnColour = cl
+    , carAnnCaption = capt
+        { captAnnColour = cl
+        }
+    }
+    where
+    capt = carAnnCaption ann
 
 data SegAnnotation
      = SegAnnotation

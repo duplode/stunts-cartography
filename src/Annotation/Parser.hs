@@ -7,14 +7,17 @@ module Annotation.Parser
 
 import Text.Parsec
 import qualified Text.Parsec.Token as P
-import Text.Parsec.Language (haskellDef)
 import Text.Parsec.Permutation
 
 import Control.Monad (replicateM)
 import Control.Applicative ((<$>), (<*), (<*>))
 import Data.Maybe (fromMaybe)
+import Control.Monad.IO.Class
+import System.Directory (doesFileExist)
 
 import Annotation
+import Annotation.LapTrace
+import Annotation.LapTrace.Parser.Simple
 import Data.Colour (Colour)
 import Data.Colour.Names (readColourName, yellow)
 import Data.Colour.SRGB (sRGB24read)
@@ -22,7 +25,7 @@ import Types.CartoM
 import Control.Monad.RWS (tell)
 import qualified Parameters as Pm
 
-parseAnnotations :: (Monad m) => String -> CartoT m [Annotation]
+parseAnnotations :: (MonadIO m) => String -> CartoT m [Annotation]
 parseAnnotations input = do
     result <- runPT annotations () "" input
     case result of
@@ -39,11 +42,13 @@ annotations = whiteSpace >> pAnnotation `manyTill` eof
 
 pAnnotation = (try (annotation <$> car)
     <|> try (annotation <$> seg)
-    <|> try (annotation <$> splitSeg)) <* annDelimiter
+    <|> try (annotation <$> splitSeg)
+    <|> try (annotation <$> traceSpec)) <* annDelimiter
 
 annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
 
-detectAnnStart = choice . map (lookAhead . try . symbol) $ ["Car", "Seg", "Split"]
+detectAnnStart = choice . map (lookAhead . try . symbol) $
+    ["Car", "Seg", "Split", "Trace"]
 
 car = do
     symbol "Car"
@@ -186,6 +191,76 @@ alignment = cardinalDir "'"
 
 splitDir = cardinalDir "^"
 
+
+traceSpec = do
+    symbol "Trace"
+    opt <- runPermParser $
+        (,,,) <$> oncePerm rawPath
+              <*> optionPerm yellow colour
+              <*> optionPerm True visibility
+              <*> manyPerm carOnTrace
+    let (path, cl, vis, cars) = opt
+    -- TODO: Add support for relative paths via CartoT
+    exists <- liftIO $ doesFileExist path
+    if not exists then
+        fail "Trace data file does not exist."
+    else do
+        rawData <- liftIO $ readFile path
+        let eDat = runP laptrace () path rawData
+        case eDat of
+            Left e    -> fail $ show e
+            Right dat -> return $ initializeTrace dat emptyTraceAnn
+                { traceAnnPoints = []
+                , traceAnnOverlays = emptyTraceOverlays
+                    { carsOverTrace = map
+                        (fmap $ overrideCarAnnColours cl) cars
+                    }
+                , traceAnnColour = cl
+                , traceAnnVisible = vis
+                }
+
+-- As the name indicates, the "path" could be anything.
+rawPath = do
+    symbol ":"
+    stringLiteral
+
+visibility = do
+    symbol "!"
+    return False
+
+lapMoment = do
+    symbol "@"
+    floatOrInteger
+
+-- TODO: Minimize duplication in the car parsers. First step would be
+-- simplifying the caption parser interface.
+-- TODO: Add support for overriding the colours (trickier than it sounds).
+carOnTrace = (symbol "+" >>) $ braces $ do
+    symbol "Car"
+    opt <- runPermParser $
+        (,,) <$> oncePerm lapMoment
+             <*> optionPerm 0.5 size
+             <*> optionPerm (Nothing, 0, 0, E, 0.4, "") caption
+    let (moment, sz, capt) = opt
+    -- TODO: Stop ignoring the caption colour.
+    let (_, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
+    return $ (truncate $ 20 * moment, CarAnnotation
+        { carAnnColour = yellow
+        , carAnnPosition = (0, 0)
+        , carAnnAngle = 0
+        , carAnnSize = sz
+        , carAnnCaption = CaptAnnotation
+            { captAnnPosition = (0, 0)
+            , captAnnText = cpTxt
+            , captAnnColour = yellow
+            , captAnnBgOpacity = cpBg
+            , captAnnAlignment = cpAl
+            , captAnnAngle = cpAng
+            , captAnnSize = cpSz
+            }
+        })
+
+
 floatOrInteger = try float <|> fromIntegral <$> integer
 
 lexer = P.makeTokenParser annDef
@@ -229,7 +304,6 @@ test6 = "Car @15.5 10.5 ^135 *0.5 #yellow \"foo\" {^0 *1 'N} ;\n\n"
     ++ "Seg @16.5 10.5 ^160 *0.5 #red \"bar\" {^0 *1 'E}"
 test7 = "Split 1 @22 11 ^N *5 #magenta 'N;"
 
-runTests :: CartoM [[Annotation]]
 runTests = mapM parseAnnotations $
     [test1, test2, test3, test4, test5, test6, test7]
 
