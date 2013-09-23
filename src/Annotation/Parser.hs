@@ -58,20 +58,13 @@ car = do
                <*> optionMaybePerm colour
                <*> optionPerm 0 angle
                <*> optionPerm 0.5 size
-               <*> optionPerm (Nothing, 0, 0, E, 0.4, "") caption
+               <*> optionPerm defAnn caption -- The default caption is empty.
     let (pos, mCl, ang, sz, capt) = opt
-    let (mCpCl, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
     return $ maybeDeepOverrideAnnColour mCl defAnn
         { carAnnPosition = pos
         , carAnnAngle = ang
         , carAnnSize = sz
-        , carAnnCaption = maybeCustomiseAnnColour mCpCl defAnn
-            { captAnnText = cpTxt
-            , captAnnBgOpacity = cpBg
-            , captAnnAlignment = cpAl
-            , captAnnAngle = cpAng
-            , captAnnSize = cpSz
-            }
+        , carAnnCaption = capt
         }
 
 seg = do
@@ -81,20 +74,13 @@ seg = do
                <*> optionMaybePerm colour
                <*> oncePerm angle
                <*> oncePerm size
-               <*> optionPerm (Nothing, 0, 0, E, 0.4, "") caption
+               <*> optionPerm defAnn caption
     let (pos, mCl, ang, len, capt) = opt
-    let (mCpCl, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
     return $ maybeDeepOverrideAnnColour mCl defAnn
         { segAnnPosition = pos
         , segAnnAngle = ang
         , segAnnLength = len
-        , segAnnCaption = maybeCustomiseAnnColour mCpCl defAnn
-            { captAnnText = cpTxt
-            , captAnnBgOpacity = cpBg
-            , captAnnAlignment = cpAl
-            , captAnnAngle = cpAng
-            , captAnnSize = cpSz
-            }
+        , segAnnCaption = capt
         }
 
 splitSeg = do
@@ -157,21 +143,21 @@ sizeInt = do
     fromIntegral <$> integer
 
 -- Captions associated to another annotation.
--- On the Maybe (Colour Double): Nothing means "use a default from somewhere".
--- TODO: Stop returning a 6-uple, ideally as soon as a clean way of handling
--- the optional colour is found.
-caption :: (Monad m) => ParsecT String u m
-               ( Maybe (Colour Double), Double, Double, CardinalDirection
-               , Double, String )
 caption = do
     txt <- stringLiteral
-    (al, sz, ang, mCl, bg) <- option (E, 0.4, 0, Nothing, 0) . try . braces $
-        runPermParser $ (,,,,) <$> optionPerm E alignment
-                               <*> optionPerm 0.4 size
-                               <*> optionPerm 0 angle
+    mOpt <- optionMaybe . try . braces $
+        runPermParser $ (,,,,) <$> optionMaybePerm alignment
+                               <*> optionMaybePerm size
+                               <*> optionMaybePerm angle
                                <*> optionMaybePerm colour
-                               <*> optionPerm 0 bg
-    return (mCl, bg, ang, al, sz, txt)
+                               <*> optionMaybePerm bg
+    let setCapt = maybe id $ \(mAl, mSz, mAng, mCl, mBg) ->
+            maybeCustomiseAnnColour mCl
+            . maybe id (\al capt -> capt { captAnnAlignment = al }) mAl
+            . maybe id (\sz capt -> capt { captAnnSize = sz }) mSz
+            . maybe id (\ang capt -> capt { captAnnAngle = ang }) mAng
+            . maybe id (\bg capt -> capt {captAnnBgOpacity = bg}) mBg
+    return $ setCapt mOpt defAnn { captAnnText = txt }
 
 cardinalDir :: (Monad m) => String -> ParsecT String u m CardinalDirection
 cardinalDir leading = do
@@ -195,11 +181,8 @@ traceSpec = do
               <*> optionPerm True visibility
               <*> manyPerm carOnTrace
     let (path, cl, vis, cars) = opt
-    -- TODO: Add support for relative paths via CartoT
     basePath <- lift $ asks Pm.baseDirectory
-    liftIO $ putStrLn basePath
     let fullPath = basePath </> path
-    liftIO $ putStrLn fullPath
     exists <- liftIO $ doesFileExist fullPath
     if not exists then
         fail "Trace data file does not exist."
@@ -239,19 +222,12 @@ carOnTrace = (symbol "+" >>) $ braces $ do
         (,,,) <$> oncePerm lapMoment
               <*> optionMaybePerm colour
               <*> optionPerm 0.5 size
-              <*> optionPerm (Nothing, 0, 0, E, 0.4, "") caption
+              <*> optionPerm defAnn caption
     let (moment, mCl, sz, capt) = opt
-    let (mCpCl, cpBg, cpAng, cpAl, cpSz, cpTxt) = capt
     return $ (truncate $ 20 * moment
         , maybeDeepOverrideAnnColour mCl defAnn
             { carAnnSize = sz
-            , carAnnCaption = maybeCustomiseAnnColour mCpCl defAnn
-                { captAnnText = cpTxt
-                , captAnnBgOpacity = cpBg
-                , captAnnAlignment = cpAl
-                , captAnnAngle = cpAng
-                , captAnnSize = cpSz
-                }
+            , carAnnCaption = capt
             }
         )
 
