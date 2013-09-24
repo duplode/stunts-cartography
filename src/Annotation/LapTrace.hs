@@ -2,6 +2,7 @@ module Annotation.LapTrace
     ( TraceOverlays(..)
     , TraceAnnotation(..)
     , initializeTrace
+    , clearOverlays
     ) where
 
 import qualified Data.Map as M (Map, fromList, lookup, member, size)
@@ -144,6 +145,9 @@ initializeTrace :: [(VecDouble, VecDouble)]
                 -> TraceAnnotation -> TraceAnnotation
 initializeTrace dat ann = setupTrace
     ann { traceAnnPoints = tracePointsFromData dat }
+
+clearOverlays :: TraceAnnotation -> TraceAnnotation
+clearOverlays ann = ann { traceAnnOverlays = defAnn }
 
 -- TODO: Add a LocatableAnnotation instance (obviously it will relocate the
 -- overlays too).
