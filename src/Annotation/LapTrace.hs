@@ -9,6 +9,7 @@ import Data.Default
 import Data.List (sortBy, dropWhile, takeWhile)
 import Data.Ord (comparing)
 import Data.Maybe (fromMaybe)
+import Text.Printf (printf)
 
 import Annotation
 import Annotation.LapTrace.Vec
@@ -65,9 +66,9 @@ instance Default TraceAnnotation where
 -- Trace initialization workhorse. Filters out overlays with invalid frames,
 -- positions each overlay according to the corresponding trace frame and
 -- generates periodic overlays.
-arrangeOverlays :: TraceAnnotation -> TraceAnnotation
-arrangeOverlays ann = ann
-    { traceAnnOverlays = arrangeOverlays' tovs
+setupTrace :: TraceAnnotation -> TraceAnnotation
+setupTrace ann = ann
+    { traceAnnOverlays = arrangeOverlays tovs
     }
     where
     pointMap = M.fromList $ map (\p -> (traceFrame p, p)) $ traceAnnPoints ann
@@ -81,7 +82,7 @@ arrangeOverlays ann = ann
         in (\p -> (ix, fArrange p c)) $
             fromMaybe (error "Frameless overlay.") mp
 
-    arrangeOverlays' tovs = tovs
+    arrangeOverlays tovs = tovs
         { carsOverTrace = map arrangeCar $ carsOverTrace tovs
         }
 
@@ -95,13 +96,37 @@ arrangeOverlays ann = ann
     nFrames = M.size pointMap
     appendPeriodic tovs =
         let ((ifr, freq), baseCar) = periodicCarsSpec tovs
+            ifr' = max 0 ifr
+            fCarMagic = magicStringReplacerCar baseCar
         in tovs
             { carsOverTrace = carsOverTrace tovs ++
                 if freq > 0 then
-                    zip [ifr, ifr + freq .. nFrames] $ repeat baseCar
+                    map fCarMagic . zip [ifr', ifr' + freq .. nFrames] $
+                        repeat baseCar
                 else
                     []
             }
+
+    magicStringReplacerCar baseCar =
+        let txt = captAnnText . carAnnCaption $ baseCar
+        in case txt of
+            "{{FRAMENUMBER}}" -> \(ix, c) ->
+                (ix, c { carAnnCaption = (carAnnCaption c)
+                    { captAnnText = show ix }})
+            "{{GAMETIME}}" -> \(ix, c) ->
+                (ix, c { carAnnCaption = (carAnnCaption c)
+                    { captAnnText = formatFrameAsGameTime ix }})
+            _ -> id
+
+-- 20fps assumed throughout. Note that this implementation
+-- only makes sense for positive values.
+formatFrameAsGameTime :: Int -> String
+formatFrameAsGameTime x = (if mm > 0 then show mm ++ ":" else "")
+    ++ printf "%02d" ss ++ "." ++ printf "%02d" cc
+    where
+    (sm, cc) = (5 * x) `quotRem` 100
+    (mm, ss) = sm `quotRem` 60
+
 
 tracePointsFromData :: [(VecDouble, VecDouble)] -> [TracePoint]
 tracePointsFromData dat = map mkPoint $ zip [0..] dat
@@ -117,7 +142,7 @@ tracePointsFromData dat = map mkPoint $ zip [0..] dat
 
 initializeTrace :: [(VecDouble, VecDouble)]
                 -> TraceAnnotation -> TraceAnnotation
-initializeTrace dat ann = arrangeOverlays
+initializeTrace dat ann = setupTrace
     ann { traceAnnPoints = tracePointsFromData dat }
 
 -- TODO: Add a LocatableAnnotation instance (obviously it will relocate the
