@@ -29,7 +29,7 @@ import Track (Horizon(..), terrainTrkSimple)
 import qualified Parameters as Pm
 import Util.Misc (retrieveFileSize)
 import Annotation (Annotation)
-import Annotation.Parser (parseAnnotations)
+import Annotation.Parser (parseAnnotations, parseFlipbook)
 import Types.CartoM
 import Paths
 import qualified Widgets.BoundedInput as BI
@@ -224,6 +224,11 @@ setup tmpDir w = void $ do
             # set UI.id_ "ann-input"
             # set UI.cols "25" # set UI.rows "5"
 
+    txaFlipbook <-
+        UI.textarea # set UI.name "flipbook-input"
+            # set UI.id_ "flipbook-input"
+            # set UI.cols "25" # set UI.rows "5"
+
     imgMap <- UI.img # set UI.id_ "track-map" # set UI.src "static/images/welcome.png"
 
     -- Assembling the interface HTML.
@@ -290,6 +295,11 @@ setup tmpDir w = void $ do
                 , UI.br
                 , element txaAnns
                 ]
+            , UI.p #+
+                [ string "Flipbook"
+                , UI.br
+                , element txaFlipbook
+                ]
             ]
         , UI.div # set UI.id_ "main-wrap" #+
             [ element imgMap
@@ -328,19 +338,25 @@ setup tmpDir w = void $ do
                     throwError "Bad file size (.TRK files must have 1802 bytes)."
 
                 -- Decide on input format.
-                let pngWriter :: FilePath -> CartoT (ErrorT String IO) Pm.PostRenderInfo
-                    pngWriter = case fileExt of
-                        ".TRK" -> writePngFromTrk
-                        ".RPL" -> writePngFromRpl
+                let imgWriter :: FilePath -> CartoT (ErrorT String IO) Pm.PostRenderInfo
+                    imgWriter = case fileExt of
+                        ".TRK" -> writeImageFromTrk
+                        ".RPL" -> writeImageFromRpl
                         _      -> error "Unrecognized input extension."
 
                 -- Parse annotations and render the map.
                 let goCarto :: CartoT (ErrorT String IO) Pm.PostRenderInfo
                     goCarto = do
                         anns <- liftIO (txaAnns # get value)
-                            >>=  parseAnnotations
-                        RWS.local (\p -> p { Pm.annotationSpecs = anns }) $
-                            pngWriter trkPath
+                            >>= parseAnnotations
+                        mFbk <- liftIO (txaFlipbook # get value)
+                            >>= \txt -> case txt of
+                                "" -> return Nothing
+                                _  -> Just <$> parseFlipbook txt
+                        RWS.local (\p -> p
+                            { Pm.annotationSpecs = anns
+                            , Pm.flipbookSpec = mFbk
+                            }) $ imgWriter trkPath
                 (postRender,st',logW) <- RWS.runRWST goCarto params st
 
                 -- Update the UI.

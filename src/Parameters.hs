@@ -8,6 +8,7 @@ module Parameters
     , RenderingState(..), initialRenderingState
     , clearElementCache, clearTerrainCache
     , insertIntoElementCache, insertIntoTerrainCache
+    , incrementNumberOfRuns
     , RenderingLog(..), logToList, logFromList
     , module Data.Default
     ) where
@@ -24,6 +25,7 @@ import Diagrams.Backend.Cairo (OutputType(..))
 import Track (Horizon(..), Element, Terrain)
 import qualified Util.ByteString as LB
 import Annotation (Annotation)
+import Annotation.Flipbook (Flipbook)
 import Types.Diagrams (BEDia)
 
 -- Data types which shift information across the various layers of the
@@ -44,6 +46,7 @@ data RenderingParameters = RenderingParameters
     , yTileBounds :: (Int, Int)
 
     , annotationSpecs :: [Annotation]
+    , flipbookSpec :: Maybe Flipbook
 
     , pixelsPerTile :: Double
     , outputType :: OutputType
@@ -64,6 +67,7 @@ defaultRenderingParameters = RenderingParameters
     , xTileBounds = (0, 29)
     , yTileBounds = (0, 29)
     , annotationSpecs = []
+    , flipbookSpec = Nothing
     , temporaryDirectory = "."
     , baseDirectory = "."
     }
@@ -126,12 +130,14 @@ data PostRenderInfo = PostRenderInfo
 data RenderingState = RenderingState
     { elementCache :: Map Element (Diagram BEDia R2)
     , terrainCache :: Map Terrain (Diagram BEDia R2)
+    , numberOfRuns :: Int
     }
 
 initialRenderingState :: RenderingState
 initialRenderingState = RenderingState
     { elementCache = M.empty
     , terrainCache = M.empty
+    , numberOfRuns = 0
     }
 
 instance Default RenderingState where
@@ -150,6 +156,9 @@ insertIntoElementCache el dia st = st{ elementCache = M.insert el dia $ elementC
 insertIntoTerrainCache :: Terrain -> Diagram BEDia R2
                        -> RenderingState -> RenderingState
 insertIntoTerrainCache te dia st = st{ terrainCache = M.insert te dia $ terrainCache st }
+
+incrementNumberOfRuns :: RenderingState -> RenderingState
+incrementNumberOfRuns st = st{ numberOfRuns = numberOfRuns st + 1 }
 
 -- Opaque Writer type.
 

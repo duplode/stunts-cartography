@@ -3,6 +3,7 @@ module Annotation.Parser
     ( parseAnnotations
     , annotations
     , pAnnotation
+    , parseFlipbook
     ) where
 
 import Text.Parsec
@@ -15,10 +16,12 @@ import Data.Maybe (fromMaybe)
 import Control.Monad.Trans
 import System.Directory (doesFileExist)
 import System.FilePath ((</>))
+import Data.Default
 
 import Annotation
 import Annotation.LapTrace
 import Annotation.LapTrace.Parser.Simple
+import Annotation.Flipbook
 import Data.Colour (Colour)
 import Data.Colour.Names (readColourName, yellow)
 import Data.Colour.SRGB (sRGB24read)
@@ -246,6 +249,23 @@ carOnTrace mMoment = do
             , carAnnCaption = capt
             }
         )
+
+-- Flipbook parsers.
+parseFlipbook :: (MonadIO m) => String -> CartoT m Flipbook
+parseFlipbook input = do
+    result <- runPT flipbookSpec () "" input
+    case result of
+        Left err   -> do
+            tell . Pm.logFromList $
+                "Error in defining the animation "
+            tell . Pm.logFromList . show $ err
+            tell . Pm.logFromList $ "\r\n"
+            return def
+        Right fbk -> return fbk
+
+-- TODO: Add support for multiple annotations (e.g. multiple traces in the
+-- same flipbook, maybe with a monoid instance).
+flipbookSpec = toFlipbook <$> traceSpec
 
 
 floatOrInteger = try float <|> fromIntegral <$> integer

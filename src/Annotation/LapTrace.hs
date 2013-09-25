@@ -94,7 +94,7 @@ setupTrace ann = ann
         . dropWhile (not . flip M.member pointMap . fst)
         . sortBy (comparing fst)
 
-    nFrames = M.size pointMap
+    lastFrame = M.size pointMap - 1
     appendPeriodic tovs =
         let ((ifr, freq), baseCar) = periodicCarsSpec tovs
             ifr' = max 0 ifr
@@ -102,7 +102,7 @@ setupTrace ann = ann
         in tovs
             { carsOverTrace = carsOverTrace tovs ++
                 if freq > 0 then
-                    map fCarMagic . zip [ifr', ifr' + freq .. nFrames] $
+                    map fCarMagic . zip [ifr', ifr' + freq .. lastFrame] $
                         repeat baseCar
                 else
                     []
