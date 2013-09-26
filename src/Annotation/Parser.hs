@@ -188,23 +188,23 @@ traceSpec = do
     basePath <- lift $ asks Pm.baseDirectory
     let fullPath = basePath </> path
     exists <- liftIO $ doesFileExist fullPath
-    if not exists then
-        fail "Trace data file does not exist."
-    else do
-        rawData <- liftIO $ readFile fullPath
-        let eDat = runP laptrace () fullPath rawData
-        case eDat of
-            Left e    -> fail $ show e
-            Right dat -> return $ initializeTrace dat
-                . maybeDeepOverrideAnnColour mCl
-                . maybe id (\v tr -> tr { traceAnnVisible = v }) mVis
-                . maybe id (\pc tr -> tr
-                    { traceAnnOverlays =
-                        (traceAnnOverlays tr) { periodicCarsSpec = pc }
-                    }) mPCars
-                $ defAnn
-                    { traceAnnOverlays = defAnn { carsOverTrace = cars }
-                    }
+    if not exists
+        then fail "Trace data file does not exist."
+        else do
+            rawData <- liftIO $ readFile fullPath
+            let eDat = runP laptrace () fullPath rawData
+            case eDat of
+                Left e    -> fail $ show e
+                Right dat -> return $ initializeTrace dat
+                    . maybeDeepOverrideAnnColour mCl
+                    . maybe id (\v tr -> tr { traceAnnVisible = v }) mVis
+                    . maybe id (\pc tr -> tr
+                        { traceAnnOverlays =
+                            (traceAnnOverlays tr) { periodicCarsSpec = pc }
+                        }) mPCars
+                    $ defAnn
+                        { traceAnnOverlays = defAnn { carsOverTrace = cars }
+                        }
 
 -- As the name indicates, the "path" could be anything.
 rawPath = do

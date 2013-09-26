@@ -157,3 +157,4 @@ wholeMapDiagram tiles = mapRWST (return . runIdentity) $ do
         # clipBy clipRect
         # withEnvelope clipRect
 
+--pile' = foldl' beneath mempty

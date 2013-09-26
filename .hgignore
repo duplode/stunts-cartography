@@ -26,7 +26,13 @@ laptrace/z70-demo
 dist/**
 _hsbuild/**
 .hsenv_carto-xp/**
+.hsenv_prof/**
 dist_carto-xp/**
+dist_prof/**
+*.ps
+*.hp
+*.aux
+*.prof
 
 laptrace/*.ods
 laptrace/*.dat
