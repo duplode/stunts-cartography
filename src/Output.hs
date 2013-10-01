@@ -1,4 +1,5 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE BangPatterns #-}
 module Output
     ( writeImageFromTrk
     , writeImageFromRpl
@@ -55,9 +56,9 @@ writeImageOutput trackName trkBS = do
     tmpDir <- asks Pm.temporaryDirectory
 
     -- Whether to render a regular map or an animation flipbook.
-    mFbk <- asks Pm.flipbookSpec
-    case mFbk of
-        Nothing -> do
+    fbks <- asks Pm.flipbookSpec
+    case fbks of
+        [] -> do
             outType <- asks Pm.outputType
             let outRelPath = case outType of
                     PNG -> "stunts-cartography-map.png"
@@ -84,24 +85,25 @@ writeImageOutput trackName trkBS = do
                 , Pm.outputPath = outFile
                 }
 
-        Just fbk -> do
+        fbks' -> do
             startTime <- liftIO getCPUTime
             wholeMap <- wholeMapDiagram tiles
 
             -- Ignoring the output type, at least for now.
             modify Pm.incrementNumberOfRuns
             fbkDir <- createFlipbookDir tmpDir trackName
+            -- let (backdrop, pages) = renderFlipbook $ mconcat fbks'
 
             -- Five digits are enough for Stunts replays of any length.
             let renderPage (ix, pg) = liftIO $ renderCairo
                     (fbkDir </> (printf "%05d.png" ix)) (Width renWidth) pg
             mapM renderPage $
                 zip ([0..] :: [Int]) . map (withEnvelope wholeMap) $
-                    toFlipbook fbk
+                    toFlipbook (mconcat fbks)
 
             let backdropFile = fbkDir </> "backdrop.png"
-                backdrop = renderAnnotation fbk <> wholeMap
-            liftIO $ renderCairo backdropFile (Width renWidth) backdrop
+                fullBackdrop = (flipbookBackdrop $ mconcat fbks) <> wholeMap
+            liftIO $ renderCairo backdropFile (Width renWidth) fullBackdrop
 
             endTime <- liftIO getCPUTime
             tell . Pm.logFromList $ "Flipbook rendering complete.\r\n"

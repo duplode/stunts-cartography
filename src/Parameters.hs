@@ -47,7 +47,7 @@ data RenderingParameters = RenderingParameters
     , yTileBounds :: (Int, Int)
 
     , annotationSpecs :: [Annotation]
-    , flipbookSpec :: Maybe TraceAnnotation
+    , flipbookSpec :: [SomeFlipbook]
 
     , pixelsPerTile :: Double
     , outputType :: OutputType
@@ -68,7 +68,7 @@ defaultRenderingParameters = RenderingParameters
     , xTileBounds = (0, 29)
     , yTileBounds = (0, 29)
     , annotationSpecs = []
-    , flipbookSpec = Nothing
+    , flipbookSpec = []
     , temporaryDirectory = "."
     , baseDirectory = "."
     }

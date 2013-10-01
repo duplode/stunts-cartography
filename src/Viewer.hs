@@ -349,13 +349,11 @@ setup tmpDir w = void $ do
                     goCarto = do
                         anns <- liftIO (txaAnns # get value)
                             >>= parseAnnotations
-                        mFbk <- liftIO (txaFlipbook # get value)
-                            >>= \txt -> case txt of
-                                "" -> return Nothing
-                                _  -> Just <$> parseFlipbook txt
+                        fbks <- liftIO (txaFlipbook # get value)
+                            >>= parseFlipbook
                         RWS.local (\p -> p
                             { Pm.annotationSpecs = anns
-                            , Pm.flipbookSpec = mFbk
+                            , Pm.flipbookSpec = fbks
                             }) $ imgWriter trkPath
                 (postRender,st',logW) <- RWS.runRWST goCarto params st
 

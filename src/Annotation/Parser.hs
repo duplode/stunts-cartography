@@ -256,7 +256,7 @@ carOnTrace mMoment = do
         )
 
 -- Flipbook parsers.
-parseFlipbook :: (MonadIO m) => String -> CartoT m TraceAnnotation
+parseFlipbook :: (MonadIO m) => String -> CartoT m [SomeFlipbook]
 parseFlipbook input = do
     result <- runPT flipbookSpec () "" input
     case result of
@@ -266,11 +266,11 @@ parseFlipbook input = do
             tell . Pm.logFromList . show $ err
             tell . Pm.logFromList $ "\r\n"
             return def
-        Right fbk -> return fbk
+        Right fbks -> return fbks
 
 -- TODO: Add support for multiple annotations (e.g. multiple traces in the
 -- same flipbook, maybe with a monoid instance).
-flipbookSpec = traceSpec (initializeTrace False)
+flipbookSpec = many $ SomeFlipbook <$> traceSpec (initializeTrace False)
 
 
 floatOrInteger = try float <|> fromIntegral <$> integer
