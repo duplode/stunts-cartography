@@ -4,7 +4,6 @@ module Annotation.LapTrace
     , TraceAnnotation(..)
     , putCarOnTracePoint
     , initializeTrace
-    , setTraceData
     , clearOverlays
     ) where
 
@@ -70,20 +69,19 @@ instance Default TraceAnnotation where
 -- Trace initialization workhorse. Filters out overlays with invalid frames,
 -- positions each overlay according to the corresponding trace frame and
 -- generates periodic overlays.
-setupTrace :: TraceAnnotation -> TraceAnnotation
-setupTrace ann = ann
+setupTrace :: Bool -> TraceAnnotation -> TraceAnnotation
+setupTrace isSingleFrame ann = ann
     { traceAnnOverlays = arrangeOverlays tovs
     }
     where
     pointMap = M.fromList $ map (\p -> (traceFrame p, p)) $ traceAnnPoints ann
-    tovs = appendPeriodic . eliminateFrameless $ traceAnnOverlays ann
+    tovs = (if isSingleFrame then appendPeriodic else id)
+        . eliminateFrameless $ traceAnnOverlays ann
     lookupPoint = flip M.lookup pointMap
 
     arrangeCar (ix, c) =
         let mp = lookupPoint ix
-            fArrange p = orientAnnotation (traceRotXZ p)
-                . locateAnnotation (tracePosXZ p)
-        in (\p -> (ix, fArrange p c)) $
+        in (\p -> (ix, putCarOnTracePoint p c)) $
             fromMaybe (error "Frameless overlay.") mp
 
     arrangeOverlays tovs = tovs
@@ -101,26 +99,13 @@ setupTrace ann = ann
     appendPeriodic tovs =
         let ((ifr, freq), baseCar) = periodicCarsSpec tovs
             ifr' = max 0 ifr
-            fCarMagic = magicStringReplacerCar baseCar
         in tovs
             { carsOverTrace = carsOverTrace tovs ++
                 if freq > 0 then
-                    map fCarMagic . zip [ifr', ifr' + freq .. lastFrame] $
-                        repeat baseCar
+                    zip [ifr', ifr' + freq .. lastFrame] $ repeat baseCar
                 else
                     []
             }
-
-    magicStringReplacerCar baseCar =
-        let txt = captAnnText . carAnnCaption $ baseCar
-        in case txt of
-            "{{FRAMENUMBER}}" -> \(ix, c) ->
-                (ix, c { carAnnCaption = (carAnnCaption c)
-                    { captAnnText = show ix }})
-            "{{GAMETIME}}" -> \(ix, c) ->
-                (ix, c { carAnnCaption = (carAnnCaption c)
-                    { captAnnText = formatFrameAsGameTime ix }})
-            _ -> id
 
 -- 20fps assumed throughout. Note that this implementation
 -- only makes sense for positive values.
@@ -130,8 +115,6 @@ formatFrameAsGameTime x = (if mm > 0 then show mm ++ ":" else "")
     where
     (sm, cc) = (5 * x) `quotRem` 100
     (mm, ss) = sm `quotRem` 60
-
---TODO: The two functions below are duplicated within setupTrace.
 
 replaceMagicStringsForCar :: Int -> CarAnnotation -> CarAnnotation
 replaceMagicStringsForCar ix c =
@@ -163,9 +146,10 @@ tracePointsFromData dat = map mkPoint $ zip [0..] dat
         , traceRotXY = rxy
         }
 
-initializeTrace :: [(VecDouble, VecDouble)]
+initializeTrace :: Bool -> [(VecDouble, VecDouble)]
                 -> TraceAnnotation -> TraceAnnotation
-initializeTrace dat = setupTrace . setTraceData dat
+initializeTrace isSingleFrame dat =
+    setupTrace isSingleFrame . setTraceData dat
 
 setTraceData :: [(VecDouble, VecDouble)]
              -> TraceAnnotation -> TraceAnnotation

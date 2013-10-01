@@ -14,7 +14,6 @@ class (IsAnnotation a) => ToFlipbook a where
 -- Annotations.LapTrace.setupTrace is not supposed to be employed before
 -- using this instance.
 instance ToFlipbook TraceAnnotation where
-    -- TODO: envelop.
     toFlipbook ann =
         map (renderAnnotation . flip putCarOnTracePoint baseCar) pts
         where

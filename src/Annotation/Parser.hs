@@ -48,7 +48,7 @@ annotations = whiteSpace >> pAnnotation `manyTill` eof
 pAnnotation = (try (annotation <$> car)
     <|> try (annotation <$> seg)
     <|> try (annotation <$> splitSeg)
-    <|> try (annotation <$> traceSpec initializeTrace)
+    <|> try (annotation <$> traceSpec (initializeTrace True))
     ) <* annDelimiter
 
 annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
@@ -270,7 +270,7 @@ parseFlipbook input = do
 
 -- TODO: Add support for multiple annotations (e.g. multiple traces in the
 -- same flipbook, maybe with a monoid instance).
-flipbookSpec = traceSpec setTraceData
+flipbookSpec = traceSpec (initializeTrace False)
 
 
 floatOrInteger = try float <|> fromIntegral <$> integer
