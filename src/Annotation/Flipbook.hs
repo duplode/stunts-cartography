@@ -4,6 +4,7 @@ module Annotation.Flipbook
     , SomeFlipbook(..)
     ) where
 
+import Data.List (groupBy)
 import Diagrams.Prelude
 
 import Types.Diagrams
@@ -17,8 +18,8 @@ class ToFlipbook a where
 
     renderFlipbook ann = (flipbookBackdrop ann, toFlipbook ann)
 
--- Annotations.LapTrace.setupTrace is not supposed to be employed before
--- using this instance.
+-- Annotations.LapTrace.initializeTrace is supposed to be called with the
+-- single frame option disabled before using this instance.
 instance ToFlipbook TraceAnnotation where
     toFlipbook ann =
         let ((ifr, freq), baseCar) = periodicCarsSpec . traceAnnOverlays $ ann
@@ -27,12 +28,23 @@ instance ToFlipbook TraceAnnotation where
                 in phaselessFrame >= 0 && phaselessFrame `rem` freq == 0
             fRenderOn c p =
                 if pointIsIncluded p
-                    then renderAnnotation $ putCarOnTracePoint p c
-                    else mempty
+                    then (True, renderAnnotation $ putCarOnTracePoint p c)
+                    else (False, mempty)
             pts = traceAnnPoints ann
-        in map (fRenderOn baseCar) pts
+        -- Note that freq should actually be called period.
+        in case freq of
+            0 -> [] -- TODO: Notify the issue (through the parser, probably).
+            1 ->  map (snd . fRenderOn baseCar) pts
+            _ -> spillOverEmpty $ map (fRenderOn baseCar) pts
     flipbookBackdrop = renderAnnotation
 
+-- Frame replication to account for frame rate variations.
+spillOverEmpty :: [(Bool, Diagram BEDia R2)] -> [Diagram BEDia R2]
+spillOverEmpty = concatMap (overwriteWithHead . map snd)
+    . groupBy (((not . fst) .) . flip const)
+    where
+    overwriteWithHead [] = []
+    overwriteWithHead (x:xs) = x : map (const x) xs
 
 -- Generic concrete instance.
 data RenderedFlipbook = RenderedFlipbook
