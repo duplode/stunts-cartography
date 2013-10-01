@@ -24,7 +24,7 @@ import Util.Misc
 import Replay
 import Composition
 import qualified Parameters as Pm
-import Annotation (annotationDiagram)
+import Annotation (annotationDiagram, renderAnnotation)
 import Annotation.Flipbook
 import Types.CartoM
 import Types.Diagrams
@@ -87,19 +87,21 @@ writeImageOutput trackName trkBS = do
         Just fbk -> do
             startTime <- liftIO getCPUTime
             wholeMap <- wholeMapDiagram tiles
-            let fbk' = underlayFlipbook wholeMap fbk
-                (backdrop, pages) = renderFlipbook fbk'
 
             -- Ignoring the output type, at least for now.
             modify Pm.incrementNumberOfRuns
             fbkDir <- createFlipbookDir tmpDir trackName
 
-            let backdropFile = fbkDir </> "backdrop.png"
-                -- Five digits are enough for Stunts replays of any length.
-                renderPage (ix, pg) = liftIO $ renderCairo
+            -- Five digits are enough for Stunts replays of any length.
+            let renderPage (ix, pg) = liftIO $ renderCairo
                     (fbkDir </> (printf "%05d.png" ix)) (Width renWidth) pg
+            mapM renderPage $
+                zip ([0..] :: [Int]) . map (withEnvelope wholeMap) $
+                    toFlipbook fbk
+
+            let backdropFile = fbkDir </> "backdrop.png"
+                backdrop = renderAnnotation fbk <> wholeMap
             liftIO $ renderCairo backdropFile (Width renWidth) backdrop
-            mapM renderPage $ zip ([0..] :: [Int]) pages
 
             endTime <- liftIO getCPUTime
             tell . Pm.logFromList $ "Flipbook rendering complete.\r\n"

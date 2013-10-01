@@ -49,7 +49,7 @@ data CardinalDirection = E
                        | S
                        deriving (Read, Show, Eq, Ord)
 
-data Annotation
+newtype Annotation
     = Annotation
     { annotationDiagram :: Diagram BEDia R2
     }

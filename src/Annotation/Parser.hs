@@ -20,6 +20,7 @@ import Data.Default
 
 import Annotation
 import Annotation.LapTrace
+import Annotation.LapTrace.Vec (VecDouble)
 import Annotation.LapTrace.Parser.Simple
 import Annotation.Flipbook
 import Data.Colour (Colour)
@@ -47,7 +48,8 @@ annotations = whiteSpace >> pAnnotation `manyTill` eof
 pAnnotation = (try (annotation <$> car)
     <|> try (annotation <$> seg)
     <|> try (annotation <$> splitSeg)
-    <|> try (annotation <$> traceSpec)) <* annDelimiter
+    <|> try (annotation <$> traceSpec initializeTrace)
+    ) <* annDelimiter
 
 annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
 
@@ -176,7 +178,10 @@ alignment = cardinalDir "'"
 splitDir = cardinalDir "^"
 
 
-traceSpec = do
+traceSpec :: (MonadIO m)
+          => ([(VecDouble, VecDouble)] -> TraceAnnotation -> TraceAnnotation)
+          -> ParsecT String u (CartoT m) TraceAnnotation
+traceSpec fInitTrace = do
     symbol "Trace"
     opt <- runPermParser $
         (,,,,) <$> oncePerm rawPath
@@ -195,7 +200,7 @@ traceSpec = do
             let eDat = runP laptrace () fullPath rawData
             case eDat of
                 Left e    -> fail $ show e
-                Right dat -> return $ initializeTrace dat
+                Right dat -> return $ fInitTrace dat
                     . maybeDeepOverrideAnnColour mCl
                     . maybe id (\v tr -> tr { traceAnnVisible = v }) mVis
                     . maybe id (\pc tr -> tr
@@ -251,7 +256,7 @@ carOnTrace mMoment = do
         )
 
 -- Flipbook parsers.
-parseFlipbook :: (MonadIO m) => String -> CartoT m Flipbook
+parseFlipbook :: (MonadIO m) => String -> CartoT m TraceAnnotation
 parseFlipbook input = do
     result <- runPT flipbookSpec () "" input
     case result of
@@ -265,7 +270,7 @@ parseFlipbook input = do
 
 -- TODO: Add support for multiple annotations (e.g. multiple traces in the
 -- same flipbook, maybe with a monoid instance).
-flipbookSpec = toFlipbook <$> traceSpec
+flipbookSpec = traceSpec setTraceData
 
 
 floatOrInteger = try float <|> fromIntegral <$> integer

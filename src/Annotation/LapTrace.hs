@@ -1,7 +1,10 @@
 module Annotation.LapTrace
     ( TraceOverlays(..)
+    , TracePoint(..)
     , TraceAnnotation(..)
+    , putCarOnTracePoint
     , initializeTrace
+    , setTraceData
     , clearOverlays
     ) where
 
@@ -128,6 +131,25 @@ formatFrameAsGameTime x = (if mm > 0 then show mm ++ ":" else "")
     (sm, cc) = (5 * x) `quotRem` 100
     (mm, ss) = sm `quotRem` 60
 
+--TODO: The two functions below are duplicated within setupTrace.
+
+replaceMagicStringsForCar :: Int -> CarAnnotation -> CarAnnotation
+replaceMagicStringsForCar ix c =
+    let txt = captAnnText . carAnnCaption $ c
+    in case txt of
+        "{{FRAMENUMBER}}" ->
+            c { carAnnCaption = (carAnnCaption c)
+                { captAnnText = show ix }}
+        "{{GAMETIME}}" ->
+            c { carAnnCaption = (carAnnCaption c)
+                { captAnnText = formatFrameAsGameTime ix }}
+        _ -> c
+
+putCarOnTracePoint :: TracePoint -> CarAnnotation -> CarAnnotation
+putCarOnTracePoint p =
+    replaceMagicStringsForCar (traceFrame p)
+    . orientAnnotation (traceRotXZ p)
+    . locateAnnotation (tracePosXZ p)
 
 tracePointsFromData :: [(VecDouble, VecDouble)] -> [TracePoint]
 tracePointsFromData dat = map mkPoint $ zip [0..] dat
@@ -143,8 +165,11 @@ tracePointsFromData dat = map mkPoint $ zip [0..] dat
 
 initializeTrace :: [(VecDouble, VecDouble)]
                 -> TraceAnnotation -> TraceAnnotation
-initializeTrace dat ann = setupTrace
-    ann { traceAnnPoints = tracePointsFromData dat }
+initializeTrace dat = setupTrace . setTraceData dat
+
+setTraceData :: [(VecDouble, VecDouble)]
+             -> TraceAnnotation -> TraceAnnotation
+setTraceData dat ann = ann { traceAnnPoints = tracePointsFromData dat }
 
 clearOverlays :: TraceAnnotation -> TraceAnnotation
 clearOverlays ann = ann { traceAnnOverlays = defAnn }

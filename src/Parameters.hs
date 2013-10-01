@@ -25,7 +25,8 @@ import Diagrams.Backend.Cairo (OutputType(..))
 import Track (Horizon(..), Element, Terrain)
 import qualified Util.ByteString as LB
 import Annotation (Annotation)
-import Annotation.Flipbook (Flipbook)
+import Annotation.LapTrace (TraceAnnotation)
+import Annotation.Flipbook
 import Types.Diagrams (BEDia)
 
 -- Data types which shift information across the various layers of the
@@ -46,7 +47,7 @@ data RenderingParameters = RenderingParameters
     , yTileBounds :: (Int, Int)
 
     , annotationSpecs :: [Annotation]
-    , flipbookSpec :: Maybe Flipbook
+    , flipbookSpec :: Maybe TraceAnnotation
 
     , pixelsPerTile :: Double
     , outputType :: OutputType
