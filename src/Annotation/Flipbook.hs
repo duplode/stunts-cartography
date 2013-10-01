@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -O0 #-}
 {-# LANGUAGE ExistentialQuantification #-}
 module Annotation.Flipbook
     ( ToFlipbook (toFlipbook, flipbookBackdrop, renderFlipbook)
