@@ -22,8 +22,15 @@ class ToFlipbook a where
 instance ToFlipbook TraceAnnotation where
     toFlipbook ann =
         let ((ifr, freq), baseCar) = periodicCarsSpec . traceAnnOverlays $ ann
+            pointIsIncluded p =
+                let phaselessFrame = traceFrame p - ifr
+                in phaselessFrame >= 0 && phaselessFrame `rem` freq == 0
+            fRenderOn c p =
+                if pointIsIncluded p
+                    then renderAnnotation $ putCarOnTracePoint p c
+                    else mempty
             pts = traceAnnPoints ann
-        in map (renderAnnotation . flip putCarOnTracePoint baseCar) pts
+        in map (fRenderOn baseCar) pts
     flipbookBackdrop = renderAnnotation
 
 
