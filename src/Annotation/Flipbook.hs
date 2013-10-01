@@ -60,17 +60,17 @@ instance Monoid SomeFlipbook where
     mappend (SomeFlipbook ann1) (SomeFlipbook ann2) =
         SomeFlipbook $ RenderedFlipbook
             { renderedFlipbookPages =
-                zipStillTailWith mappend (toFlipbook ann1) (toFlipbook ann2)
+                zipStillLastWith mappend (toFlipbook ann1) (toFlipbook ann2)
             , renderedFlipbookBackdrop =
                 mappend (flipbookBackdrop ann1) (flipbookBackdrop ann2)
             }
-        where
-        zipPages pgs1 [] = pgs1
-        zipPages [] pgs2 = pgs2
 
-zipStillTailWith :: (a -> a -> a) -> [a] -> [a] -> [a]
-zipStillTailWith _ [] ys          = ys
-zipStillTailWith _ xs []          = xs
-zipStillTailWith f [x] ys         = zipWith f (repeat x) ys
-zipStillTailWith f xs [y]         = zipWith f xs (repeat y)
-zipStillTailWith f (x:xs) (y:ys)  = f x y : zipStillTailWith f xs ys
+-- Zipping so that the final length is that of the longer list. The shorter
+-- list has its last element repeated to make it fit. That mirrors the behavior
+-- of the Stunts engine when one car finishes ahead of the other in a race.
+zipStillLastWith :: (a -> a -> a) -> [a] -> [a] -> [a]
+zipStillLastWith _ [] ys          = ys
+zipStillLastWith _ xs []          = xs
+zipStillLastWith f [x] ys         = zipWith f (repeat x) ys
+zipStillLastWith f xs [y]         = zipWith f xs (repeat y)
+zipStillLastWith f (x:xs) (y:ys)  = f x y : zipStillLastWith f xs ys
