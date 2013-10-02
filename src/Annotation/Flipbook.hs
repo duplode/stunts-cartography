@@ -1,8 +1,9 @@
-{-# OPTIONS_GHC -O0 #-}
 {-# LANGUAGE ExistentialQuantification #-}
 module Annotation.Flipbook
-    ( ToFlipbook (toFlipbook, flipbookBackdrop, renderFlipbook)
+    ( ToFlipbook (toFlipbook, flipbookBackdrop)
     , SomeFlipbook(..)
+    , zipFlipbookPages
+    , concatFlipbookBackdrops
     ) where
 
 import Data.List (groupBy)
@@ -15,9 +16,6 @@ import Annotation.LapTrace
 class ToFlipbook a where
     toFlipbook :: a -> [Diagram BEDia R2]
     flipbookBackdrop :: a -> Diagram BEDia R2
-    renderFlipbook :: a -> (Diagram BEDia R2, [Diagram BEDia R2])
-
-    renderFlipbook ann = (flipbookBackdrop ann, toFlipbook ann)
 
 -- Annotations.LapTrace.initializeTrace is supposed to be called with the
 -- single frame option disabled before using this instance.
@@ -35,7 +33,7 @@ instance ToFlipbook TraceAnnotation where
         -- Note that freq should actually be called period.
         in case freq of
             0 -> [] -- TODO: Notify the issue (through the parser, probably).
-            1 ->  map (snd . fRenderOn baseCar) pts
+            1 -> map (snd . fRenderOn baseCar) pts
             _ -> spillOverEmpty $ map (fRenderOn baseCar) pts
     flipbookBackdrop = renderAnnotation
 
@@ -58,13 +56,32 @@ instance ToFlipbook RenderedFlipbook where
     flipbookBackdrop = renderedFlipbookBackdrop
 
 -- Existential wrapper.
-
 data SomeFlipbook = forall a. ToFlipbook a => SomeFlipbook a
 
 instance ToFlipbook SomeFlipbook where
     toFlipbook (SomeFlipbook ann) = toFlipbook ann
     flipbookBackdrop (SomeFlipbook ann) = flipbookBackdrop ann
 
+-- A less complex alternative to the monoid instance for the common use case.
+-- The signatures can be more general, if the need arises.
+zipFlipbookPages :: [SomeFlipbook] -> [Diagram BEDia R2]
+zipFlipbookPages = foldr (zipStillLastWith mappend . toFlipbook) []
+
+concatFlipbookBackdrops :: [SomeFlipbook] -> Diagram BEDia R2
+concatFlipbookBackdrops = mconcat . map flipbookBackdrop
+
+-- Zipping so that the final length is that of the longer list. The shorter
+-- list has its last element repeated to make it fit. That mirrors the behavior
+-- of the Stunts engine when one car finishes ahead of the other in a race.
+zipStillLastWith :: (a -> a -> a) -> [a] -> [a] -> [a]
+zipStillLastWith _ [] ys          = ys
+zipStillLastWith _ xs []          = xs
+zipStillLastWith f [x] ys         = zipWith f (repeat x) ys
+zipStillLastWith f xs [y]         = zipWith f xs (repeat y)
+zipStillLastWith f (x:xs) (y:ys)  = f x y : zipStillLastWith f xs ys
+
+-- The monoid instance is easy on the eyes when used; however, the conversion to
+-- an intermediate wrapper can complicate things.
 instance Monoid SomeFlipbook where
     mempty = SomeFlipbook $ RenderedFlipbook
         { renderedFlipbookPages = []
@@ -78,12 +95,3 @@ instance Monoid SomeFlipbook where
                 mappend (flipbookBackdrop ann1) (flipbookBackdrop ann2)
             }
 
--- Zipping so that the final length is that of the longer list. The shorter
--- list has its last element repeated to make it fit. That mirrors the behavior
--- of the Stunts engine when one car finishes ahead of the other in a race.
-zipStillLastWith :: (a -> a -> a) -> [a] -> [a] -> [a]
-zipStillLastWith _ [] ys          = ys
-zipStillLastWith _ xs []          = xs
-zipStillLastWith f [x] ys         = zipWith f (repeat x) ys
-zipStillLastWith f xs [y]         = zipWith f xs (repeat y)
-zipStillLastWith f (x:xs) (y:ys)  = f x y : zipStillLastWith f xs ys

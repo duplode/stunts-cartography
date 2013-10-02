@@ -25,7 +25,7 @@ import Util.Misc
 import Replay
 import Composition
 import qualified Parameters as Pm
-import Annotation (annotationDiagram, renderAnnotation)
+import Annotation (annotationDiagram)
 import Annotation.Flipbook
 import Types.CartoM
 import Types.Diagrams
@@ -85,7 +85,7 @@ writeImageOutput trackName trkBS = do
                 , Pm.outputPath = outFile
                 }
 
-        fbks' -> do
+        _ -> do
             startTime <- liftIO getCPUTime
             wholeMap <- wholeMapDiagram tiles
 
@@ -103,10 +103,10 @@ writeImageOutput trackName trkBS = do
             -- acceptable until a more elegant solution, if any, is found.
             mapM renderPage $
                 zip ([0..] :: [Int]) . map (withEnvelope wholeMap) $
-                    toFlipbook (mconcat fbks)
+                    zipFlipbookPages fbks
 
             let backdropFile = fbkDir </> "backdrop.png"
-                fullBackdrop = (flipbookBackdrop $ mconcat fbks) <> wholeMap
+                fullBackdrop = concatFlipbookBackdrops fbks <> wholeMap
             liftIO $ renderCairo backdropFile (Width renWidth) fullBackdrop
 
             endTime <- liftIO getCPUTime
