@@ -54,7 +54,7 @@ Executable sc-trk-viewer
   Hs-Source-Dirs:   src
 
   Build-Depends:     base >= 4.6 && < 5
-                    ,threepenny-gui == 0.3.*
+                    ,threepenny-gui == 0.4.*
                     ,diagrams-core >= 0.7 && < 0.8
                     ,diagrams-lib >= 0.7 && < 0.8
                     ,diagrams-cairo >= 0.7 && < 0.8

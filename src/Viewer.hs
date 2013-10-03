@@ -20,7 +20,7 @@ import Data.Char (toUpper)
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
-import Util.Reactive.Threepenny (concatE, union, reactimate, setter)
+import Util.Reactive.Threepenny (concatE, union, setter)
 import Diagrams.Backend.Cairo (OutputType(..))
 
 import Output
@@ -43,7 +43,7 @@ main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
         , tpStatic = Just staticDir
         } $ setup tmpDir
 
-setup :: FilePath -> Window -> IO ()
+setup :: FilePath -> Window -> UI ()
 setup tmpDir w = void $ do
 
     -- Base directory.
@@ -105,13 +105,15 @@ setup tmpDir w = void $ do
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-lines-chk"
             # set UI.id_ "grid-lines-chk"
     bDrawGrid <- True `stepper` UI.checkedChange chkDrawGrid
-    currentValue bDrawGrid >>= (element chkDrawGrid #) . set UI.checked_
+    liftIO (currentValue bDrawGrid)
+        >>= (element chkDrawGrid #) . set UI.checked_
 
     chkDrawIndices <-
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
             # set UI.id_ "grid-indices-chk"
     bDrawIndices <- True `stepper` UI.checkedChange chkDrawIndices
-    currentValue bDrawIndices >>= (element chkDrawIndices #) . set UI.checked_
+    liftIO (currentValue bDrawIndices)
+        >>= (element chkDrawIndices #) . set UI.checked_
 
     -- Preset selection and ratio field initialization.
     let presetDefAndSetter :: (Pm.RenderingParameters -> a)
@@ -181,8 +183,8 @@ setup tmpDir w = void $ do
 
     -- Log handling
 
-    (eAppendToLog, appendToLog) <- newEvent
-    (eStringToLog, stringToLog) <- newEvent
+    (eAppendToLog, appendToLog) <- liftIO newEvent
+    (eStringToLog, stringToLog) <- liftIO newEvent
 
     let appendLnTo = flip mappend . flip mappend (Pm.logFromList "\r\n")
         ePutLnLog = concatE . map (appendLnTo <$>) $
@@ -202,9 +204,9 @@ setup tmpDir w = void $ do
         UI.textarea # set UI.id_ "log-text"
             # set UI.cols "72" # set UI.rows "6"
 
-    (eRenderLog, renderLog) <- newEvent
-    reactimate $ void . (element txaLog #) . set value . Pm.logToList
-        <$> bLogContents <@ eRenderLog
+    (eRenderLog, renderLog) <- liftIO newEvent
+    onEvent (bLogContents <@ eRenderLog) $
+        (element txaLog #) . set value . Pm.logToList
 
     -- Misc. interesting elements
 
@@ -258,23 +260,23 @@ setup tmpDir w = void $ do
                 ]
             , UI.p #+
                 [ string "Road width:", UI.br
-                , BI.toElement bidRoadW
+                , element bidRoadW
                 ]
             , UI.p #+
                 [ string "Bridge height:", UI.br
-                , BI.toElement bidBridgeH
+                , element bidBridgeH
                 ]
             , UI.p #+
                 [ string "Bridge relative width:", UI.br
-                , BI.toElement bidBridgeRelW
+                , element bidBridgeRelW
                 ]
             , UI.p #+
                 [ string "Banking relative height:", UI.br
-                , BI.toElement bidBankingRelH
+                , element bidBankingRelH
                 ]
             , UI.p #+
                 [ element strPxPtPerTile, UI.br
-                , BI.toElement bidPxPtPerTile
+                , element bidPxPtPerTile
                 ]
             , UI.p #+
                 [ string "Grid?", element chkDrawGrid
@@ -282,10 +284,10 @@ setup tmpDir w = void $ do
                 ]
             , UI.p #+
                 [ string "Map bounds (0 - 29):", UI.br
-                , string "x from ", BI.toElement biiMinX
-                , string " to ", BI.toElement biiMaxX, UI.br
-                , string "y from ", BI.toElement biiMinY
-                , string " to ", BI.toElement biiMaxY
+                , string "x from ", element biiMinX
+                , string " to ", element biiMaxX, UI.br
+                , string "y from ", element biiMinY
+                , string " to ", element biiMaxY
                 ]
             , UI.p #+
                 [ string "Annotations - "
@@ -313,7 +315,7 @@ setup tmpDir w = void $ do
     -- The main action proper.
 
     let runRenderMap :: Pm.RenderingParameters -> Pm.RenderingState
-                     -> IO (Pm.RenderingState, Pm.RenderingLog)
+                     -> UI (Pm.RenderingState, Pm.RenderingLog)
         runRenderMap params st = do
 
             trkRelPath <- itxTrkPath # get value
@@ -338,18 +340,18 @@ setup tmpDir w = void $ do
                     throwError "Bad file size (.TRK files must have 1802 bytes)."
 
                 -- Decide on input format.
-                let imgWriter :: FilePath -> CartoT (ErrorT String IO) Pm.PostRenderInfo
+                let imgWriter :: FilePath -> CartoT (ErrorT String UI) Pm.PostRenderInfo
                     imgWriter = case fileExt of
                         ".TRK" -> writeImageFromTrk
                         ".RPL" -> writeImageFromRpl
                         _      -> error "Unrecognized input extension."
 
                 -- Parse annotations and render the map.
-                let goCarto :: CartoT (ErrorT String IO) Pm.PostRenderInfo
+                let goCarto :: CartoT (ErrorT String UI) Pm.PostRenderInfo
                     goCarto = do
-                        anns <- liftIO (txaAnns # get value)
+                        anns <- (lift . lift $ txaAnns # get value)
                             >>= parseAnnotations
-                        fbks <- liftIO (txaFlipbook # get value)
+                        fbks <- (lift . lift $ txaFlipbook # get value)
                             >>= parseFlipbook
                         RWS.local (\p -> p
                             { Pm.annotationSpecs = anns
@@ -358,12 +360,12 @@ setup tmpDir w = void $ do
                 (postRender,st',logW) <- RWS.runRWST goCarto params st
 
                 -- Update the UI.
-                liftIO $ do
+                lift $ do
                     element theBody #. horizonClass (Pm.renderedTrackHorizon postRender)
                     let outType = Pm.outputType params
-                    trackImage <- loadTrackImage w outType $ Pm.outputPath postRender
-                    trkUri <- loadTmpTrk tmpDir w postRender
-                    terrainUri <- loadTmpTerrainTrk tmpDir w postRender
+                    trackImage <- loadTrackImage outType $ Pm.outputPath postRender
+                    trkUri <- loadTmpTrk tmpDir postRender
+                    terrainUri <- loadTmpTerrainTrk tmpDir postRender
                     element imgMap # set UI.src trackImage
                     element lnkTrk # set UI.href trkUri
                     element lnkTerrTrk # set UI.href terrainUri
@@ -372,10 +374,10 @@ setup tmpDir w = void $ do
 
                 `catchError` \errorMsg -> do
 
-                    liftIO $ do
+                    lift $ do
                         element theBody #. "blank-horizon"
                         element imgMap # set UI.src "static/images/failure.png"
-                        runFunction w $ unsetSaveLinksHref
+                        runFunction unsetSaveLinksHref
 
                     throwError errorMsg
 
@@ -388,7 +390,7 @@ setup tmpDir w = void $ do
         let eRenParams = bRenParams <@ eGo
 
         -- Output from the main action, input for the next run.
-        (eRenState, fireRenState) <- newEvent
+        (eRenState, fireRenState) <- liftIO newEvent
         bRenState <- Pm.def `stepper` eRenState
 
         let (eRenParamsDiffEStyle, eRenParamsSameEStyle) = split $
@@ -414,12 +416,10 @@ setup tmpDir w = void $ do
 
         -- TODO: Ensure it is okay to run appendToLog and then renderLog
         -- like this.
-        reactimate $
+        onEvent eParamsAndStateAfterEStyleCheck $
             (\(p, st) -> runRenderMap p st
-                >>= \(st', w) -> fireRenState st'
+                >>= \(st', w) -> liftIO $ fireRenState st'
                     >> appendToLog w >> renderLog ())
-                        <$> eParamsAndStateAfterEStyleCheck
-
 
 unsetSaveLinksHref :: JSFunction ()
 unsetSaveLinksHref = ffi $ unlines
@@ -428,17 +428,17 @@ unsetSaveLinksHref = ffi $ unlines
     ]
 
 loadTmpTrkBase :: (String -> String) -> (LB.ByteString -> LB.ByteString)
-               -> FilePath -> Window -> Pm.PostRenderInfo -> IO String
-loadTmpTrkBase fName fTrk tmpDir w postRender = do
+               -> FilePath -> Pm.PostRenderInfo -> UI String
+loadTmpTrkBase fName fTrk tmpDir postRender = do
     let trkName = "_" ++ fName (Pm.trackName postRender)
         tmpTrkPath = addExtension (tmpDir </> trkName) ".TRK"
-    LB.writeFile tmpTrkPath . fTrk $ Pm.trackData postRender
-    loadFile w "application/octet-stream" tmpTrkPath
+    liftIO $ LB.writeFile tmpTrkPath . fTrk $ Pm.trackData postRender
+    loadFile "application/octet-stream" tmpTrkPath
 
-loadTmpTrk :: FilePath -> Window -> Pm.PostRenderInfo -> IO String
+loadTmpTrk :: FilePath -> Pm.PostRenderInfo -> UI String
 loadTmpTrk = loadTmpTrkBase id id
 
-loadTmpTerrainTrk :: FilePath -> Window -> Pm.PostRenderInfo -> IO String
+loadTmpTerrainTrk :: FilePath -> Pm.PostRenderInfo -> UI String
 loadTmpTerrainTrk =
     loadTmpTrkBase ((++ "-T") . take 6) terrainTrkSimple
 
@@ -451,10 +451,10 @@ horizonClass horizon = case horizon of
     Tropical -> "tropical-horizon"
     _        -> "unknown-horizon"
 
-loadTrackImage :: Window -> OutputType -> FilePath -> IO String
-loadTrackImage w outType outPath = case outType of
-    PNG -> loadFile w "image/png" outPath
-    SVG -> loadFile w "image/svg+xml" outPath
+loadTrackImage :: OutputType -> FilePath -> UI String
+loadTrackImage outType outPath = case outType of
+    PNG -> loadFile "image/png" outPath
+    SVG -> loadFile "image/svg+xml" outPath
     _   -> error "Unsupported output format."
 
 intToOutputType :: Int -> OutputType
@@ -472,7 +472,7 @@ intToPresetRenderingParams n = case n of
     3 -> Pm.classicRenderingParameters
     _ -> error "Unknown preset."
 
--- Reading of fields without FRP. Currently unused.
+-- Reading of fields without FRP, circa threepenny-gui 0.3.* .
 {-
 selectedFromSelect :: (Int -> a) -> String -> Window -> IO a
 selectedFromSelect fSel selId = \w -> do
