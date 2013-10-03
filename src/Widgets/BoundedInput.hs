@@ -80,11 +80,7 @@ plugModel bi bModel = do
         unions [ True <$ UI.domEvent "focus" itx, False <$ eBlur ]
     void $ element itx # sinkWhen (not <$> bEditing) value (show <$> bValue)
 
-    -- TODO: What are the implications of registering with the current window?
-    window <- askWindow
-
-    let eSync = bValue <@ unionWith const eBlur (_eRefresh bi)
-    onEvent eSync $ (element itx #) . set value . show
+    onEvent (bValue <@ _eRefresh bi) $ (element itx #) . set value . show
 
     return bValue
 

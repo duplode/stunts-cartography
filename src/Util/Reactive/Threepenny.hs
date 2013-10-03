@@ -21,7 +21,6 @@ concatE = foldr unionDot never
 setter :: Event a -> Event (a -> a)
 setter = fmap const
 
--- TODO: Update when the boolean is toggled.
 sinkWhen :: Behavior Bool -> ReadWriteAttr x i o -> Behavior i -> UI x -> UI x
 sinkWhen bp attr bi mx = do
     x <- mx
@@ -32,6 +31,9 @@ sinkWhen bp attr bi mx = do
         runUI window $ when p $ set' attr i x
         onChange bi $ \i -> do
             p <- currentValue bp
+            runUI window $ when p $ set' attr i x
+        onChange bp $ \p -> do
+            i <- currentValue bi
             runUI window $ when p $ set' attr i x
     return x
 
