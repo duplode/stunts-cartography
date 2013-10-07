@@ -75,9 +75,8 @@ plugModel bi bModel = do
         bValue = enforceBounds bi <$> bModel
     _defaultValue <- liftIO $ currentValue bValue
 
-    let eBlur = UI.blur itx
     bEditing <- stepper False $ and <$>
-        unions [ True <$ UI.domEvent "focus" itx, False <$ eBlur ]
+        unions [ True <$ UI.focus itx, False <$ UI.blur itx ]
     void $ element itx # sinkWhen (not <$> bEditing) value (show <$> bValue)
 
     onEvent (bValue <@ _eRefresh bi) $ (element itx #) . set value . show
