@@ -25,15 +25,10 @@ sinkWhen :: Behavior Bool -> ReadWriteAttr x i o -> Behavior i -> UI x -> UI x
 sinkWhen bp attr bi mx = do
     x <- mx
     window <- askWindow
+    let bpi = pure (,) <*> bp <*> bi
     liftIOLater $ do
-        i <- currentValue bi
-        p <- currentValue bp
+        (p, i) <- currentValue bpi
         runUI window $ when p $ set' attr i x
-        onChange bi $ \i -> do
-            p <- currentValue bp
-            runUI window $ when p $ set' attr i x
-        onChange bp $ \p -> do
-            i <- currentValue bi
-            runUI window $ when p $ set' attr i x
+        onChange bpi $ \(p, i) -> runUI window $ when p $ set' attr i x
     return x
 
