@@ -105,15 +105,13 @@ setup tmpDir w = void $ do
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-lines-chk"
             # set UI.id_ "grid-lines-chk"
     bDrawGrid <- True `stepper` UI.checkedChange chkDrawGrid
-    liftIO (currentValue bDrawGrid)
-        >>= (element chkDrawGrid #) . set UI.checked_
+    currentValue bDrawGrid >>= (element chkDrawGrid #) . set UI.checked_
 
     chkDrawIndices <-
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
             # set UI.id_ "grid-indices-chk"
     bDrawIndices <- True `stepper` UI.checkedChange chkDrawIndices
-    liftIO (currentValue bDrawIndices)
-        >>= (element chkDrawIndices #) . set UI.checked_
+    currentValue bDrawIndices >>= (element chkDrawIndices #) . set UI.checked_
 
     -- Preset selection and ratio field initialization.
     let presetDefAndSetter :: (Pm.RenderingParameters -> a)

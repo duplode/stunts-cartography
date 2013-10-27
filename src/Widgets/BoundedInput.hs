@@ -73,7 +73,7 @@ plugModel bi bModel = do
 
     let itx = _itxValue bi
         bValue = enforceBounds bi <$> bModel
-    _defaultValue <- liftIO $ currentValue bValue
+    _defaultValue <- currentValue bValue
 
     bEditing <- stepper False $ and <$>
         unions [ True <$ UI.focus itx, False <$ UI.blur itx ]
