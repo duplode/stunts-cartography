@@ -13,23 +13,19 @@
 
 <p>Annotations to a track map are specified by text commands inserted into the
 annotations text area of the viewer. A particular set of commands might look
-like this:</p>
-<pre>
-Car @15.5 10 ^105 #aliceblue "Alan Rotoi" {'S *1}
-Split 1 @11 14 ^S *3 'N
-</pre>
-<p>There are currently three types of annotations available: <code>Car</code>,
-<code>Seg</code> and <code>Split</code>. These keywords inform the program the
-following values should be taken as styling options of an annotation of the
-corresponding kind. Most of the options are identified by leading symbols
-(<code>@</code>, <code>^</code> etc.), which have roughly equivalent meanings
-for the different annotations. In most cases, the options can be omitted (thus
-being replaced by sensible defaults) and reordered freely. The syntax is quite
-liberal about whitespace and linebreaks.</p> <p>The syntax and meaning of the
-fields for each sort of annotation is described below. Mandatory fields are
-<code><span class="anns-mandatory">highlighted</span></code>; fields whose
-position can not be changed are <code><span
-class="anns-fixed">underlined</span></code>.</p>
+like this:</p> <pre> Car @15.5 10 ^105 #aliceblue "Alan Rotoi" {'S *1} Split 1
+@11 14 ^S *3 'N </pre> <p>There are currently three types of annotations
+available: <code>Car</code>, <code>Seg</code>, <code>Split</code> and
+<code>Trace</code>. These keywords inform the program the following values
+should be taken as styling options of an annotation of the corresponding kind.
+Most of the options are identified by leading symbols (<code>@</code>,
+<code>^</code> etc.), which have roughly equivalent meanings for the different
+annotations. In most cases, the options can be omitted (thus being replaced by
+sensible defaults) and reordered freely. The syntax is quite liberal about
+whitespace and linebreaks.</p> <p>The syntax and meaning of the fields for each
+sort of annotation is described below. Mandatory fields are <code><span
+class="anns-mandatory">highlighted</span></code>; fields whose position can not
+be changed are <code><span class="anns-fixed">underlined</span></code>.</p>
 
 <h2><code>Car</code></h2>
 
@@ -192,6 +188,19 @@ specialised properties.</p>
       </td>
   </tr>
 </table>
+
+<h2><code>Trace</code></h2>
+
+<code><span class="anns-fixed anns-mandatory">Trace</code>
+  <span class="anns-mandatory">:"146zctg.dat"</code>
+  #red !
+  <!-- TODO: Add notation to indicate "conditionally mandatory" parameters -->
+  + {Car @0 "CTG"}
+  ~1 1 {Car}
+  </code>
+
+<!-- TODO: Actually describe the Trace syntax. -->
+<!-- TODO: Document flipbooks. -->
 
 </body>
 
