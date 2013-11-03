@@ -22,6 +22,7 @@ import Diagrams.Core
 import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
 import qualified Util.ByteString as LB
 import Util.Misc
+import Util.ZipConduit
 import Replay
 import Composition
 import qualified Parameters as Pm
@@ -111,6 +112,10 @@ writeImageOutput trackName trkBS = do
             let backdropFile = fbkDir </> "backdrop.png"
                 fullBackdrop = concatFlipbookBackdrops fbks <> wholeMap
             liftIO $ renderCairo backdropFile (Width renWidth) fullBackdrop
+
+            nRuns <- gets Pm.numberOfRuns
+            let zipFile = tmpDir </> ("flipbook-" ++ show nRuns ++ ".zip")
+            liftIO $ writeDirContentsZip fbkDir zipFile
 
             endTime <- liftIO getCPUTime
             tell . Pm.logFromList $ "Flipbook rendering complete.\r\n"
