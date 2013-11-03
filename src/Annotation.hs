@@ -81,6 +81,7 @@ class (IsAnnotation a) => OrientableAnnotation a where
     rotateAnnotation da ann = orientAnnotation (da + annAngle ann) ann
 
 -- Colour overriding for nested annotations.
+-- Note that opacity is not handled, as it is not subject to overriding.
 class (IsAnnotation a) => ColourAnnotation a where
     annColour :: a -> Colour Double
     setAnnColour :: Colour Double -> a -> a
@@ -113,6 +114,7 @@ maybeDeepOverrideAnnColour = maybe id deepOverrideAnnColour
 data CarAnnotation
      = CarAnnotation
      { carAnnColour :: Colour Double
+     , carAnnOpacity :: Double
      , carAnnColourIsProtected :: Bool
      , carAnnPosition :: (Double, Double)
      , carAnnAngle :: Double
@@ -123,6 +125,7 @@ data CarAnnotation
 instance Default CarAnnotation where
     def = CarAnnotation
         { carAnnColour = yellow
+        , carAnnOpacity = 1
         , carAnnColourIsProtected = False
         , carAnnPosition = (0, 0)
         , carAnnAngle = 0
@@ -134,6 +137,7 @@ instance IsAnnotation CarAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
             acura' (carAnnColour ann) 1
+            # opacity (carAnnOpacity ann)
             # scale (carAnnSize ann)
             # (flip $ beside
                 (cardinalDirToR2 . captAnnAlignment . carAnnCaption $ ann))
