@@ -38,11 +38,19 @@ Executable sc-trk-viewer
                     ,Pics
                     ,Track
                     ,Util.Misc
+                    ,Util.ByteString
+                    ,Util.ZipConduit
+                    ,Util.Reactive.Threepenny
+                    ,Widgets.BoundedInput
                     ,Replay
                     ,Types.Diagrams
                     ,Types.CartoM
                     ,Annotation
                     ,Annotation.Parser
+                    ,Annotation.Flipbook
+                    ,Annotation.LapTrace
+                    ,Annotation.LapTrace.Vec
+                    ,Annotation.LapTrace.Parser.Simple
                     ,Pics.MM
                     ,Paths
 
