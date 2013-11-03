@@ -131,6 +131,7 @@ replaceMagicStringsForCar ix c =
 putCarOnTracePoint :: TracePoint -> CarAnnotation -> CarAnnotation
 putCarOnTracePoint p =
     replaceMagicStringsForCar (traceFrame p)
+    . scaleAnnotation (1 + tracePosY p / 4)
     . orientAnnotation (traceRotXZ p)
     . locateAnnotation (tracePosXZ p)
 

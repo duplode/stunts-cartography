@@ -16,6 +16,11 @@ module Annotation
         , orientAnnotation
         , rotateAnnotation
         )
+    , ResizableAnnotation
+        ( annSize
+        , resizeAnnotation
+        , scaleAnnotation
+        )
     , ColourAnnotation
         ( annColour
         , setAnnColour
@@ -79,6 +84,13 @@ class (IsAnnotation a) => OrientableAnnotation a where
     rotateAnnotation :: Double -> a -> a
 
     rotateAnnotation da ann = orientAnnotation (da + annAngle ann) ann
+
+class (IsAnnotation a) => ResizableAnnotation a where
+    annSize :: a -> Double
+    resizeAnnotation :: Double -> a -> a
+    scaleAnnotation :: Double -> a -> a
+
+    scaleAnnotation qs ann = resizeAnnotation (qs * annSize ann) ann
 
 -- Colour overriding for nested annotations.
 -- Note that opacity is not handled, as it is not subject to overriding.
@@ -154,6 +166,10 @@ instance LocatableAnnotation CarAnnotation where
 instance OrientableAnnotation CarAnnotation where
     annAngle = carAnnAngle
     orientAnnotation ang ann = ann { carAnnAngle = ang }
+
+instance ResizableAnnotation CarAnnotation where
+    annSize = carAnnSize
+    resizeAnnotation sz ann = ann { carAnnSize = sz }
 
 instance ColourAnnotation CarAnnotation where
     annColour = carAnnColour
