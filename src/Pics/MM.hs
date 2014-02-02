@@ -12,10 +12,8 @@ acura cl =
         <> roundedRect (1/4) (1/4) (1/20) # fc windshieldCl)
     # translateX (-1/32)
     <>
-    roundedRect' (1/2) (3/10) with
-        { radiusTR = 1/10
-        , radiusBR = 1/10
-        }
+    roundedRect' (1/2) (3/10)
+        (with & radiusTR .~ 1/10 & radiusBR .~ 1/10)
     # fc cl
 
 -- TODO: Further abstract the base size.

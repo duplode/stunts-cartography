@@ -8,7 +8,6 @@ module Pics
 import Control.Monad (liftM)
 import Control.Monad.Reader
 import Diagrams.Prelude
-import Diagrams.Coordinates ((&))
 import Track (Orientation(..), Chirality(..), rotateOrientation
              , ElementType(..), ElementSurface(..), ElementAttribute(..)
              , TerrainType(..)
@@ -113,10 +112,10 @@ baseElementPic' env c q sf et = do
             # lw w # lc cl
 
         isoscelesTransition cl ratio =
-            let sidePad = polygon with
-                    { polyType = PolySides [1/4 :: Turn]
-                                           [ roadW * (ratio - 1) / 2, 1 ]
-                    , polyOrient = OrientV }
+            let sidePad = polygon (with
+                    & polyType .~ PolySides [1/4 :: Turn]
+                                            [ roadW * (ratio - 1) / 2, 1 ]
+                    & polyOrient .~ OrientV )
                     # lw 0 # fc cl # centerXY
             in centerY $
             sidePad # reflectY
@@ -203,7 +202,7 @@ baseElementPic' env c q sf et = do
                 baseElementPicNoO env sf Road # rotateBy (1/4)
                 # atop (baseElementPicNoO env sf ElevatedSpan)
             ElevatedRoad ->
-                cat' unitX with { sep = 2 * pillarW } (replicate 3 $
+                cat' unitX (with & sep .~ 2 * pillarW) (replicate 3 $
                     genericSquare pillarCl
                     # scaleX pillarW # scaleY bridgeH)
                 # centerX # alignWithRoadY
@@ -310,9 +309,9 @@ baseElementPic' env c q sf et = do
                     ((leaf ||| leaf # reflectX) # centerX)
             Cactus ->
                 (
-                    fromOffsets [ 0 & (-3/16)
-                                , (3/8) & 0
-                                , 0 & (1/4)
+                    fromOffsets [ 0 ^& (-3/16)
+                                , (3/8) ^& 0
+                                , 0 ^& (1/4)
                                 ]
                     # stroke # centerXY
                     # lineJoin LineJoinRound
@@ -325,10 +324,10 @@ baseElementPic' env c q sf et = do
                 # scaleX 0.5
             Ship ->
                 (
-                    polygon with
-                        { polyType = PolySides [-1/4 :: Turn, -1/8 :: Turn]
-                                               [ 1/4, 2/4, sqrt 2 * 1 / 4 ]
-                        } # lw 0 # fc shipCl
+                    polygon (with
+                        & polyType .~ PolySides [-1/4 :: Turn, -1/8 :: Turn]
+                                                [ 1/4, 2/4, sqrt 2 * 1 / 4 ]
+                        ) # lw 0 # fc shipCl
                     ===
                     (vrule (1/2) # lc miscLightCl # alignT
                         ||| strutX (1/10) ||| square (1/5) # alignT
@@ -387,7 +386,7 @@ baseElementPic' env c q sf et = do
                             # lw 0 # fc petrolCl)
                         # centerY
                         <> roundedRect' (3/10) (3/5)
-                            with { radiusTL = 1/16 }
+                            (with & radiusTL .~ 1/16)
                         # alignR
                         # lw 0 # fc masonryCl)
                     # alignL)
@@ -425,16 +424,16 @@ emptySquare = square 1 # lw (1/20)
 
 genericSquare cl = square 1 # lw 0 # fc cl
 
-diagonalTriangle cl = polygon with
-    { polyType = PolySides [-3/8 :: Turn]
-                           [ 1, sqrt 2 ]
-    } # centerXY # lw 0 # fc cl
+diagonalTriangle cl = polygon (with
+    & polyType .~ PolySides [-3/8 :: Turn]
+                            [ 1, sqrt 2 ]
+    ) # centerXY # lw 0 # fc cl
 
 rightTriangle cl h =
-    polygon with
-        { polyType = PolySides [1/4 :: Turn]
-                               [ h, 1 ]
-        , polyOrient = OrientV }
+    polygon (with
+        & polyType .~ PolySides [1/4 :: Turn]
+                                [ h, 1 ]
+        & polyOrient .~ OrientV)
     # alignB # centerX # reflectY # translateY (h / 2)
     # lw 0 # fc cl
 

@@ -86,11 +86,11 @@ renderIndicesIfRequired = do
 gridLines :: (Monoid m, Semigroup m, TrailLike (QDiagram BEDia R2 m))
           => QDiagram BEDia R2 m
 gridLines =
-    vcat' with { sep = 1 } (replicate 31 $ hrule 30) # alignBL
-    <> hcat' with { sep = 1 } (replicate 31 $ vrule 30) # alignBL
+    vcat' (with & sep .~ 1) (replicate 31 $ hrule 30) # alignBL
+    <> hcat' (with & sep .~ 1) (replicate 31 $ vrule 30) # alignBL
 
-catTiles = cat' unitX with { sep = 1, catMethod = Distrib }
-catRows = cat' unitY with { sep = 1, catMethod = Distrib }
+catTiles = cat' unitX (with & sep .~ 1 & catMethod .~ Distrib)
+catRows = cat' unitY (with & sep .~ 1 & catMethod .~ Distrib)
 
 plainStripe = square 1 # scaleX 30 # translateX 14.5 # fc plainCl # lw 0
 

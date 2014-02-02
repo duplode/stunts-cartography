@@ -43,6 +43,7 @@ module Annotation
 import Data.Default
 import Diagrams.Prelude
 import qualified Diagrams.Backend.Cairo.Text as CairoText
+import Control.Lens ((^.))
 import Data.Colour.SRGB
 import Data.Colour.RGBSpace.HSV
 import Types.Diagrams (BEDia)
@@ -311,9 +312,9 @@ instance IsAnnotation CaptAnnotation where
         captionStyle = mempty # bold
         -- The font metric corrections were defined by trial-and-error.
         extentsToBounds (fe, te) =
-            let (_, h) = unr2 $ CairoText.textSize te
-                (xa, _) = unr2 $ CairoText.advance te
-                fh = CairoText.height fe
+            let (_, h) = unr2 $ te ^. CairoText.textSize
+                (xa, _) = unr2 $ te ^. CairoText.advance
+                fh = fe ^. CairoText.height
             in ((xa + h) / (0.8 * fh), 2 * h / fh)
         textBounds = extentsToBounds
             . CairoText.unsafeCairo . CairoText.getExtents captionStyle
