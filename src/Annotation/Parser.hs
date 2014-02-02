@@ -59,17 +59,19 @@ detectAnnStart = choice . map (lookAhead . try . symbol) $
 car = do
     symbol "Car"
     opt <- runPermParser $
-        (,,,,) <$> oncePerm xy
-               <*> optionMaybePerm colour
-               <*> optionPerm 0 angle
-               <*> optionPerm 0.5 size
-               <*> optionPerm defAnn caption -- The default caption is empty.
-    let (pos, mCl, ang, sz, capt) = opt
+        (,,,,,) <$> oncePerm xy
+                <*> optionMaybePerm colour
+                <*> optionPerm 1 bg
+                <*> optionPerm 0 angle
+                <*> optionPerm 0.5 size
+                <*> optionPerm defAnn caption -- The default caption is empty.
+    let (pos, mCl, bg, ang, sz, capt) = opt
     return $ maybeDeepOverrideAnnColour mCl defAnn
         { carAnnPosition = pos
         , carAnnAngle = ang
         , carAnnSize = sz
         , carAnnCaption = capt
+        , carAnnOpacity = bg
         }
 
 seg = do
@@ -243,15 +245,17 @@ periodic ovr = do
 carOnTrace mMoment = do
     symbol "Car"
     opt <- runPermParser $
-        (,,,) <$> maybe (oncePerm lapMoment) (oncePerm . return) mMoment
-              <*> optionMaybePerm colour
-              <*> optionPerm 0.5 size
-              <*> optionPerm defAnn caption
-    let (moment, mCl, sz, capt) = opt
+        (,,,,) <$> maybe (oncePerm lapMoment) (oncePerm . return) mMoment
+               <*> optionMaybePerm colour
+               <*> optionPerm 1 bg
+               <*> optionPerm 0.5 size
+               <*> optionPerm defAnn caption
+    let (moment, mCl, bg, sz, capt) = opt
     return $ (momentToFrame moment
         , maybeDeepOverrideAnnColour mCl defAnn
             { carAnnSize = sz
             , carAnnCaption = capt
+            , carAnnOpacity = bg
             }
         )
 

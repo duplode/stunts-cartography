@@ -22,6 +22,7 @@ import Diagrams.Core
 import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
 import qualified Util.ByteString as LB
 import Util.Misc
+import Util.ZipConduit
 import Replay
 import Composition
 import qualified Parameters as Pm
@@ -30,20 +31,23 @@ import Annotation.Flipbook
 import Types.CartoM
 import Types.Diagrams
 
-writeImageFromTrk :: FilePath -> CartoT (ErrorT String IO) Pm.PostRenderInfo
+writeImageFromTrk :: (MonadIO m, Functor m)
+                  => FilePath -> CartoT (ErrorT String m) Pm.PostRenderInfo
 writeImageFromTrk trkPath =
     liftIO (LB.readFile trkPath)
         >>= writeImageOutput (takeBaseName trkPath)
 
-writeImageFromRpl :: FilePath -> CartoT (ErrorT String IO) Pm.PostRenderInfo
+writeImageFromRpl :: (MonadIO m, Functor m)
+                  => FilePath -> CartoT (ErrorT String m) Pm.PostRenderInfo
 writeImageFromRpl rplPath = do
     rplData <- liftIO $ LB.readFile rplPath
     if trackDataHasTheCorrectSize rplData
         then uncurry writeImageOutput $ trkFromRplSimple rplData
         else lift $ throwError "No track data in RPL file."
 
-writeImageOutput :: String -> LB.ByteString
-               -> CartoT (ErrorT String IO) Pm.PostRenderInfo
+writeImageOutput :: (MonadIO m, Functor m)
+                 => String -> LB.ByteString
+                 -> CartoT (ErrorT String m) Pm.PostRenderInfo
 writeImageOutput trackName trkBS = do
     let rawTrk = veryRawReadTrack trkBS
         horizon = horizonFromRawTrack rawTrk
@@ -108,6 +112,10 @@ writeImageOutput trackName trkBS = do
             let backdropFile = fbkDir </> "backdrop.png"
                 fullBackdrop = concatFlipbookBackdrops fbks <> wholeMap
             liftIO $ renderCairo backdropFile (Width renWidth) fullBackdrop
+
+            nRuns <- gets Pm.numberOfRuns
+            let zipFile = tmpDir </> ("flipbook-" ++ show nRuns ++ ".zip")
+            liftIO $ writeDirContentsZip fbkDir zipFile
 
             endTime <- liftIO getCPUTime
             tell . Pm.logFromList $ "Flipbook rendering complete.\r\n"

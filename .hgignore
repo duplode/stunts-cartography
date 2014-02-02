@@ -29,6 +29,7 @@ _hsbuild/**
 .hsenv_prof/**
 dist_carto-xp/**
 dist_prof/**
+dist_threepenny-expm/**
 *.ps
 *.hp
 *.aux
