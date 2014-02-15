@@ -70,6 +70,7 @@ Executable sc-trk-viewer
                     ,parsec-permutation == 0.1.*
                     ,zip-conduit == 0.2.*
                     ,lens
+                    ,conduit
                     ,colour
                     ,data-default
                     ,containers
