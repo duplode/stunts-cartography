@@ -85,12 +85,11 @@ seg = do
                <*> oncePerm size
                <*> optionPerm defAnn caption
     let (pos, mCl, ang, len, capt) = opt
-    return $ maybeDeepOverrideAnnColour mCl defAnn
-        { segAnnPosition = pos
-        , segAnnAngle = ang
-        , segAnnLength = len
-        , segAnnCaption = capt
-        }
+    return $ maybeDeepOverrideAnnColour mCl $ defAnn
+        & segAnnPosition .~ pos
+        & segAnnAngle .~ ang
+        & segAnnLength .~ len
+        & segAnnCaption .~ capt
 
 splitSeg = do
     symbol "Split"
@@ -104,15 +103,14 @@ splitSeg = do
                 <*> optionMaybePerm alignment
     let (pos, cl, captBg, splD, len, mCaptAl) = opt
     let captAl = fromMaybe splD mCaptAl
-    return $ SplitAnnotation
-        { splAnnColour = cl
-        , splAnnIndex = ix
-        , splAnnPosition = pos
-        , splAnnDirection = splD
-        , splAnnLength = len
-        , splAnnCaptBgOpacity = captBg
-        , splAnnCaptAlignment = fromMaybe splD mCaptAl
-        }
+    return $ defAnn
+        & splAnnColour .~ cl
+        & splAnnIndex .~ ix
+        & splAnnPosition .~ pos
+        & splAnnDirection .~ splD
+        & splAnnLength .~ len
+        & splAnnCaptBgOpacity .~ captBg
+        & splAnnCaptAlignment .~ fromMaybe splD mCaptAl
 
 xy = do
     symbol "@"

@@ -33,6 +33,7 @@ module Annotation
         )
     , maybeCustomiseAnnColour
     , maybeDeepOverrideAnnColour
+
     , CarAnnotation
     , carAnnColour
     , carAnnOpacity
@@ -40,8 +41,23 @@ module Annotation
     , carAnnAngle
     , carAnnSize
     , carAnnCaption
-    , SegAnnotation(..)
+
+    , SegAnnotation
+    , segAnnColour
+    , segAnnPosition
+    , segAnnAngle
+    , segAnnLength
+    , segAnnCaption
+
     , SplitAnnotation(..)
+    , splAnnColour
+    , splAnnPosition
+    , splAnnDirection
+    , splAnnLength
+    , splAnnIndex
+    , splAnnCaptBgOpacity
+    , splAnnCaptAlignment
+
     , CaptAnnotation
     , captAnnPosition
     , captAnnColour
@@ -306,87 +322,98 @@ instance ColourAnnotation CarAnnotation where
 
 data SegAnnotation
      = SegAnnotation
-     { segAnnColour :: Colour Double
-     , segAnnColourIsProtected :: Bool
-     , segAnnPosition :: (Double, Double)
-     , segAnnAngle :: Double
-     , segAnnLength :: Double
-     , segAnnCaption :: CaptAnnotation
+     { _segAnnColour :: Colour Double
+     , _segAnnColourIsProtected :: Bool
+     , _segAnnPosition :: (Double, Double)
+     , _segAnnAngle :: Double
+     , _segAnnLength :: Double
+     , _segAnnCaption :: CaptAnnotation
      } deriving (Show)
 
 instance Default SegAnnotation where
     def = SegAnnotation
-        { segAnnColour = yellow
-        , segAnnColourIsProtected = False
-        , segAnnPosition = (0, 0)
-        , segAnnAngle = 0
-        , segAnnLength = 1
-        , segAnnCaption = defAnn
+        { _segAnnColour = yellow
+        , _segAnnColourIsProtected = False
+        , _segAnnPosition = (0, 0)
+        , _segAnnAngle = 0
+        , _segAnnLength = 1
+        , _segAnnCaption = defAnn
         }
+L.makeLenses ''SegAnnotation
 
 instance IsAnnotation SegAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
             fromSegments
-                [ straight (r2 (segAnnLength ann, 0))
+                [ straight (r2 (_segAnnLength ann, 0))
                 ]
             # stroke
-            # lw 0.25 # lc (segAnnColour ann)
+            # lw 0.25 # lc (_segAnnColour ann)
             # (flip $ beside
-                (cardinalDirToR2 . _captAnnAlignment . segAnnCaption $ ann))
-                (renderAnnotation . rotateAnnotation (- segAnnAngle ann) $
-                    segAnnCaption ann)
-            # rotate (Deg $ segAnnAngle ann)
-            # translate (r2 $ segAnnPosition ann)
+                (cardinalDirToR2 . _captAnnAlignment . _segAnnCaption $ ann))
+                (renderAnnotation . rotateAnnotation (- _segAnnAngle ann) $
+                    _segAnnCaption ann)
+            # rotate (Deg $ _segAnnAngle ann)
+            # translate (r2 $ _segAnnPosition ann)
         }
 
 instance LocatableAnnotation SegAnnotation where
-    annPosition = segAnnPosition
-    locateAnnotation pos ann = ann { segAnnPosition = pos }
+    annPosition = _segAnnPosition
+    locateAnnotation pos ann = ann & segAnnPosition .~ pos
 
 instance OrientableAnnotation SegAnnotation where
-    annAngle = segAnnAngle
-    orientAnnotation ang ann = ann { segAnnAngle = ang }
+    annAngle = _segAnnAngle
+    orientAnnotation ang ann = ann & segAnnAngle .~ ang
 
 instance ColourAnnotation SegAnnotation where
-    annColour = segAnnColour
-    setAnnColour cl ann = ann { segAnnColour = cl }
-    annColourIsProtected = segAnnColourIsProtected
-    protectAnnColour ann = ann { segAnnColourIsProtected = True }
-    deepOverrideAnnColour cl ann = overrideAnnColour cl
-        ann { segAnnCaption = deepOverrideAnnColour cl $ segAnnCaption ann }
+    annColour = _segAnnColour
+    setAnnColour cl ann = ann & segAnnColour .~ cl
+    annColourIsProtected = _segAnnColourIsProtected
+    protectAnnColour ann = ann & segAnnColourIsProtected .~ True
+    deepOverrideAnnColour cl ann = overrideAnnColour cl $
+        L.over segAnnCaption (deepOverrideAnnColour cl) ann
 
 data SplitAnnotation
      = SplitAnnotation
-     { splAnnColour :: Colour Double
-     , splAnnPosition :: (Int, Int)
-     , splAnnDirection :: CardinalDirection
-     , splAnnLength :: Int
-     , splAnnIndex :: Int
-     , splAnnCaptBgOpacity :: Double
-     , splAnnCaptAlignment :: CardinalDirection
+     { _splAnnColour :: Colour Double
+     , _splAnnPosition :: (Int, Int)
+     , _splAnnDirection :: CardinalDirection
+     , _splAnnLength :: Int
+     , _splAnnIndex :: Int
+     , _splAnnCaptBgOpacity :: Double
+     , _splAnnCaptAlignment :: CardinalDirection
      } deriving (Show)
+L.makeLenses ''SplitAnnotation
+
+instance Default SplitAnnotation where
+    def = SplitAnnotation
+        { _splAnnColour = yellow
+        , _splAnnPosition = (1, 1)
+        , _splAnnDirection = N
+        , _splAnnLength = 1
+        , _splAnnIndex = 1
+        , _splAnnCaptBgOpacity = 1
+        , _splAnnCaptAlignment = N
+        }
 
 instance IsAnnotation SplitAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
-            let (posX, posY) = splAnnPosition ann
+            let (posX, posY) = _splAnnPosition ann
                 pos = (fromIntegral posX, fromIntegral posY)
             in fromSegments
-                [ straight (r2 (fromIntegral $ splAnnLength ann, 0)
-                # rotate (Deg $ cardinalDirToAngle $ splAnnDirection ann)) ]
+                [ straight (r2 (fromIntegral $ _splAnnLength ann, 0)
+                # rotate (Deg $ cardinalDirToAngle $ _splAnnDirection ann)) ]
             # stroke
-            # lw 0.25 # lc (splAnnColour ann)
+            # lw 0.25 # lc (_splAnnColour ann)
             # (flip $ beside
-                (cardinalDirToR2 . splAnnCaptAlignment $ ann))
-                (renderAnnotation $
-                    defAnn
-                        { _captAnnColour = splAnnColour ann
-                        , _captAnnBgOpacity = splAnnCaptBgOpacity ann
-                        , _captAnnAlignment = splAnnCaptAlignment ann
-                        , _captAnnSize = 0.75
-                        , _captAnnText = show $ splAnnIndex ann
-                        }
+                (cardinalDirToR2 . _splAnnCaptAlignment $ ann))
+                (renderAnnotation $ defAnn
+                    & captAnnColour .~ _splAnnColour ann
+                    & captAnnBgOpacity .~ _splAnnCaptBgOpacity ann
+                    & captAnnAlignment .~ _splAnnCaptAlignment ann
+                    & captAnnSize .~ 0.75
+                    & captAnnText .~ show (_splAnnIndex ann)
                     )
             # translate (r2 pos)
         }
