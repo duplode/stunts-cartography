@@ -204,14 +204,11 @@ traceSpec fInitTrace = do
                 Left e    -> fail $ show e
                 Right dat -> return $ fInitTrace dat
                     . maybeDeepOverrideAnnColour mCl
-                    . maybe id (\v tr -> tr { traceAnnVisible = v }) mVis
-                    . maybe id (\pc tr -> tr
-                        { traceAnnOverlays =
-                            (traceAnnOverlays tr) { periodicCarsSpec = pc }
-                        }) mPCars
+                    . maybe id (traceAnnVisible .~) mVis
+                    . maybe id (\pc -> L.over traceAnnOverlays
+                        (periodicCarsSpec .~ pc)) mPCars
                     $ defAnn
-                        { traceAnnOverlays = defAnn { carsOverTrace = cars }
-                        }
+                        & traceAnnOverlays .~ (defAnn & carsOverTrace .~ cars)
 
 -- As the name indicates, the "path" could be anything.
 rawPath = do

@@ -6,6 +6,9 @@ module Annotation.Flipbook
     , concatFlipbookBackdrops
     ) where
 
+import Control.Lens.Operators hiding ((#))
+import qualified Control.Lens as L
+
 import Data.List (groupBy)
 import Diagrams.Prelude
 
@@ -21,7 +24,7 @@ class ToFlipbook a where
 -- single frame option disabled before using this instance.
 instance ToFlipbook TraceAnnotation where
     toFlipbook ann =
-        let ((ifr, freq), baseCar) = periodicCarsSpec . traceAnnOverlays $ ann
+        let ((ifr, freq), baseCar) = ann ^. traceAnnOverlays . periodicCarsSpec
             pointIsIncluded p =
                 let phaselessFrame = traceFrame p - ifr
                 in phaselessFrame >= 0 && phaselessFrame `rem` freq == 0
@@ -29,7 +32,7 @@ instance ToFlipbook TraceAnnotation where
                 if pointIsIncluded p
                     then (True, renderAnnotation $ putCarOnTracePoint p c)
                     else (False, mempty)
-            pts = traceAnnPoints ann
+            pts = ann ^. traceAnnPoints
         -- Note that freq should actually be called period.
         in case freq of
             0 -> [] -- TODO: Notify the issue (through the parser, probably).
