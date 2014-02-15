@@ -7,6 +7,8 @@ module Annotation.LapTrace
     , clearOverlays
     ) where
 
+import Control.Lens.Operators hiding ((#))
+import qualified Control.Lens as L
 import qualified Data.Map as M (Map, fromList, lookup, member, size)
 import Data.Default
 import Data.List (sortBy, dropWhile, takeWhile)
@@ -118,14 +120,12 @@ formatFrameAsGameTime x = (if mm > 0 then show mm ++ ":" else "")
 
 replaceMagicStringsForCar :: Int -> CarAnnotation -> CarAnnotation
 replaceMagicStringsForCar ix c =
-    let txt = captAnnText . carAnnCaption $ c
+    let txt = c ^. carAnnCaption . captAnnText
     in case txt of
         "{{FRAMENUMBER}}" ->
-            c { carAnnCaption = (carAnnCaption c)
-                { captAnnText = show ix }}
+            L.over carAnnCaption (captAnnText .~ show ix) c
         "{{GAMETIME}}" ->
-            c { carAnnCaption = (carAnnCaption c)
-                { captAnnText = formatFrameAsGameTime ix }}
+            L.over carAnnCaption (captAnnText .~ formatFrameAsGameTime ix) c
         _ -> c
 
 putCarOnTracePoint :: TracePoint -> CarAnnotation -> CarAnnotation

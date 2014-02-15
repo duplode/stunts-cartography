@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Annotation
     ( CardinalDirection(..)
     , Annotation(..)
@@ -32,14 +33,29 @@ module Annotation
         )
     , maybeCustomiseAnnColour
     , maybeDeepOverrideAnnColour
-    , CarAnnotation(..)
+    , CarAnnotation
+    , carAnnColour
+    , carAnnOpacity
+    , carAnnPosition
+    , carAnnAngle
+    , carAnnSize
+    , carAnnCaption
     , SegAnnotation(..)
     , SplitAnnotation(..)
-    , CaptAnnotation(..)
+    , CaptAnnotation
+    , captAnnPosition
+    , captAnnColour
+    , captAnnBgOpacity
+    , captAnnAlignment
+    , captAnnAngle
+    , captAnnSize
+    , captAnnText
     ) where
 
 -- It might be sensible to import this qualified if you need the constructors.
 
+import Control.Lens.Operators hiding ((#))
+import qualified Control.Lens as L
 import Data.Default
 import Diagrams.Prelude
 import qualified Diagrams.Backend.Cairo.Text as CairoText
@@ -54,6 +70,46 @@ data CardinalDirection = E
                        | W
                        | S
                        deriving (Read, Show, Eq, Ord)
+
+cardinalDirToR2 :: CardinalDirection -> R2
+cardinalDirToR2 x = case x of
+    E -> unitX
+    N -> unitY
+    W -> unit_X
+    S -> unit_Y
+
+cardinalDirToAngle :: CardinalDirection -> Double
+cardinalDirToAngle x = case x of
+    E -> 0
+    N -> 90
+    W -> 180
+    S -> 270
+
+computeBgColour :: Colour Double -> Colour Double
+computeBgColour c = sRGB r' g' b'
+    where
+    cRgb = toSRGB c
+    (h, s, v) = hsvView cRgb
+    h' = if h > 180 then h - 180 else h + 180
+    (s', v') = monochromeSV (s, v)
+    cHsv' = hsv h' s' v'
+    r' = channelRed cHsv'
+    g' = channelGreen cHsv'
+    b' = channelBlue cHsv'
+
+monochromeSV, polychromeSV, limitedPolychromeSV :: (Double, Double)
+                                                -> (Double, Double)
+monochromeSV (s, v) =
+    if v > 0.65 || (v > 0.55 && s > 0.25)
+       then (0, 0)
+       else (0, 1)
+
+polychromeSV = const (1, 1)
+
+limitedPolychromeSV sv@(s, _) =
+    if s > 0.25
+        then polychromeSV sv
+        else monochromeSV sv
 
 newtype Annotation
     = Annotation
@@ -124,61 +180,129 @@ maybeDeepOverrideAnnColour :: (ColourAnnotation a)
                            => Maybe (Colour Double) -> a -> a
 maybeDeepOverrideAnnColour = maybe id deepOverrideAnnColour
 
+data CaptAnnotation = CaptAnnotation
+    { _captAnnPosition :: (Double, Double)
+    , _captAnnColour :: Colour Double
+    , _captAnnColourIsProtected :: Bool
+    , _captAnnBgOpacity :: Double
+    , _captAnnAlignment :: CardinalDirection
+    , _captAnnAngle :: Double
+    , _captAnnSize :: Double
+    , _captAnnText :: String
+    } deriving (Show)
+L.makeLenses ''CaptAnnotation
+
+instance Default CaptAnnotation where
+    def = CaptAnnotation
+        { _captAnnPosition = (0, 0)
+        , _captAnnColour = yellow
+        , _captAnnColourIsProtected = False
+        , _captAnnBgOpacity = 0
+        , _captAnnAlignment = E
+        , _captAnnAngle = 0
+        , _captAnnSize = 0.4
+        , _captAnnText = ""
+        }
+
+instance IsAnnotation CaptAnnotation where
+    annotation ann = Annotation
+        { annotationDiagram =
+            let dirAlign = - cardinalDirToR2 (_captAnnAlignment ann)
+                adjustAlignments (x, y) = ((x + 1) / 2, (y + 1) / 2)
+                (xAlign, yAlign) = adjustAlignments $ unr2 dirAlign
+            in (
+                --alignedText xAlign yAlign caption
+                text (_captAnnText ann)
+                # fc (_captAnnColour ann) # applyStyle captionStyle
+                <> uncurry rect (textBounds $ _captAnnText ann)
+                # fcA (computeBgColour (_captAnnColour ann)
+                    `withOpacity` (_captAnnBgOpacity ann))
+                # lw 0
+            )
+            # align dirAlign # scale (_captAnnSize ann)
+            # rotate (Deg $ _captAnnAngle ann)
+        }
+        where
+        captionStyle = mempty # bold
+        -- The font metric corrections were defined by trial-and-error.
+        extentsToBounds (fe, te) =
+            let (_, h) = unr2 $ te ^. CairoText.textSize
+                (xa, _) = unr2 $ te ^. CairoText.advance
+                fh = fe ^. CairoText.height
+            in ((xa + h) / (0.8 * fh), 2 * h / fh)
+        textBounds = extentsToBounds
+            . CairoText.unsafeCairo . CairoText.getExtents captionStyle
+
+instance LocatableAnnotation CaptAnnotation where
+    annPosition = _captAnnPosition
+    locateAnnotation pos ann = ann & captAnnPosition .~ pos
+
+instance OrientableAnnotation CaptAnnotation where
+    annAngle = _captAnnAngle
+    orientAnnotation ang ann = ann & captAnnAngle .~ ang
+
+instance ColourAnnotation CaptAnnotation where
+    annColour = _captAnnColour
+    setAnnColour cl ann = ann & captAnnColour .~ cl
+    annColourIsProtected = _captAnnColourIsProtected
+    protectAnnColour ann = ann & captAnnColourIsProtected .~ True
+
 data CarAnnotation
      = CarAnnotation
-     { carAnnColour :: Colour Double
-     , carAnnOpacity :: Double
-     , carAnnColourIsProtected :: Bool
-     , carAnnPosition :: (Double, Double)
-     , carAnnAngle :: Double
-     , carAnnSize :: Double
-     , carAnnCaption :: CaptAnnotation
+     { _carAnnColour :: Colour Double
+     , _carAnnOpacity :: Double
+     , _carAnnColourIsProtected :: Bool
+     , _carAnnPosition :: (Double, Double)
+     , _carAnnAngle :: Double
+     , _carAnnSize :: Double
+     , _carAnnCaption :: CaptAnnotation
      } deriving (Show)
+L.makeLenses ''CarAnnotation
 
 instance Default CarAnnotation where
     def = CarAnnotation
-        { carAnnColour = yellow
-        , carAnnOpacity = 1
-        , carAnnColourIsProtected = False
-        , carAnnPosition = (0, 0)
-        , carAnnAngle = 0
-        , carAnnSize = 0.5
-        , carAnnCaption = defAnn
+        { _carAnnColour = yellow
+        , _carAnnOpacity = 1
+        , _carAnnColourIsProtected = False
+        , _carAnnPosition = (0, 0)
+        , _carAnnAngle = 0
+        , _carAnnSize = 0.5
+        , _carAnnCaption = defAnn
         }
 
 instance IsAnnotation CarAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
-            acura' (carAnnColour ann) 1
-            # opacity (carAnnOpacity ann)
-            # scale (carAnnSize ann)
+            acura' (_carAnnColour ann) 1
+            # opacity (_carAnnOpacity ann)
+            # scale (_carAnnSize ann)
             # (flip $ beside
-                (cardinalDirToR2 . captAnnAlignment . carAnnCaption $ ann))
-                (renderAnnotation . rotateAnnotation (- carAnnAngle ann) $
-                    carAnnCaption ann)
-            # rotate (Deg $ carAnnAngle ann)
-            # translate (r2 $ carAnnPosition ann)
+                (cardinalDirToR2 . _captAnnAlignment . _carAnnCaption $ ann))
+                (renderAnnotation . rotateAnnotation (- _carAnnAngle ann) $
+                    _carAnnCaption ann)
+            # rotate (Deg $ _carAnnAngle ann)
+            # translate (r2 $ _carAnnPosition ann)
         }
 
 instance LocatableAnnotation CarAnnotation where
-    annPosition = carAnnPosition
-    locateAnnotation pos ann = ann { carAnnPosition = pos }
+    annPosition = _carAnnPosition
+    locateAnnotation pos ann = ann & carAnnPosition .~ pos
 
 instance OrientableAnnotation CarAnnotation where
-    annAngle = carAnnAngle
-    orientAnnotation ang ann = ann { carAnnAngle = ang }
+    annAngle = _carAnnAngle
+    orientAnnotation ang ann = ann & carAnnAngle .~ ang
 
 instance ResizableAnnotation CarAnnotation where
-    annSize = carAnnSize
-    resizeAnnotation sz ann = ann { carAnnSize = sz }
+    annSize = _carAnnSize
+    resizeAnnotation sz ann = ann & carAnnSize .~ sz
 
 instance ColourAnnotation CarAnnotation where
-    annColour = carAnnColour
-    setAnnColour cl ann = ann { carAnnColour = cl }
-    annColourIsProtected = carAnnColourIsProtected
-    protectAnnColour ann = ann { carAnnColourIsProtected = True }
-    deepOverrideAnnColour cl ann = overrideAnnColour cl
-        ann { carAnnCaption = deepOverrideAnnColour cl $ carAnnCaption ann }
+    annColour = _carAnnColour
+    setAnnColour cl ann = ann & carAnnColour .~ cl
+    annColourIsProtected = _carAnnColourIsProtected
+    protectAnnColour ann = ann & carAnnColourIsProtected .~ True
+    deepOverrideAnnColour cl ann = overrideAnnColour cl $
+        L.over carAnnCaption (deepOverrideAnnColour cl) ann
 
 data SegAnnotation
      = SegAnnotation
@@ -209,7 +333,7 @@ instance IsAnnotation SegAnnotation where
             # stroke
             # lw 0.25 # lc (segAnnColour ann)
             # (flip $ beside
-                (cardinalDirToR2 . captAnnAlignment . segAnnCaption $ ann))
+                (cardinalDirToR2 . _captAnnAlignment . segAnnCaption $ ann))
                 (renderAnnotation . rotateAnnotation (- segAnnAngle ann) $
                     segAnnCaption ann)
             # rotate (Deg $ segAnnAngle ann)
@@ -257,121 +381,15 @@ instance IsAnnotation SplitAnnotation where
                 (cardinalDirToR2 . splAnnCaptAlignment $ ann))
                 (renderAnnotation $
                     defAnn
-                        { captAnnColour = splAnnColour ann
-                        , captAnnBgOpacity = splAnnCaptBgOpacity ann
-                        , captAnnAlignment = splAnnCaptAlignment ann
-                        , captAnnSize = 0.75
-                        , captAnnText = show $ splAnnIndex ann
+                        { _captAnnColour = splAnnColour ann
+                        , _captAnnBgOpacity = splAnnCaptBgOpacity ann
+                        , _captAnnAlignment = splAnnCaptAlignment ann
+                        , _captAnnSize = 0.75
+                        , _captAnnText = show $ splAnnIndex ann
                         }
                     )
             # translate (r2 pos)
         }
-
-data CaptAnnotation = CaptAnnotation
-    { captAnnPosition :: (Double, Double)
-    , captAnnColour :: Colour Double
-    , captAnnColourIsProtected :: Bool
-    , captAnnBgOpacity :: Double
-    , captAnnAlignment :: CardinalDirection
-    , captAnnAngle :: Double
-    , captAnnSize :: Double
-    , captAnnText :: String
-    } deriving (Show)
-
-instance Default CaptAnnotation where
-    def = CaptAnnotation
-        { captAnnPosition = (0, 0)
-        , captAnnColour = yellow
-        , captAnnColourIsProtected = False
-        , captAnnBgOpacity = 0
-        , captAnnAlignment = E
-        , captAnnAngle = 0
-        , captAnnSize = 0.4
-        , captAnnText = ""
-        }
-
-instance IsAnnotation CaptAnnotation where
-    annotation ann = Annotation
-        { annotationDiagram =
-            let dirAlign = - cardinalDirToR2 (captAnnAlignment ann)
-                adjustAlignments (x, y) = ((x + 1) / 2, (y + 1) / 2)
-                (xAlign, yAlign) = adjustAlignments $ unr2 dirAlign
-            in (
-                --alignedText xAlign yAlign caption
-                text (captAnnText ann)
-                # fc (captAnnColour ann) # applyStyle captionStyle
-                <> uncurry rect (textBounds $ captAnnText ann)
-                # fcA (computeBgColour (captAnnColour ann)
-                    `withOpacity` (captAnnBgOpacity ann))
-                # lw 0
-            )
-            # align dirAlign # scale (captAnnSize ann)
-            # rotate (Deg $ captAnnAngle ann)
-        }
-        where
-        captionStyle = mempty # bold
-        -- The font metric corrections were defined by trial-and-error.
-        extentsToBounds (fe, te) =
-            let (_, h) = unr2 $ te ^. CairoText.textSize
-                (xa, _) = unr2 $ te ^. CairoText.advance
-                fh = fe ^. CairoText.height
-            in ((xa + h) / (0.8 * fh), 2 * h / fh)
-        textBounds = extentsToBounds
-            . CairoText.unsafeCairo . CairoText.getExtents captionStyle
-
-instance LocatableAnnotation CaptAnnotation where
-    annPosition = captAnnPosition
-    locateAnnotation pos ann = ann { captAnnPosition = pos }
-
-instance OrientableAnnotation CaptAnnotation where
-    annAngle = captAnnAngle
-    orientAnnotation ang ann = ann { captAnnAngle = ang }
-
-instance ColourAnnotation CaptAnnotation where
-    annColour = captAnnColour
-    setAnnColour cl ann = ann { captAnnColour = cl }
-    annColourIsProtected = captAnnColourIsProtected
-    protectAnnColour ann = ann { captAnnColourIsProtected = True }
-
-cardinalDirToR2 :: CardinalDirection -> R2
-cardinalDirToR2 x = case x of
-    E -> unitX
-    N -> unitY
-    W -> unit_X
-    S -> unit_Y
-
-cardinalDirToAngle :: CardinalDirection -> Double
-cardinalDirToAngle x = case x of
-    E -> 0
-    N -> 90
-    W -> 180
-    S -> 270
-
-computeBgColour :: Colour Double -> Colour Double
-computeBgColour c = sRGB r' g' b'
-    where
-    cRgb = toSRGB c
-    (h, s, v) = hsvView cRgb
-    h' = if h > 180 then h - 180 else h + 180
-    (s', v') = monochromeSV (s, v)
-    cHsv' = hsv h' s' v'
-    r' = channelRed cHsv'
-    g' = channelGreen cHsv'
-    b' = channelBlue cHsv'
-
-monochromeSV, polychromeSV, limitedPolychromeSV :: (Double, Double)
-                                                -> (Double, Double)
-monochromeSV (s, v) =
-    if v > 0.65 || (v > 0.55 && s > 0.25)
-       then (0, 0)
-       else (0, 1)
-
-polychromeSV = const (1, 1)
-
-limitedPolychromeSV sv@(s, _) =
-    if s > 0.25
-        then polychromeSV sv
-        else monochromeSV sv
 
 {-
  - Old code kept around for reference in future refactorings.

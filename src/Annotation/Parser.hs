@@ -6,6 +6,9 @@ module Annotation.Parser
     , parseFlipbook
     ) where
 
+import Control.Lens.Operators
+import qualified Control.Lens as L
+
 import Text.Parsec
 import qualified Text.Parsec.Token as P
 import Text.Parsec.Permutation
@@ -66,13 +69,12 @@ car = do
                 <*> optionPerm 0.5 size
                 <*> optionPerm defAnn caption -- The default caption is empty.
     let (pos, mCl, bg, ang, sz, capt) = opt
-    return $ maybeDeepOverrideAnnColour mCl defAnn
-        { carAnnPosition = pos
-        , carAnnAngle = ang
-        , carAnnSize = sz
-        , carAnnCaption = capt
-        , carAnnOpacity = bg
-        }
+    return $ maybeDeepOverrideAnnColour mCl $ defAnn
+        & carAnnPosition .~ pos
+        & carAnnAngle .~ ang
+        & carAnnSize .~ sz
+        & carAnnCaption .~ capt
+        & carAnnOpacity .~ bg
 
 seg = do
     symbol "Seg"
@@ -160,11 +162,11 @@ caption = do
                                <*> optionMaybePerm bg
     let setCapt = maybe id $ \(mAl, mSz, mAng, mCl, mBg) ->
             maybeCustomiseAnnColour mCl
-            . maybe id (\al capt -> capt { captAnnAlignment = al }) mAl
-            . maybe id (\sz capt -> capt { captAnnSize = sz }) mSz
-            . maybe id (\ang capt -> capt { captAnnAngle = ang }) mAng
-            . maybe id (\bg capt -> capt {captAnnBgOpacity = bg}) mBg
-    return $ setCapt mOpt defAnn { captAnnText = txt }
+            . maybe id (captAnnAlignment .~) mAl
+            . maybe id (captAnnSize .~) mSz
+            . maybe id (captAnnAngle .~) mAng
+            . maybe id (captAnnBgOpacity .~) mBg
+    return $ setCapt mOpt $ defAnn & captAnnText .~ txt
 
 cardinalDir :: (Monad m) => String -> ParsecT String u m CardinalDirection
 cardinalDir leading = do
@@ -252,11 +254,10 @@ carOnTrace mMoment = do
                <*> optionPerm defAnn caption
     let (moment, mCl, bg, sz, capt) = opt
     return $ (momentToFrame moment
-        , maybeDeepOverrideAnnColour mCl defAnn
-            { carAnnSize = sz
-            , carAnnCaption = capt
-            , carAnnOpacity = bg
-            }
+        , maybeDeepOverrideAnnColour mCl $ defAnn
+            & carAnnSize .~ sz
+            & carAnnCaption .~ capt
+            & carAnnOpacity .~ bg
         )
 
 -- Flipbook parsers.
