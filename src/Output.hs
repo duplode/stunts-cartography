@@ -87,6 +87,7 @@ writeImageOutput trackName trkBS = do
                 , Pm.trackName = trackName
                 , Pm.trackData = trkBS
                 , Pm.outputPath = outFile
+                , Pm.flipbookPath = Nothing
                 }
 
         _ -> do
@@ -130,6 +131,7 @@ writeImageOutput trackName trkBS = do
                 , Pm.trackName = trackName
                 , Pm.trackData = trkBS
                 , Pm.outputPath = backdropFile
+                , Pm.flipbookPath = Just zipFile
                 }
 
 createFlipbookDir :: (MonadIO m) => FilePath -> String -> CartoT m FilePath

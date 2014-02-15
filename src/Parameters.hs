@@ -124,6 +124,7 @@ data PostRenderInfo = PostRenderInfo
     , trackName :: String
     , trackData :: LB.ByteString
     , outputPath :: FilePath
+    , flipbookPath :: Maybe FilePath
     }
 
 -- Rendering state.

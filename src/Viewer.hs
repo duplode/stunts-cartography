@@ -218,6 +218,9 @@ setup tmpDir w = void $ do
     lnkTerrTrk <-
         UI.a # set UI.id_ "save-terrain-link" # set UI.target "_blank" #+
             [string "terrain"]
+    lnkFlipbook <-
+        UI.a # set UI.id_ "save-flipbook" # set UI.target "_blank" #+
+            [string "flipbook"]
 
     txaAnns <-
         UI.textarea # set UI.name "ann-input"
@@ -249,8 +252,10 @@ setup tmpDir w = void $ do
                 , element itxTrkPath
                 ]
             , UI.p #+
-                [ string "Save as: ", element lnkTrk
-                , string " - ", element lnkTerrTrk
+                [ string "Save generated files: ", UI.br
+                , element lnkTrk, string " - "
+                , element lnkTerrTrk, string " - "
+                , element lnkFlipbook
                 ]
             , UI.p #+
                 [ string "Style presets:", UI.br
@@ -364,9 +369,17 @@ setup tmpDir w = void $ do
                     trackImage <- loadTrackImage outType $ Pm.outputPath postRender
                     trkUri <- loadTmpTrk tmpDir postRender
                     terrainUri <- loadTmpTerrainTrk tmpDir postRender
+                    mFlipbookUri <- maybe (return Nothing)
+                        ((Just <$>) . loadFile "application/zip")
+                            $ Pm.flipbookPath postRender
                     element imgMap # set UI.src trackImage
                     element lnkTrk # set UI.href trkUri
                     element lnkTerrTrk # set UI.href terrainUri
+                    maybe
+                        (runFunction $ ffi
+                            "document.getElementById('save-flipbook').removeAttribute('href');")
+                        (void . (element lnkFlipbook #) . set UI.href)
+                        mFlipbookUri
 
                     return (st', logW)
 
