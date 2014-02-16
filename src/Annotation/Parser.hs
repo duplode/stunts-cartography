@@ -268,8 +268,6 @@ parseFlipbook input = do
             return def
         Right fbks -> return fbks
 
--- TODO: Add support for multiple annotations (e.g. multiple traces in the
--- same flipbook, maybe with a monoid instance).
 flipbookSpec = many $ SomeFlipbook <$> traceSpec (initializeTrace False)
 
 

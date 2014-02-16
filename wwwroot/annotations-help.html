@@ -191,16 +191,95 @@ specialised properties.</p>
 
 <h2><code>Trace</code></h2>
 
-<code><span class="anns-fixed anns-mandatory">Trace</code>
-  <span class="anns-mandatory">:"146zctg.dat"</code>
+<code><span class="anns-fixed anns-mandatory">Trace</span>
+  <span class="anns-mandatory">:"146zctg.dat"</span>
   #red !
   <!-- TODO: Add notation to indicate "conditionally mandatory" parameters -->
   + {Car @0 "CTG"}
   ~1 1 {Car}
   </code>
 
-<!-- TODO: Actually describe the Trace syntax. -->
-<!-- TODO: Document flipbooks. -->
+<p><code>Trace</code> adds the path of a replay, optionally decorated with car
+annotations. The path is meant to be rendered from data extracted from a replay
+(e.g. through dstien's repldump DOS tool) and formatted for reading with the
+companion tool repldump-to-carto.</p>
+
+<table>
+  <tr>
+    <th>Syntax</th><th>Option</th><th>Notes</th>
+  </tr>
+  <tr>
+    <td>:</td><td>Replay data path</td>
+    <td>File containing the replay data. The path is relative to the base path
+      set with the Cartography interface.</td>
+  </tr>
+  <tr>
+    <td>#</td><td>Colour</td>
+    <td>Colour of the trace; used as a default for cars and other decorations.
+      The decorations may override the default colour with a <code>#</code>
+      option of their own.</td>
+  </tr>
+  <tr>
+    <td>!</td><td>Visibility</td>
+    <td>Add an exclamation mark to make the trace line, but not cars or other
+      decorations. invisible.</td>
+  </tr>
+  <tr>
+    <td>+</td><td>Individual car decoration</td>
+    <td>A car overlaid on some point of the path. Must be followed by the
+      specification of a car annotation within curly brackets. The options for
+      the overlaid car follow the syntax described above for regular car
+      annotations, <strong>except for the position and angle
+      annotations</strong>. The <code>@</code> position symbol should be
+      followed by a single number, which sets at which moment of the lap should
+      the car be positioned (for instance, <code>@7.5</code> will place the
+      annotation on the position at 7.5s or, equivalently, the 150th frame).
+      The angle annotation should be omitted, as the car will be placed
+      according to the replay path orientation. Additionally, adding a caption
+      to the car with the text <code>{{FRAMENUMBER}}</code> or
+      <code>{{GAMETIME}}</code> will result in the frame number and the time in
+      seconds of the frame, respectively, to be displayed automatically.</td>
+  </tr>
+  <tr>
+    <td>~</td><td>Periodic car decoration</td>
+    <td>Cars overlaid on the path at regular intervals. The symbol should be
+      followed by two numbers, which set the initial moment and the spacing in
+      seconds, and by a car annotation within curly brackets, using the syntax
+      described above for individual car decorations (<code>+</code>).</td>
+  </tr>
+</table>
+
+<h2>Creating flipbooks</h2>
+
+<p>A flipbook is a set of images, which, taken together, form an animation of
+laps by one or several cars performing replays. To create a flipbook, specify
+one or several trace annotations with periodic car overlays in the
+<em>Flipbook</em> text area of the Cartography interface and render the map as
+usual. After a while (rendering all frames will likely take a few minutes),
+the link to save a flipbook will become active. The flipbook consists of a zip
+file containing one PNG per replay frame, plus a background image with the
+track map as well as any static annotations.</p>
+
+<h3>Caveats and tips</h3>
+<ul>
+  <li>Regular annotations, such as split markers and stationary cars, can be
+  added to a flipbook through the annotations text area.</li>
+  <li>While the time interval parameter of the periodic car annotations can be
+  used when generating a flipbook, one image will be generated for each point
+  in the path; for intervals larger than 0.05, frames will be duplicated
+  rather than skipped.</li>
+  <li>Car overlays in a flipbook are scaled from the specified base size
+  according to the height at each point taken from the replay data, so as to
+  give some visual cues when jumps occur.</li>
+  <li>The set of images can be converted into a video with the appropriate
+  tools. For those familiar with ffmpeg, for instance, a sample command might
+  be:
+    <br>
+    <code>ffmpeg -loop 1 -i backdrop.png -r 20 -i '0%04d.png'
+      -filter_complex overlay -shortest -vcodec libx264 -frames 1329 -r 20
+      foo.mp4</code>
+  </li>
+</ul>
 
 </body>
 
