@@ -7,7 +7,6 @@ module Annotation.Flipbook
     ) where
 
 import Control.Lens.Operators hiding ((#))
-import qualified Control.Lens as L
 
 import Data.List (groupBy)
 import Diagrams.Prelude

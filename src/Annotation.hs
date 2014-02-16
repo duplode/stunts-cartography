@@ -49,7 +49,7 @@ module Annotation
     , segAnnLength
     , segAnnCaption
 
-    , SplitAnnotation(..)
+    , SplitAnnotation
     , splAnnColour
     , splAnnPosition
     , splAnnDirection
@@ -75,7 +75,6 @@ import qualified Control.Lens as L
 import Data.Default
 import Diagrams.Prelude
 import qualified Diagrams.Backend.Cairo.Text as CairoText
-import Control.Lens ((^.))
 import Data.Colour.SRGB
 import Data.Colour.RGBSpace.HSV
 import Types.Diagrams (BEDia)
@@ -251,17 +250,17 @@ instance IsAnnotation CaptAnnotation where
 
 instance LocatableAnnotation CaptAnnotation where
     annPosition = _captAnnPosition
-    locateAnnotation pos ann = ann & captAnnPosition .~ pos
+    locateAnnotation = (captAnnPosition .~)
 
 instance OrientableAnnotation CaptAnnotation where
     annAngle = _captAnnAngle
-    orientAnnotation ang ann = ann & captAnnAngle .~ ang
+    orientAnnotation = (captAnnAngle .~)
 
 instance ColourAnnotation CaptAnnotation where
     annColour = _captAnnColour
-    setAnnColour cl ann = ann & captAnnColour .~ cl
+    setAnnColour = (captAnnColour .~)
     annColourIsProtected = _captAnnColourIsProtected
-    protectAnnColour ann = ann & captAnnColourIsProtected .~ True
+    protectAnnColour = captAnnColourIsProtected .~ True
 
 data CarAnnotation
      = CarAnnotation
@@ -302,23 +301,23 @@ instance IsAnnotation CarAnnotation where
 
 instance LocatableAnnotation CarAnnotation where
     annPosition = _carAnnPosition
-    locateAnnotation pos ann = ann & carAnnPosition .~ pos
+    locateAnnotation = (carAnnPosition .~)
 
 instance OrientableAnnotation CarAnnotation where
     annAngle = _carAnnAngle
-    orientAnnotation ang ann = ann & carAnnAngle .~ ang
+    orientAnnotation = (carAnnAngle .~)
 
 instance ResizableAnnotation CarAnnotation where
     annSize = _carAnnSize
-    resizeAnnotation sz ann = ann & carAnnSize .~ sz
+    resizeAnnotation = (carAnnSize .~)
 
 instance ColourAnnotation CarAnnotation where
     annColour = _carAnnColour
-    setAnnColour cl ann = ann & carAnnColour .~ cl
+    setAnnColour = (carAnnColour .~)
     annColourIsProtected = _carAnnColourIsProtected
-    protectAnnColour ann = ann & carAnnColourIsProtected .~ True
-    deepOverrideAnnColour cl ann = overrideAnnColour cl $
-        L.over carAnnCaption (deepOverrideAnnColour cl) ann
+    protectAnnColour = carAnnColourIsProtected .~ True
+    deepOverrideAnnColour cl = overrideAnnColour cl
+        . L.over carAnnCaption (deepOverrideAnnColour cl)
 
 data SegAnnotation
      = SegAnnotation
@@ -359,19 +358,19 @@ instance IsAnnotation SegAnnotation where
 
 instance LocatableAnnotation SegAnnotation where
     annPosition = _segAnnPosition
-    locateAnnotation pos ann = ann & segAnnPosition .~ pos
+    locateAnnotation = (segAnnPosition .~)
 
 instance OrientableAnnotation SegAnnotation where
     annAngle = _segAnnAngle
-    orientAnnotation ang ann = ann & segAnnAngle .~ ang
+    orientAnnotation = (segAnnAngle .~)
 
 instance ColourAnnotation SegAnnotation where
     annColour = _segAnnColour
-    setAnnColour cl ann = ann & segAnnColour .~ cl
+    setAnnColour = (segAnnColour .~)
     annColourIsProtected = _segAnnColourIsProtected
-    protectAnnColour ann = ann & segAnnColourIsProtected .~ True
-    deepOverrideAnnColour cl ann = overrideAnnColour cl $
-        L.over segAnnCaption (deepOverrideAnnColour cl) ann
+    protectAnnColour = segAnnColourIsProtected .~ True
+    deepOverrideAnnColour cl = overrideAnnColour cl
+        . L.over segAnnCaption (deepOverrideAnnColour cl)
 
 data SplitAnnotation
      = SplitAnnotation

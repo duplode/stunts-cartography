@@ -96,9 +96,9 @@ setupTrace isSingleFrame ann = ann & traceAnnOverlays .~ arrangeOverlays tovs
         in (\p -> (ix, putCarOnTracePoint p c)) $
             fromMaybe (error "Frameless overlay.") mp
 
-    arrangeOverlays tovs = L.over carsOverTrace (map arrangeCar) tovs
+    arrangeOverlays = L.over carsOverTrace (map arrangeCar)
 
-    eliminateFrameless tovs = L.over carsOverTrace framelessFilter tovs
+    eliminateFrameless = L.over carsOverTrace framelessFilter
 
     framelessFilter = takeWhile (flip M.member pointMap . fst)
         . dropWhile (not . flip M.member pointMap . fst)
@@ -160,10 +160,10 @@ initializeTrace isSingleFrame dat =
 
 setTraceData :: [(VecDouble, VecDouble)]
              -> TraceAnnotation -> TraceAnnotation
-setTraceData dat ann = ann & traceAnnPoints .~ tracePointsFromData dat
+setTraceData dat = (traceAnnPoints .~ tracePointsFromData dat)
 
 clearOverlays :: TraceAnnotation -> TraceAnnotation
-clearOverlays ann = ann & traceAnnOverlays .~ defAnn
+clearOverlays = traceAnnOverlays .~ defAnn
 
 -- TODO: Add a LocatableAnnotation instance (obviously it will relocate the
 -- overlays too).
@@ -182,7 +182,7 @@ instance IsAnnotation TraceAnnotation where
 
 instance ColourAnnotation TraceAnnotation where
     annColour = _traceAnnColour
-    setAnnColour cl ann = ann & traceAnnColour .~ cl
+    setAnnColour = (traceAnnColour .~)
     annColourIsProtected = const False -- TODO: Not implemented yet.
     protectAnnColour ann = ann
     deepOverrideAnnColour cl ann = overrideAnnColour cl ann
