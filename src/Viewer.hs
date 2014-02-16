@@ -436,6 +436,7 @@ unsetSaveLinksHref :: JSFunction ()
 unsetSaveLinksHref = ffi $ unlines
     [ "document.getElementById('save-trk-link').removeAttribute('href');"
     , "document.getElementById('save-terrain-link').removeAttribute('href');"
+    , "document.getElementById('save-flipbook').removeAttribute('href');"
     ]
 
 loadTmpTrkBase :: (String -> String) -> (LB.ByteString -> LB.ByteString)
