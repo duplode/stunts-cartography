@@ -12,10 +12,11 @@ import Text.Parsec.Prim
 
 import Annotation.LapTrace.Vec
 
--- Parser for raw coordinates extracted from game data. The format is very
--- simple: each line is a frame; six integers per line, with the first
--- three being the player position vector and the other ones the car
--- orientation vector.
+-- Parser for raw coordinates extracted from game data as provided by the
+-- repldump2carto tool (cf. the REPLDUMP.md document and the repldump
+-- directory). The format is very simple: each line is a frame; six integers
+-- per line, with the first three being the player position vector and the
+-- other ones the car orientation vector.
 
 eol = oneOf "\n\r"
 
