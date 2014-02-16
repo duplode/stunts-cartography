@@ -23,6 +23,10 @@ flag resourcesWithExecutables
                  the stunts-cartography executables.
     default:     False
 
+flag repldump2carto
+    description: Builds the repldump2carto utility.
+    default:     False
+
 Source-Repository head
   type: hg
   location: https://bitbucket.org/duplode/stunts-cartography
@@ -81,3 +85,17 @@ Executable sc-trk-viewer
                     ,filepath
                     ,temporary
 
+Executable repldump2carto
+  Hs-Source-Dirs:    repldump/src
+  Main-is:           WriteCoords.hs
+  Other-Modules:     GameState
+
+  if flag (repldump2carto)
+    Build-Depends:   base >= 4.6 && < 5
+                    ,bytestring
+                    ,text
+                    ,binary
+                    ,directory
+                    ,filepath
+  else
+    Buildable:       False
