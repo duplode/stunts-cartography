@@ -16,6 +16,10 @@ Data-Files:          wwwroot/css/viewer.css
                      wwwroot/annotations-help.html
                      wwwroot/images/welcome.png
                      wwwroot/images/failure.png
+                     wwwroot/lib/alertify.min.js
+                     wwwroot/lib/README-alertify.md
+                     wwwroot/css/alertify.core.css
+                     wwwroot/css/alertify.default.css
 
 flag resourcesWithExecutables
     description: Retrieve resources (i.e. files listed under Data-Files in the
@@ -45,6 +49,7 @@ Executable sc-trk-viewer
                     ,Util.ByteString
                     ,Util.ZipConduit
                     ,Util.Reactive.Threepenny
+                    ,Util.Threepenny.Alertify
                     ,Widgets.BoundedInput
                     ,Replay
                     ,Types.Diagrams

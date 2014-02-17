@@ -9,7 +9,7 @@ import Control.Monad
 import qualified Control.Monad.RWS as RWS
 import Control.Monad.Error
 import Control.Exception (catch, SomeException)
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Monoid
 import Text.Read (readMaybe)
 import Text.Printf (printf)
@@ -33,6 +33,7 @@ import Annotation.Parser (parseAnnotations, parseFlipbook)
 import Types.CartoM
 import Paths
 import qualified Widgets.BoundedInput as BI
+import Util.Threepenny.Alertify
 
 main :: IO ()
 main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
@@ -238,6 +239,7 @@ setup tmpDir w = void $ do
 
     return w # set title "Stunts Cartography - Track Viewer"
     UI.addStyleSheet w "viewer.css"
+    alertifySetup w "static/lib"
 
     theBody <- getBody w # set UI.id_ "the-body" #. "blank-horizon" #+
         [ UI.div # set UI.id_ "left-bar" #+
@@ -358,6 +360,9 @@ setup tmpDir w = void $ do
                             >>= parseAnnotations
                         fbks <- (lift . lift $ txaFlipbook # get value)
                             >>= parseFlipbook
+                        lift . lift $ unless (null fbks) $ alertifyLog'
+                            "Flipbook rendering usually takes a few minutes. Please stand by..."
+                            StandardLog 10000
                         RWS.local (\p -> p
                             { Pm.annotationSpecs = anns
                             , Pm.flipbookSpec = fbks
@@ -366,6 +371,8 @@ setup tmpDir w = void $ do
 
                 -- Update the UI.
                 lift $ do
+                    when (isJust $ Pm.flipbookPath postRender) $ alertifySuccess
+                        "Flipbook ready! Use the flipbook link on the left to save it."
                     element theBody #. horizonClass (Pm.renderedTrackHorizon postRender)
                     let outType = Pm.outputType params
                     trackImage <- loadTrackImage outType $ Pm.outputPath postRender
