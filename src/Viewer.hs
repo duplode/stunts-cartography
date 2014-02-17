@@ -483,29 +483,6 @@ intToPresetRenderingParams n = case n of
     3 -> Pm.classicRenderingParameters
     _ -> error "Unknown preset."
 
--- Reading of fields without FRP, circa threepenny-gui 0.3.* .
-{-
-selectedFromSelect :: (Int -> a) -> String -> Window -> IO a
-selectedFromSelect fSel selId = \w -> do
-    optionIx <- join $ liftM (fromMaybe 0) . get UI.selection . fromJust
-        <$> getElementById w selId
-    return $ fSel optionIx
-
-
-selectedNumFromTextInput :: (Num a, Read a, Ord a)
-                         => String -> a -> a -> a
-                         -> Window -> IO a
-selectedNumFromTextInput elemId minVal defVal maxVal = \w -> do
-    inputStr <- join $ get value . fromJust
-        <$> getElementById w elemId
-    let val = fromMaybe defVal . readMaybe $ inputStr
-    return $ min maxVal . max minVal $ val
-
-selectedBoolFromCheckbox :: String -> Window -> IO Bool
-selectedBoolFromCheckbox elemId = \w ->
-    join $ get UI.checked . fromJust <$> getElementById w elemId
--}
-
 -- Other unused utility functions we do not want to throw away (yet).
 {-
 setTrackMapVisibility :: Bool -> JSFunction ()
