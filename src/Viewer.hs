@@ -375,11 +375,8 @@ setup tmpDir w = void $ do
                     element imgMap # set UI.src trackImage
                     element lnkTrk # set UI.href trkUri
                     element lnkTerrTrk # set UI.href terrainUri
-                    maybe
-                        (runFunction $ ffi
-                            "document.getElementById('save-flipbook').removeAttribute('href');")
-                        (void . (element lnkFlipbook #) . set UI.href)
-                        mFlipbookUri
+                    maybe (element lnkFlipbook # unsetHref)
+                        ((element lnkFlipbook #) . set UI.href) mFlipbookUri
 
                     return (st', logW)
 
@@ -388,7 +385,7 @@ setup tmpDir w = void $ do
                     lift $ do
                         element theBody #. "blank-horizon"
                         element imgMap # set UI.src "static/images/failure.png"
-                        runFunction unsetSaveLinksHref
+                        mapM_ (unsetHref . element) [lnkTrk, lnkTerrTrk, lnkFlipbook]
 
                     throwError errorMsg
 
@@ -432,12 +429,14 @@ setup tmpDir w = void $ do
                 >>= \(st', w) -> liftIO $ fireRenState st'
                     >> appendToLog w >> renderLog ())
 
-unsetSaveLinksHref :: JSFunction ()
-unsetSaveLinksHref = ffi $ unlines
-    [ "document.getElementById('save-trk-link').removeAttribute('href');"
-    , "document.getElementById('save-terrain-link').removeAttribute('href');"
-    , "document.getElementById('save-flipbook').removeAttribute('href');"
-    ]
+removeAttr :: String -> UI Element -> UI Element
+removeAttr name el = do
+    x <- el
+    runFunction $ ffi "$(%1).removeAttr(%2)" x name
+    el
+
+unsetHref :: UI Element -> UI Element
+unsetHref = removeAttr "href"
 
 loadTmpTrkBase :: (String -> String) -> (LB.ByteString -> LB.ByteString)
                -> FilePath -> Pm.PostRenderInfo -> UI String
