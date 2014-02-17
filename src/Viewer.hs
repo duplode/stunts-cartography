@@ -321,6 +321,8 @@ setup tmpDir w = void $ do
                      -> UI (Pm.RenderingState, Pm.RenderingLog)
         runRenderMap params st = do
 
+            element btnGo # set UI.enabled False
+
             trkRelPath <- itxTrkPath # get value
             let basePath = Pm.baseDirectory params
                 trkPath = basePath </> trkRelPath
@@ -388,6 +390,8 @@ setup tmpDir w = void $ do
                         mapM_ (unsetHref . element) [lnkTrk, lnkTerrTrk, lnkFlipbook]
 
                     throwError errorMsg
+
+            element btnGo # set UI.enabled True
 
             return $ either ((,) st . Pm.logFromList) id outcome
 
