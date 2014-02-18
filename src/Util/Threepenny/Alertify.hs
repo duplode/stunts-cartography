@@ -13,22 +13,25 @@ import System.FilePath ((</>))
 
 -- Toy bindings to alertify.js 0.3 API.
 
+-- TODO: Decide whether to use extra subdirectories here.
 alertifySetup :: Window -> FilePath -> UI ()
 alertifySetup w libDir = do
     scrAlertify <- mkElement "script" # set UI.src (libDir </> "alertify.min.js")
     getHead w #+ [element scrAlertify]
     mapM_ (UI.addStyleSheet w) ["alertify.core.css", "alertify.default.css"]
 
-data LogType = StandardLog | SuccessLog | ErrorLog deriving (Show)
+data LogType = StandardLog | SuccessLog | ErrorLog | CustomLog String
+    deriving (Show)
 
 alertifyLog' :: String -> LogType -> Int -> UI ()
 alertifyLog' msg type_ timeout = runFunction $
     ffi "alertify.log(%1, %2, %3)" msg strType timeout
     where
     strType = case type_ of
-        StandardLog -> "standard"
-        SuccessLog  -> "success"
-        ErrorLog    -> "error"
+        StandardLog      -> "standard"
+        SuccessLog       -> "success"
+        ErrorLog         -> "error"
+        CustomLog class_ -> class_
 
 alertifyLog :: String -> UI ()
 alertifyLog msg = runFunction $ ffi "alertify.log(%1)" msg
