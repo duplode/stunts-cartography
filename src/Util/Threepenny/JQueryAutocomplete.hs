@@ -1,4 +1,12 @@
-module Util.Threepenny.JQueryAutocomplete where
+module Util.Threepenny.JQueryAutocomplete
+    ( autocompleteSetup
+    , autocompleteInit
+    , autocompleteArraySource
+    , autocompleteDelay
+    , autocompleteMinLength
+    , autocompletechange
+    , autocompleteselect
+    ) where
 
 -- TODO: The module name is obviously provisional.
 import Graphics.UI.Threepenny.Core
