@@ -13,7 +13,8 @@ import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Monoid
 import Text.Read (readMaybe)
 import Text.Printf (printf)
-import System.Directory (doesFileExist)
+import System.Directory
+    (doesFileExist, doesDirectoryExist, getDirectoryContents)
 import System.FilePath ((</>), takeExtension, addExtension)
 import System.IO.Temp (withSystemTempDirectory)
 import Data.Char (toUpper)
@@ -241,10 +242,20 @@ setup tmpDir w = void $ do
     alertifySetup w "static/lib/"
     itxAcTest <-
         UI.input # set UI.type_ "text" # set UI.id_ "ac-test"
-            -- # (alertifyLog "Boo!" >>)
+
+    let toListingEvent = unsafeMapIO $ \dir -> do
+            exists <- doesDirectoryExist dir
+            if exists
+                then getDirectoryContents dir
+                        >>= filterM (doesFileExist . (dir </>))
+                else return []
+
+    bFileListing <- [] `stepper` (toListingEvent $ UI.valueChange itxBasePath)
+
     element itxAcTest
         # autocompleteInit
-        # set autocompleteArraySource ["foo", "bar", "blah", "glub"]
+        # sink autocompleteArraySource bFileListing
+
 
     -- Assembling the interface HTML.
 
