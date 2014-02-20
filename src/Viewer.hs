@@ -11,6 +11,7 @@ import Control.Monad.Error
 import Control.Exception (catch, SomeException)
 import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Monoid
+import Data.List (sort)
 import Text.Read (readMaybe)
 import Text.Printf (printf)
 import System.Directory
@@ -71,12 +72,12 @@ setup tmpDir w = void $ do
 
     let toDirListing :: Event FilePath -> Event [FilePath]
         -- Assiming we already checked that dir exists.
-        toDirListing = unsafeMapIO $ \dir ->
+        toDirListing = unsafeMapIO $ \dir -> fmap sort $
             getDirectoryContents dir
                 >>= (filterM doesDirectoryExist . map (dir </>))
 
         toFileListing :: Event FilePath -> Event [FilePath]
-        toFileListing = unsafeMapIO $ \dir -> do
+        toFileListing = unsafeMapIO $ \dir -> fmap sort $ do
             exists <- doesDirectoryExist dir
             if exists
                 then getDirectoryContents dir
