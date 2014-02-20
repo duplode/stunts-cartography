@@ -50,7 +50,8 @@ main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
 setup :: FilePath -> Window -> UI ()
 setup tmpDir w = void $ do
 
-    autocompleteSetup w "/static/lib/"
+    autocompleteSetup w "static/lib/"
+    alertifySetup w "static/lib/"
 
     -- Base directory.
     let initialDir = ".."
@@ -278,8 +279,6 @@ setup tmpDir w = void $ do
             # set UI.cols "25" # set UI.rows "5"
 
     imgMap <- UI.img # set UI.id_ "track-map" # set UI.src "static/images/welcome.png"
-
-    alertifySetup w "static/lib/"
 
     -- Assembling the interface HTML.
 

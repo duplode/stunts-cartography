@@ -3,7 +3,6 @@ module Util.Threepenny.JQueryAutocomplete where
 -- TODO: The module name is obviously provisional.
 import Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny as UI
-import System.FilePath ((</>))
 import Text.JSON (showJSON, fromJSObject, fromJSString)
 import Text.JSON.String (runGetJSON, readJSObject, readJSString)
 import Text.JSON.Types (JSValue(..))
