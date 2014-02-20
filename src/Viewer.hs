@@ -34,6 +34,7 @@ import Types.CartoM
 import Paths
 import qualified Widgets.BoundedInput as BI
 import Util.Threepenny.Alertify
+import Util.Threepenny.JQueryAutocomplete
 
 main :: IO ()
 main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
@@ -46,6 +47,8 @@ main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
 
 setup :: FilePath -> Window -> UI ()
 setup tmpDir w = void $ do
+
+    autocompleteSetup w "/static/lib/"
 
     -- Base directory.
     itxBasePath <-
@@ -235,11 +238,18 @@ setup tmpDir w = void $ do
 
     imgMap <- UI.img # set UI.id_ "track-map" # set UI.src "static/images/welcome.png"
 
+    alertifySetup w "static/lib/"
+    itxAcTest <-
+        UI.input # set UI.type_ "text" # set UI.id_ "ac-test"
+            -- # (alertifyLog "Boo!" >>)
+    element itxAcTest
+        # autocompleteInit
+        # set autocompleteArraySource ["foo", "bar", "blah", "glub"]
+
     -- Assembling the interface HTML.
 
     return w # set title "Stunts Cartography - Track Viewer"
     UI.addStyleSheet w "viewer.css"
-    alertifySetup w "static/lib"
 
     theBody <- getBody w # set UI.id_ "the-body" #. "blank-horizon" #+
         [ UI.div # set UI.id_ "left-bar" #+
@@ -306,6 +316,9 @@ setup tmpDir w = void $ do
                 [ string "Flipbook"
                 , UI.br
                 , element txaFlipbook
+                ]
+            , UI.p #+
+                [ element itxAcTest
                 ]
             ]
         , UI.div # set UI.id_ "main-wrap" #+
