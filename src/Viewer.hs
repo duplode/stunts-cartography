@@ -52,14 +52,57 @@ setup tmpDir w = void $ do
     autocompleteSetup w "/static/lib/"
 
     -- Base directory.
+    let initialDir = ".."
+    initialDirExists <- liftIO $ doesDirectoryExist initialDir
+    initialDirContents <- liftIO $ getDirectoryContents initialDir
+    initialDirListing <- liftIO $
+        filterM doesDirectoryExist initialDirContents
+    initialFileListing <- liftIO $ filterM doesFileExist initialDirContents
+
     itxBasePath <-
         UI.input # set UI.type_ "text" # set UI.name "base-path-input"
             # set UI.id_ "base-path-input"
-    bBaseDir <- mdo
+
+    (eBaseDir, bBaseDir) <- mdo
         let eBaseDir = UI.valueChange itxBasePath
-        bBaseDir <- ".." `stepper` eBaseDir
+        bBaseDir <- initialDir `stepper` eBaseDir
         element itxBasePath # sink value bBaseDir
-        return bBaseDir
+        return (eBaseDir, bBaseDir)
+
+    let toDirListing :: Event FilePath -> Event [FilePath]
+        -- Assiming we already checked that dir exists.
+        toDirListing = unsafeMapIO $ \dir ->
+            getDirectoryContents dir
+                >>= (filterM doesDirectoryExist . map (dir </>))
+
+        toFileListing :: Event FilePath -> Event [FilePath]
+        toFileListing = unsafeMapIO $ \dir -> do
+            exists <- doesDirectoryExist dir
+            if exists
+                then getDirectoryContents dir
+                        >>= (filterM $ doesFileExist . (dir </>))
+                else return []
+
+        eExistingBaseDir = fmap snd . filterE fst
+            . unsafeMapIO (\dir -> (\b -> (b, dir)) <$> doesDirectoryExist dir)
+            $ eBaseDir
+        eDirListing = toDirListing eExistingBaseDir
+        eFileListing = toFileListing eBaseDir
+
+    bDirListing <- initialDirListing `stepper` eDirListing
+    bFileListing <- initialFileListing `stepper` eFileListing
+
+    itxTrkPath <-
+        UI.input # set UI.type_ "text" # set UI.name "trk-input"
+            # set UI.id_ "trk-input"
+
+    element itxBasePath
+        # autocompleteInit
+        # sink autocompleteArraySource bDirListing
+
+    element itxTrkPath
+        # autocompleteInit
+        # sink autocompleteArraySource bFileListing
 
     -- Output type and tile resolution caption.
     selOutput <-
@@ -213,10 +256,6 @@ setup tmpDir w = void $ do
 
     -- Misc. interesting elements
 
-    itxTrkPath <-
-        UI.input # set UI.type_ "text" # set UI.name "trk-input"
-            # set UI.id_ "trk-input"
-
     lnkTrk <-
         UI.a # set UI.id_ "save-trk-link" # set UI.target "_blank" #+
             [string "track"]
@@ -240,22 +279,6 @@ setup tmpDir w = void $ do
     imgMap <- UI.img # set UI.id_ "track-map" # set UI.src "static/images/welcome.png"
 
     alertifySetup w "static/lib/"
-    itxAcTest <-
-        UI.input # set UI.type_ "text" # set UI.id_ "ac-test"
-
-    let toListingEvent = unsafeMapIO $ \dir -> do
-            exists <- doesDirectoryExist dir
-            if exists
-                then getDirectoryContents dir
-                        >>= filterM (doesFileExist . (dir </>))
-                else return []
-
-    bFileListing <- [] `stepper` (toListingEvent $ UI.valueChange itxBasePath)
-
-    element itxAcTest
-        # autocompleteInit
-        # sink autocompleteArraySource bFileListing
-
 
     -- Assembling the interface HTML.
 
@@ -327,9 +350,6 @@ setup tmpDir w = void $ do
                 [ string "Flipbook"
                 , UI.br
                 , element txaFlipbook
-                ]
-            , UI.p #+
-                [ element itxAcTest
                 ]
             ]
         , UI.div # set UI.id_ "main-wrap" #+
