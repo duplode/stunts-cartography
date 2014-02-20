@@ -86,7 +86,7 @@ autocompleteMinLength = mkWriteAttr $ \minLength x ->
 silence :: (Functor f) => f a -> f ()
 silence = fmap (const ())
 
---readJSObjectOptimistically :: String -> [(String, e)]
+readJSObjectOptimistically :: String -> [(String, JSValue)]
 readJSObjectOptimistically = fromJSObject
     . (\(Right (JSObject o)) -> o)
     . runGetJSON readJSObject
