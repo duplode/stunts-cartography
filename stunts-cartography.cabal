@@ -19,6 +19,7 @@ Data-Files:          wwwroot/css/viewer.css
                      wwwroot/lib/alertify.min.js
                      wwwroot/lib/README-alertify.md
                      wwwroot/lib/jquery-ui-autocomplete/jquery-ui-1.10.4.custom.min.js
+                     wwwroot/lib/jquery-ui-autocomplete/MIT-LICENSE.txt
                      wwwroot/css/alertify.core.css
                      wwwroot/css/alertify.default.css
                      wwwroot/css/jquery-ui-autocomplete/ui-lightness/jquery-ui-1.10.4.custom.min.css
