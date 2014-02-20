@@ -15,8 +15,22 @@ import qualified Graphics.UI.Threepenny as UI
 -- TODO: Decide whether to use extra subdirectories here.
 alertifySetup :: Window -> FilePath -> UI ()
 alertifySetup w libDir = do
-    scrAlertify <- mkElement "script" # set UI.src (libDir ++ "alertify.min.js")
-    getHead w #+ [element scrAlertify]
+    let jsPath = libDir ++ "alertify.min.js"
+        addScriptTag :: JSFunction ()
+        addScriptTag = ffi $ unlines
+            [ "(function(){"
+            , "var xhrObj = new XMLHttpRequest();"
+            , "xhrObj.open('GET', '" ++ jsPath ++ "', false);"
+            , "xhrObj.send('');"
+            , "var script = document.createElement('script');"
+            , "script.type = 'text/javascript';"
+            , "script.id = 'jquery-ac';"
+            , "script.text = xhrObj.responseText;"
+            , "document.getElementsByTagName('head')[0].appendChild(script);"
+            , "return null;"
+            , "})();"
+            ]
+    callFunction addScriptTag
     mapM_ (UI.addStyleSheet w) ["alertify.core.css", "alertify.default.css"]
 
 data LogType = StandardLog | SuccessLog | ErrorLog | CustomLog String
