@@ -76,8 +76,11 @@ setup tmpDir w = void $ do
             getDirectoryContents dir
                 >>= (filterM doesDirectoryExist . map (dir </>))
 
+        filterTrkRpl = filter $ (\x -> x == ".TRK" || x == ".RPL")
+            . takeExtension . map toUpper
+
         toFileListing :: Event FilePath -> Event [FilePath]
-        toFileListing = unsafeMapIO $ \dir -> fmap sort $ do
+        toFileListing = unsafeMapIO $ \dir -> fmap (sort . filterTrkRpl) $ do
             exists <- doesDirectoryExist dir
             if exists
                 then getDirectoryContents dir
