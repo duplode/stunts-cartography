@@ -58,12 +58,14 @@ setup tmpDir w = void $ do
     initialDirExists <- liftIO $ doesDirectoryExist initialDir
     initialDirContents <- liftIO $ getDirectoryContents initialDir
     initialDirListing <- liftIO $
-        filterM doesDirectoryExist initialDirContents
-    initialFileListing <- liftIO $ filterM doesFileExist initialDirContents
+        filterM doesDirectoryExist $ map (initialDir </>) initialDirContents
+    initialFileListing <- liftIO $
+        filterM (doesFileExist . (initialDir </>)) initialDirContents
 
     itxBasePath <-
         UI.input # set UI.type_ "text" # set UI.name "base-path-input"
             # set UI.id_ "base-path-input"
+            # set value initialDir
 
     let eBaseDir = UI.valueChange itxBasePath
     bBaseDir <- initialDir `stepper` eBaseDir
