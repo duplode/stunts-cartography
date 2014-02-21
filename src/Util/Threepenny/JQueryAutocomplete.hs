@@ -96,16 +96,23 @@ firstJSONEventResult ed = case ed of
     EventData []       -> Nothing
     EventData (mo : _) -> join $
         (fmap (\(JSString s) -> fromJSString s)
-            . lookup "value" .  readJSObjectOptimistically)
+            . join . fmap
+                (lookup "value" . fromJSObject . (\(JSObject o) -> o))
+            . lookup "item" .  readJSObjectOptimistically)
         <$> mo
 
--- TODO: This should return a label-value pair.
+-- TODO: Untried demo code.
+-- TODO: This (and focus, select, etc.) should return a label-value pair.
 autocompletechange :: Element -> Event (Maybe String)
 autocompletechange = fmap firstJSONEventResult
     . domEvent "autocompletechange"
 
--- etc.
+-- autocompletecreate :: Element -> Event ()
+-- autocompletefocus :: Element -> Event String
+-- autocompleteopen :: Element -> Event ()
+-- autocompleteresponse Element -> Event [String]
+-- autocompletesearch :: Element -> Event ()
 
-autocompleteselect :: Element -> Event (Maybe String)
-autocompleteselect = fmap firstJSONEventResult
+autocompleteselect :: Element -> Event String
+autocompleteselect = fmap (fromJust . firstJSONEventResult)
     . domEvent "autocompleteselect"
