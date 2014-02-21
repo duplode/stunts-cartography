@@ -7,9 +7,8 @@ Power tools for track map rendering and analysis for the classic racing game
 [Threepenny](http://hackage.haskell.org/package/threepenny-gui)
 (browser-hosted frontend).
 
-This suite currently has just one executable ready to run out of the box, the
-track viewer. Nonetheless, despite being somewhat unpolished, the viewer is
-fully functional, and supports a number of advanced features.
+This suite currently is comprised by a fully funcional track viewer and
+repldump2carto, an auxiliary tool for generation of lap traces.
 
 ## Suite components
 
@@ -38,6 +37,28 @@ fully functional, and supports a number of advanced features.
   by specifying them with a simple syntax, described in the help page linked
   from the program interface, without needing to use an image editor. It is
   specially convenient for preparing race analysis maps.
+* The flipbook box instructs the program to generate, in addition to the track
+  map, animation frames created by overlaying annotations over the path of a
+  replay. Once the rendering is complete, which typically takes a few minutes,
+  the resulting images are packaged into a zip archive and made available
+  through the flipbook download link, next to the track and replay ones. The
+  syntax for describing flipbooks, as explained in the annotations help page,
+  is mostly the same one used for regular annotations. The flipbook
+  functionality is meant to be used in conjunction with the auxiliary
+  repldump2carto tool, which generates lap traces from raw simulation ouput.
+
+### repldump2carto
+
+* Executable: repldump2carto
+* A tool which bridges the gap between dstien's repldump, a DOS tool for
+  extraction of raw data from the game engine, and the Stunts Cartography
+  track viewer. It generates lap traces for consumption of the flipbook
+  functionality of the latter from the binary data files produced by the
+  former.
+* Usage: in the command line, `repldump2carto [FILES]`, where files stand for
+  one or more files produced by repldump.
+* For extra information, see the `REPLDUMP.md` file (in the repository, it is
+  located at the `repldump` directory).
 
 ## Repository content highlights
 
@@ -54,10 +75,6 @@ fully functional, and supports a number of advanced features.
   backend and frontend.
 * Viewer.hs: the Threepenny frontend of the track viewer. Communicates with the
   Diagrams code through the Output module.
-* Animate.hs: a demonstration of how the Diagrams backend can be used to
-  generate an animation of a car following a path on the track. Usage
-  suggestions are given by the generate-movie.sh script and the video-notes.txt
-  remarks.
 
 ### Subdirectories
 
@@ -65,10 +82,8 @@ fully functional, and supports a number of advanced features.
   extracted from game data to be used for lap trace annotations (the .dat
   files). The paths are meant to be overlaid on the track which shares part of
   their file name.
-* laptrace: instructions for an arcane procedure driving path extraction from
-  an instance of Stunts running under DOSBox. Recent developments provide an
-  alternative, less complicated, way of getting hold of the paths; it will
-  eventually be included in the suite.
+* repldump: source tree and additional documentation on repldump2carto and the
+  procedures needed to generate a lap trace from a Stunts replay.
 * wwwroot: HTML, CSS, images and other files used to compose the interface.
   Includes some in-program documenation, such as the annotation syntax
   description.
