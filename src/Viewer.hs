@@ -65,11 +65,8 @@ setup tmpDir w = void $ do
         UI.input # set UI.type_ "text" # set UI.name "base-path-input"
             # set UI.id_ "base-path-input"
 
-    (eBaseDir, bBaseDir) <- mdo
-        let eBaseDir = UI.valueChange itxBasePath
-        bBaseDir <- initialDir `stepper` eBaseDir
-        element itxBasePath # sink value bBaseDir
-        return (eBaseDir, bBaseDir)
+    let eBaseDir = UI.valueChange itxBasePath
+    bBaseDir <- initialDir `stepper` eBaseDir
 
     let toDirListing :: Event FilePath -> Event [FilePath]
         -- Assiming we already checked that dir exists.
