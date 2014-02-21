@@ -54,12 +54,13 @@ consoleGreeting = do
         ++ fromMaybe "unknown" versionString ++ "."
     putStrLn "Navigate in your web browser to localhost:10000 to begin."
     putStrLn ""
-    when isPortableBuild $ putStrLn "This is a portable build."
-        >> putStrLn "If the interface doesn't load, check \
-                    \if there is a wwwroot directory with"
-        >> putStrLn "auxiliary files of the application \
-                    \in the directory of the executable."
-    putStrLn ""
+    when isPortableBuild $ do
+        putStrLn "This is a portable build."
+        putStrLn "If the interface doesn't load, check \
+                 \if there is a wwwroot directory with"
+        putStrLn "auxiliary files of the application \
+                 \in the directory of the executable."
+        putStrLn ""
 
 setup :: FilePath -> Window -> UI ()
 setup tmpDir w = void $ do
@@ -72,7 +73,9 @@ setup tmpDir w = void $ do
     -- Base directory.
     let initialDir = ".."
     initialDirExists <- liftIO $ doesDirectoryExist initialDir
-    initialDirContents <- liftIO $ getDirectoryContents initialDir
+    initialDirContents <- liftIO $ if initialDirExists
+        then getDirectoryContents initialDir
+        else return []
     initialDirListing <- liftIO $
         filterM doesDirectoryExist $ map (initialDir </>) initialDirContents
     initialFileListing <- liftIO $
