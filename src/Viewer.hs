@@ -291,10 +291,8 @@ setup tmpDir w = void $ do
                 [ element btnGo, string " as ", element selOutput ]
             , UI.p #+
                 [ string "Base path:", UI.br
-                , element itxBasePath
-                ]
-            , UI.p #+
-                [ string "TRK / RPL relative path:", UI.br
+                , element itxBasePath, UI.br
+                , string "TRK / RPL relative path:", UI.br
                 , element itxTrkPath
                 ]
             , UI.p #+
@@ -305,38 +303,26 @@ setup tmpDir w = void $ do
                 ]
             , UI.p #+
                 [ string "Style presets:", UI.br
-                , element selPreset, element btnPreset
-                ]
-            , UI.p #+
-                [ string "Road width:", UI.br
-                , element bidRoadW
-                ]
-            , UI.p #+
-                [ string "Bridge height:", UI.br
-                , element bidBridgeH
-                ]
-            , UI.p #+
-                [ string "Bridge relative width:", UI.br
-                , element bidBridgeRelW
-                ]
-            , UI.p #+
-                [ string "Banking relative height:", UI.br
+                , element selPreset, element btnPreset, UI.br
+                , string "Road width:", UI.br
+                , element bidRoadW, UI.br
+                , string "Bridge height:", UI.br
+                , element bidBridgeH, UI.br
+                , string "Bridge relative width:", UI.br
+                , element bidBridgeRelW, UI.br
+                , string "Banking relative height:", UI.br
                 , element bidBankingRelH
                 ]
             , UI.p #+
-                [ element strPxPtPerTile, UI.br
-                , element bidPxPtPerTile
-                ]
-            , UI.p #+
                 [ string "Grid?", element chkDrawGrid
-                , string " Indices?", element chkDrawIndices
-                ]
-            , UI.p #+
-                [ string "Map bounds (0 - 29):", UI.br
+                , string " Indices?", element chkDrawIndices, UI.br
+                , string "Map bounds (0 - 29):", UI.br
                 , string "x from ", element biiMinX
                 , string " to ", element biiMaxX, UI.br
                 , string "y from ", element biiMinY
-                , string " to ", element biiMaxY
+                , string " to ", element biiMaxY, UI.br
+                , element strPxPtPerTile, UI.br
+                , element bidPxPtPerTile, UI.br
                 ]
             , UI.p #+
                 [ string "Annotations - "

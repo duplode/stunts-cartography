@@ -8,17 +8,18 @@ p, li {
 
 #left-bar {
   float: left;
-  clear: left;
-  width: 11em;
+  clear: none;
+  width: 12em;
   margin: 0 0 0 0;
-  padding: 0.5em 0.5em 0.5em 0.5em;
-  line-height: 125%;
+  padding: 0em 0.5em 0em 0.25em;
+  line-height: 110%;
 }
 
 #main-wrap {
   float: none;
   clear: none;
   margin: 0 16em 0 14em;
+  padding: 0.25em 0.25em 0.25em 0.5em;
 }
 
 .blank-horizon {
