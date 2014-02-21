@@ -316,10 +316,15 @@ setup tmpDir w = void $ do
                 [ string "Grid?", element chkDrawGrid
                 , string " Indices?", element chkDrawIndices, UI.br
                 , string "Map bounds (0 - 29):", UI.br
-                , string "x from ", element biiMinX
-                , string " to ", element biiMaxX, UI.br
-                , string "y from ", element biiMinY
-                , string " to ", element biiMaxY, UI.br
+                , row
+                    [ string "x from ", element biiMinX
+                    , string " to ", element biiMaxX
+                    ]
+                , row
+                    [ string "y from ", element biiMinY
+                    , string " to ", element biiMaxY
+                    ]
+                , UI.br
                 , element strPxPtPerTile, UI.br
                 , element bidPxPtPerTile, UI.br
                 ]

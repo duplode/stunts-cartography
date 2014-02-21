@@ -22,6 +22,10 @@ p, li {
   padding: 0.25em 0.25em 0.25em 0.5em;
 }
 
+.table-cell {
+  padding: 0em 0.25em 0em 0em;
+}
+
 .blank-horizon {
   background-color: White;
 }
