@@ -40,12 +40,26 @@ import Util.Threepenny.JQueryAutocomplete
 
 main :: IO ()
 main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
+    consoleGreeting
     staticDir <- (</> "wwwroot") <$> getDataDir
     startGUI defaultConfig
         { tpPort = 10000
         , tpCustomHTML = Nothing
         , tpStatic = Just staticDir
         } $ setup tmpDir
+
+consoleGreeting :: IO ()
+consoleGreeting = do
+    putStrLn $ "Welcome to Stunts Cartography, version "
+        ++ fromMaybe "unknown" versionString ++ "."
+    putStrLn "Navigate in your web browser to localhost:10000 to begin."
+    putStrLn ""
+    when isPortableBuild $ putStrLn "This is a portable build."
+        >> putStrLn "If the interface doesn't load, check \
+                    \if there is a wwwroot directory with"
+        >> putStrLn "auxiliary files of the application \
+                    \in the directory of the executable."
+    putStrLn ""
 
 setup :: FilePath -> Window -> UI ()
 setup tmpDir w = void $ do
@@ -255,6 +269,10 @@ setup tmpDir w = void $ do
     txaLog <-
         UI.textarea # set UI.id_ "log-text"
             # set UI.cols "72" # set UI.rows "6"
+            # set value (
+                maybe "" (("Program version: " ++) . (++ "\n")) versionString
+                ++ "Stunts fan? Hang out at zak.stunts.hu!"
+                )
 
     (eRenderLog, renderLog) <- liftIO newEvent
     onEvent (bLogContents <@ eRenderLog) $
