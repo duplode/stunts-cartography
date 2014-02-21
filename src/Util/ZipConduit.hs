@@ -7,7 +7,7 @@ import Control.Monad (filterM)
 import Control.Monad.Trans (liftIO)
 import Control.Applicative ((<$>))
 import System.Directory (doesFileExist, getDirectoryContents)
-import System.FilePath ((</>), takeFileName)
+import System.FilePath ((</>), takeFileName, takeBaseName)
 import "zip-conduit" Codec.Archive.Zip
 import Data.Conduit
 import qualified Data.Conduit.List as CL
@@ -20,7 +20,8 @@ writeDirContentsZip dir dest = do
     paths <- filterM doesFileExist
         =<< (map (dir </>)) <$> getDirectoryContents dir
     withArchive dest $
-        CL.sourceList paths $$ sinkFileWithChangedPath takeFileName
+        CL.sourceList paths
+            $$ sinkFileWithChangedPath ((takeBaseName dest </>) . takeFileName)
 
 sinkFileWithChangedPath :: (FilePath -> FilePath) -> Sink FilePath Archive ()
 sinkFileWithChangedPath fPath =
