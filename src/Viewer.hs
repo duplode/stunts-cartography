@@ -50,6 +50,8 @@ main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
 setup :: FilePath -> Window -> UI ()
 setup tmpDir w = void $ do
 
+    return w # set title "Stunts Cartography - Track Viewer"
+    UI.addStyleSheet w "viewer.css"
     autocompleteSetup w "static/lib/"
     alertifySetup w "static/lib/"
 
@@ -284,9 +286,6 @@ setup tmpDir w = void $ do
 
     -- Assembling the interface HTML.
 
-    return w # set title "Stunts Cartography - Track Viewer"
-    UI.addStyleSheet w "viewer.css"
-
     theBody <- getBody w # set UI.id_ "the-body" #. "blank-horizon" #+
         [ UI.div # set UI.id_ "left-bar" #+
             [ UI.p #+
@@ -332,16 +331,19 @@ setup tmpDir w = void $ do
                 , element bidPxPtPerTile, UI.br
                 ]
             , UI.p #+
-                [ string "Annotations - "
+                [ string "Annotations ("
                 , UI.a # set UI.text "help"
                     # set UI.href ("static/annotations-help.html")
                     # set UI.target "_blank"
-                , UI.br
+                , string ")", UI.br
                 , element txaAnns
                 ]
             , UI.p #+
-                [ string "Flipbook"
-                , UI.br
+                [ string "Flipbook ("
+                , UI.a # set UI.text "help"
+                    # set UI.href ("static/annotations-help.html#creating-flipbooks")
+                    # set UI.target "_blank"
+                , string ")", UI.br
                 , element txaFlipbook
                 ]
             ]
