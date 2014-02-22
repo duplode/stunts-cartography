@@ -11,13 +11,15 @@ Cartography. The tool is very rustic: simply pass one or more input file paths
 as arguments and the corresponding plain text files, with a .dat extension,
 will be created in the directory of the input files.
 
-In addition to repldump2carto, we provide two sample files which may be of help
-in setting a workflow for convenient replay data processing. The repldump.sh
-bash script (translating it to DOS batch or PowerShell is left as an exercise
-to the reader) will, given a replay file as argument, run repldump via DOSBox
-on it, provided that there are both a Stunts folder with repldump and the
-provided repldump.conf DOSBox configuration file lying in the working
-directory.
+In addition to repldump2carto, we provide a few sample files which may be of
+help in setting a workflow for convenient replay data processing. The
+repldump.sh and repldump.bat scripts (for Linux and Windows respectively) will,
+given a replay file as argument, run repldump via DOSBox on it, provided that
+there are both a Stunts folder (named STUNTS and containing repldump) and the
+provided repldump.conf (a DOSBox configuration file) lying in the working
+directory. The scripts are meant as suggestions, to be checked and eventually
+adjusted before running; in particular, you may have to adjust the DOSBox path
+in the batch script.
 
 The source tree of repldump2carto was forked from the
 [stunts-repldump-analysis](https://bitbucket.org/duplode/stunts-repldump-analysis)
