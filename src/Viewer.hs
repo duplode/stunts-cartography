@@ -144,10 +144,11 @@ setup initDir tmpDir w = void $ do
 
         toFileListing :: Event FilePath -> Event [FilePath]
         toFileListing = unsafeMapIO $ \dir -> fmap (sort . filterTrkRpl) $ do
-            exists <- doesDirectoryExist dir
+            let dir' = if null dir then "." else dir
+            exists <- doesDirectoryExist dir'
             if exists
-                then getDirectoryContents dir
-                        >>= (filterM $ doesFileExist . (dir </>))
+                then getDirectoryContents dir'
+                        >>= (filterM $ doesFileExist . (dir' </>))
                 else return []
 
         eExistingBaseDir = fmap snd . filterE fst
