@@ -8,6 +8,7 @@ import qualified Paths_stunts_cartography
 getDataDir = fmap takeDirectory getExecutablePath
 #else
 # ifdef CABAL
+import Data.Version
 import qualified Paths_stunts_cartography
 getDataDir = Paths_stunts_cartography.getDataDir
 # else
@@ -16,7 +17,7 @@ getDataDir = return "." :: IO FilePath
 #endif
 
 #ifdef CABAL
-versionString = Just $ Paths_stunts_cartography.version
+versionString = Just $ showVersion Paths_stunts_cartography.version
 #else
 versionString = Nothing :: Maybe String
 #endif
