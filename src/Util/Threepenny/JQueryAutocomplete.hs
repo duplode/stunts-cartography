@@ -17,6 +17,9 @@ import Text.JSON.Types (JSValue(..))
 import Data.Maybe (fromJust)
 import Control.Monad (join)
 
+-- Synchronously loading the library code and CSS.
+-- If you find this hack off-putting, an alternative is to specify them
+-- through the tpCustomHTML file in the Threepenny configuration.
 autocompleteSetup :: Window -> FilePath -> UI ()
 autocompleteSetup w libDir = do
     let jsPath = libDir ++ "jquery-ui-autocomplete/jquery-ui-1.10.4.custom.min.js"

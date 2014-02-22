@@ -12,6 +12,9 @@ import qualified Graphics.UI.Threepenny as UI
 
 -- Toy bindings to alertify.js 0.3 API.
 
+-- Synchronously loading the library code and CSS.
+-- If you find this hack off-putting, an alternative is to specify them
+-- through the tpCustomHTML file in the Threepenny configuration.
 -- TODO: Decide whether to use extra subdirectories here.
 alertifySetup :: Window -> FilePath -> UI ()
 alertifySetup w libDir = do
