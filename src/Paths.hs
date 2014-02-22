@@ -2,6 +2,7 @@
 module Paths where
 
 #ifdef RESOURCES_WITH_EXECUTABLES
+import Data.Version
 import System.Environment (getExecutablePath)
 import System.FilePath (takeDirectory)
 import qualified Paths_stunts_cartography
