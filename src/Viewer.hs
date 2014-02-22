@@ -18,6 +18,9 @@ import System.Directory
     (doesFileExist, doesDirectoryExist, getDirectoryContents)
 import System.FilePath ((</>), takeExtension, addExtension)
 import System.IO.Temp (withSystemTempDirectory)
+import System.Console.GetOpt
+import System.Environment (getArgs)
+import System.Exit (exitSuccess)
 import Data.Char (toUpper)
 
 import qualified Graphics.UI.Threepenny as UI
@@ -40,19 +43,60 @@ import Util.Threepenny.JQueryAutocomplete
 
 main :: IO ()
 main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
-    consoleGreeting
+    (port, initDir) <- processOpts
     staticDir <- (</> "wwwroot") <$> getDataDir
+    consoleGreeting port
     startGUI defaultConfig
-        { tpPort = 10000
+        { tpPort = port
         , tpCustomHTML = Nothing
         , tpStatic = Just staticDir
-        } $ setup tmpDir
+        } $ setup initDir tmpDir
 
-consoleGreeting :: IO ()
-consoleGreeting = do
+-- Command line option processing.
+data Flag = Port Int | InitDir FilePath | Help
+    deriving (Show)
+
+optionSpec :: [OptDescr Flag]
+optionSpec =
+    [ Option ['p'] ["port"]
+        (ReqArg portp "PORT")  "port number (default 10000)"
+    , Option ['d'] ["initial-dir"]
+        (ReqArg InitDir "DIR") "directory initially selected (default ..)"
+    , Option ['h'] ["help"]
+        (NoArg Help)           "prints this help text."
+    ]
+    where
+    portp = Port . fromMaybe (error $ "bad port number " ++ consoleHelp)
+        . readMaybe
+
+viewerOpts :: [String] -> IO ([Flag], [String])
+viewerOpts argv =
+    case getOpt Permute optionSpec argv of
+        (o, [], [])  -> return (o, [])
+        (_, _, errs) -> ioError $ userError $ concat errs ++ consoleHelp
+
+consoleHelp :: String
+consoleHelp = usageInfo helpHeader optionSpec
+    where
+    helpHeader = "Usage: sc-trk-viewer [OPTION]..."
+
+processOpts :: IO (Int, FilePath)
+processOpts = do
+    (opts, _) <- viewerOpts =<< getArgs
+    foldM (#) (10000, "..") $ map mkOptSetter opts
+    where
+    mkOptSetter :: Flag -> ((Int, FilePath) -> IO (Int, FilePath))
+    mkOptSetter flag = case flag of
+        Port p    -> return . (\(_, d) -> (p, d))
+        InitDir d -> return . (\(p, _) -> (p, d))
+        Help      -> const $ putStrLn consoleHelp >> exitSuccess
+
+consoleGreeting :: Int -> IO ()
+consoleGreeting port = do
     putStrLn $ "Welcome to Stunts Cartography, version "
         ++ fromMaybe "unknown" versionString ++ "."
-    putStrLn "Navigate in your web browser to localhost:10000 to begin."
+    putStrLn $ "Open your web browser and navigate to localhost:"
+        ++ show port ++ " to begin."
     putStrLn ""
     when isPortableBuild $ do
         putStrLn "This is a portable build."
@@ -62,8 +106,8 @@ consoleGreeting = do
                  \in the directory of the executable."
         putStrLn ""
 
-setup :: FilePath -> Window -> UI ()
-setup tmpDir w = void $ do
+setup :: FilePath -> FilePath -> Window -> UI ()
+setup initDir tmpDir w = void $ do
 
     return w # set title "Stunts Cartography - Track Viewer"
     UI.addStyleSheet w "viewer.css"
@@ -71,7 +115,7 @@ setup tmpDir w = void $ do
     alertifySetup w "static/lib/"
 
     -- Base directory.
-    let initialDir = ".."
+    let initialDir = initDir
     initialDirExists <- liftIO $ doesDirectoryExist initialDir
     initialDirContents <- liftIO $ if initialDirExists
         then getDirectoryContents initialDir
