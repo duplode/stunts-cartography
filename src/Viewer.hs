@@ -157,24 +157,21 @@ setup initDir tmpDir w = void $ do
                         >>= (filterM $ doesFileExist . (dir' </>))
                 else return []
 
-        dirForCompletion :: FilePath -> IO (Bool, FilePath)
-        dirForCompletion dir = do
+        completionDir :: FilePath -> IO (Maybe FilePath)
+        completionDir dir = do
             let dir' = blankDirToDot dir
             exists <- doesDirectoryExist dir'
             if exists
-                then return (True, dir')
+                then return $ Just dir'
                 else do
                     -- A trick so that completion does the right thing when
                     -- using Shift + arrow key and then pressing a character.
                     let dir'' = blankDirToDot $
-                            reverse . drop 1 . reverse $ dir'
+                            (\xs -> guard (not $ null xs) >> init xs) dir'
                     exists' <- doesDirectoryExist dir''
-                    if exists'
-                        then return (True, dir'')
-                        else return (False, dir')
+                    return $ guard exists' >> Just dir''
 
-        eExistingBaseDir = fmap snd . filterE fst
-            . unsafeMapIO dirForCompletion $ eBaseDir
+        eExistingBaseDir = filterJust . unsafeMapIO completionDir $ eBaseDir
         eDirListing = toDirListing eExistingBaseDir
         eFileListing = toFileListing eBaseDir
 
