@@ -2,6 +2,7 @@ module Util.Threepenny.JQueryAutocomplete
     ( autocompleteSetup
     , autocompleteInit
     , autocompleteArraySource
+    , autocompleteAssocSource
     , autocompleteDelay
     , autocompleteMinLength
     , autocompletechange
@@ -11,7 +12,7 @@ module Util.Threepenny.JQueryAutocomplete
 -- TODO: The module name is obviously provisional.
 import Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny as UI
-import Text.JSON (showJSON, fromJSObject, fromJSString)
+import Text.JSON
 import Text.JSON.String (runGetJSON, readJSObject, readJSString)
 import Text.JSON.Types (JSValue(..))
 import Data.Maybe (fromJust)
@@ -60,6 +61,16 @@ autocompleteArraySource = mkWriteAttr $ \items x ->
     fun :: Element -> JSValue -> JSFunction ()
     fun = ffi "$(%1).autocomplete(\"option\", \"source\", %2);"
 
+autocompleteAssocSource :: WriteAttr Element [(String, String)]
+autocompleteAssocSource = mkWriteAttr $ \items x ->
+    runFunction $ fun x (showJSON $ pairsToItemObjects items)
+    where
+    fun :: Element -> JSValue -> JSFunction ()
+    fun = ffi "$(%1).autocomplete(\"option\", \"source\", %2);"
+    pairsToItemObjects :: [(String, String)] -> [JSObject String]
+    pairsToItemObjects = map $
+        \(lab, val) -> toJSObject [("label", lab), ("value", val)]
+
 -- Note that all of these attributes could just as well be ReadWriteAttr.
 -- We are not bothering for now; one of the reasons being that the relevant
 -- parts of the Threepenny API are set to change in 0.5.
@@ -86,36 +97,38 @@ autocompleteMinLength = mkWriteAttr $ \minLength x ->
 
 -- TODO: Methods.
 
+-- The events do not seem to give back useful data as far as EventData is
+-- concerned. The commented signatures indicate the types we would expect
+-- them to have.
+-- autocompletechange :: Element -> Event (Maybe (String, String))
+autocompletechange :: Element -> Event ()
+autocompletechange = silence . domEvent "autocompletechange"
+
+-- autocompletecreate :: Element -> Event ()
+-- autocompletefocus :: Element -> Event (String, String)
+-- autocompleteopen :: Element -> Event ()
+-- autocompleteresponse Element -> Event [(String, String)]
+-- autocompletesearch :: Element -> Event ()
+
+-- autocompleteselect :: Element -> Event (String, String)
+autocompleteselect :: Element -> Event ()
+autocompleteselect = silence . domEvent "autocompleteselect"
+
 silence :: (Functor f) => f a -> f ()
 silence = fmap (const ())
 
+{-
 readJSObjectOptimistically :: String -> [(String, JSValue)]
 readJSObjectOptimistically = fromJSObject
-    . (\(Right (JSObject o)) -> o)
-    . runGetJSON readJSObject
+    . (\(Ok (JSObject o)) -> o)
+    . decode
 
 firstJSONEventResult :: EventData -> Maybe String
 firstJSONEventResult ed = case ed of
     EventData []       -> Nothing
-    EventData (mo : _) -> join $
-        (fmap (\(JSString s) -> fromJSString s)
-            . join . fmap
-                (lookup "value" . fromJSObject . (\(JSObject o) -> o))
-            . lookup "item" .  readJSObjectOptimistically)
-        <$> mo
-
--- TODO: Untried demo code.
--- TODO: This (and focus, select, etc.) should return a label-value pair.
-autocompletechange :: Element -> Event (Maybe String)
-autocompletechange = fmap firstJSONEventResult
-    . domEvent "autocompletechange"
-
--- autocompletecreate :: Element -> Event ()
--- autocompletefocus :: Element -> Event String
--- autocompleteopen :: Element -> Event ()
--- autocompleteresponse Element -> Event [String]
--- autocompletesearch :: Element -> Event ()
-
-autocompleteselect :: Element -> Event String
-autocompleteselect = fmap (fromJust . firstJSONEventResult)
-    . domEvent "autocompleteselect"
+    EventData (mso : _) -> do
+        o <- readJSObjectOptimistically <$> mso
+        it <- lookup "item" o
+        val <- lookup "value" $ fromJSObject . (\(JSObject o) -> o) $ it
+        return $ (\(JSString s) -> fromJSString s) val
+-}
