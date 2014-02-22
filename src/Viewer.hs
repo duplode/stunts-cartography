@@ -134,17 +134,23 @@ setup initDir tmpDir w = void $ do
     bBaseDir <- initialDir `stepper` eBaseDir
 
     let toDirListing :: Event FilePath -> Event [FilePath]
-        -- Assiming we already checked that dir exists.
+        -- Assuming we already checked that dir exists.
         toDirListing = unsafeMapIO $ \dir -> fmap sort $
             getDirectoryContents dir
-                >>= (filterM doesDirectoryExist . map (dir </>))
+                >>= (filterM doesDirectoryExist
+                    . map ((dotToBlankDir dir) </>))
 
         filterTrkRpl = filter $ (\x -> x == ".TRK" || x == ".RPL")
             . takeExtension . map toUpper
 
+        blankDirToDot dir = if null dir then "." else dir
+        dotToBlankDir dir = case dir of
+            "." -> ""
+            _ -> dir
+
         toFileListing :: Event FilePath -> Event [FilePath]
         toFileListing = unsafeMapIO $ \dir -> fmap (sort . filterTrkRpl) $ do
-            let dir' = if null dir then "." else dir
+            let dir' = blankDirToDot dir
             exists <- doesDirectoryExist dir'
             if exists
                 then getDirectoryContents dir'
@@ -153,7 +159,7 @@ setup initDir tmpDir w = void $ do
 
         eExistingBaseDir = fmap snd . filterE fst
             . unsafeMapIO (\dir -> (\b -> (b, dir)) <$> doesDirectoryExist dir)
-            $ eBaseDir
+            $ blankDirToDot <$> eBaseDir
         eDirListing = toDirListing eExistingBaseDir
         eFileListing = toFileListing eBaseDir
 
