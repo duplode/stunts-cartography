@@ -93,8 +93,8 @@ processOpts = do
 
 consoleGreeting :: Int -> IO ()
 consoleGreeting port = do
-    putStrLn $ "Welcome to Stunts Cartography, version "
-        ++ fromMaybe "unknown" versionString ++ "."
+    putStrLn $ "Welcome to Stunts Cartography"
+        ++ maybe "" (' ':) versionString ++ "."
     putStrLn $ "Open your web browser and navigate to localhost:"
         ++ show port ++ " to begin."
     putStrLn ""
@@ -316,10 +316,8 @@ setup initDir tmpDir w = void $ do
     txaLog <-
         UI.textarea # set UI.id_ "log-text"
             # set UI.cols "72" # set UI.rows "6"
-            # set value (
-                maybe "" (("Program version: " ++) . (++ "\n")) versionString
-                ++ "Stunts fan? Hang out at zak.stunts.hu!"
-                )
+            # set value
+                (maybe "" (("Program version: " ++) . (++ "\r\n")) versionString)
 
     (eRenderLog, renderLog) <- liftIO newEvent
     onEvent (bLogContents <@ eRenderLog) $
