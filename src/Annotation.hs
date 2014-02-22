@@ -223,10 +223,7 @@ instance IsAnnotation CaptAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
             let dirAlign = - cardinalDirToR2 (_captAnnAlignment ann)
-                adjustAlignments (x, y) = ((x + 1) / 2, (y + 1) / 2)
-                (xAlign, yAlign) = adjustAlignments $ unr2 dirAlign
             in (
-                --alignedText xAlign yAlign caption
                 text (_captAnnText ann)
                 # fc (_captAnnColour ann) # applyStyle captionStyle
                 <> uncurry rect (textBounds $ _captAnnText ann)
@@ -234,7 +231,8 @@ instance IsAnnotation CaptAnnotation where
                     `withOpacity` (_captAnnBgOpacity ann))
                 # lw 0
             )
-            # align dirAlign # scale (_captAnnSize ann)
+            # alignBL # align dirAlign
+            # scale (_captAnnSize ann)
             # rotate (Deg $ _captAnnAngle ann)
         }
         where
