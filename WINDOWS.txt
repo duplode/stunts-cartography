@@ -17,4 +17,4 @@
 
 * Source repository: https://bitbucket.org/duplode/stunts-cartography .
 
-* Reporsitory changeset of this release: tagged as 0.4.0.0 .
+* Reporsitory changeset of this release: tagged as 0.4.0.1 .

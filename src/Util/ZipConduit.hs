@@ -21,7 +21,8 @@ writeDirContentsZip dir dest = do
         =<< (map (dir </>)) <$> getDirectoryContents dir
     withArchive dest $
         CL.sourceList paths
-            $$ sinkFileWithChangedPath ((takeBaseName dest </>) . takeFileName)
+            $$ sinkFileWithChangedPath
+                (((takeBaseName dest ++ "/") ++) . takeFileName)
 
 sinkFileWithChangedPath :: (FilePath -> FilePath) -> Sink FilePath Archive ()
 sinkFileWithChangedPath fPath =
