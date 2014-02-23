@@ -48,7 +48,7 @@ main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
     consoleGreeting port
     startGUI defaultConfig
         { tpPort = port
-        , tpCustomHTML = Nothing
+        , tpCustomHTML = Just "index.html"
         , tpStatic = Just staticDir
         } $ setup initDir tmpDir
 
@@ -110,9 +110,9 @@ setup :: FilePath -> FilePath -> Window -> UI ()
 setup initDir tmpDir w = void $ do
 
     return w # set title "Stunts Cartography - Track Viewer"
-    UI.addStyleSheet w "viewer.css"
-    autocompleteSetup w "static/lib/"
-    alertifySetup w "static/lib/"
+    --UI.addStyleSheet w "viewer.css"
+    --autocompleteSetup w "static/lib/"
+    --alertifySetup w "static/lib/"
 
     -- Base directory.
     let initialDir = initDir
