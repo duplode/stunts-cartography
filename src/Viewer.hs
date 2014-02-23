@@ -45,7 +45,7 @@ main :: IO ()
 main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
     (port, initDir) <- processOpts
     staticDir <- (</> "wwwroot") <$> getDataDir
-    consoleGreeting port
+    consoleGreeting $! port
     startGUI defaultConfig
         { tpPort = port
         , tpCustomHTML = Just "index.html"
