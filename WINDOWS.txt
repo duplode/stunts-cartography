@@ -11,9 +11,8 @@
   can be opened by Notepad or any other text editor.
 
 * Browsers: we recommend you to use the most recent version of your browser of
-  choice. Still, most features are compatible with any sensible version of the
-  mainstream GUI browsers. The only exception currently is SVG display in
-  Internet Explorer 8 or earlier.
+  choice. The most important caveat is that the program requires, for Internet
+  Explorer users, IE10 or above, since support for WebSockets is needed.
 
 * Source repository: https://bitbucket.org/duplode/stunts-cartography .
 
