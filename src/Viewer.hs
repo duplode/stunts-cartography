@@ -114,28 +114,12 @@ setup initDir tmpDir w = void $ do
     --autocompleteSetup w "static/lib/"
     --alertifySetup w "static/lib/"
 
-    -- Base directory.
+    -- Base directory and file selection, with autocompletion.
     let initialDir = initDir
-    initialDirExists <- liftIO $ doesDirectoryExist initialDir
-    initialDirContents <- liftIO $ if initialDirExists
-        then getDirectoryContents initialDir
-        else return []
-    initialDirListing <- liftIO $
-        filterM doesDirectoryExist $ map (initialDir </>) initialDirContents
-    initialFileListing <- liftIO $
-        filterM (doesFileExist . (initialDir </>)) initialDirContents
 
-    itxBasePath <-
-        UI.input # set UI.type_ "text" # set UI.name "base-path-input"
-            # set UI.id_ "base-path-input"
-            # set value initialDir
-
-    let eBaseDir = UI.valueChange itxBasePath
-    bBaseDir <- initialDir `stepper` eBaseDir
-
-    let toDirListing :: Event FilePath -> Event [FilePath]
+        getDirListing :: FilePath -> IO [FilePath]
+        getDirListing dir = fmap sort $ do
         -- Assuming we already checked that dir exists.
-        toDirListing = unsafeMapIO $ \dir -> fmap sort $
             getDirectoryContents dir
                 >>= (filterM doesDirectoryExist
                     . map ((dotToBlankDir dir) </>))
@@ -149,7 +133,10 @@ setup initDir tmpDir w = void $ do
             _ -> dir
 
         toFileListing :: Event FilePath -> Event [FilePath]
-        toFileListing = unsafeMapIO $ \dir -> fmap (sort . filterTrkRpl) $ do
+        toFileListing = unsafeMapIO getFileListing
+
+        getFileListing :: FilePath -> IO [FilePath]
+        getFileListing dir = fmap (sort . filterTrkRpl) $ do
             let dir' = blankDirToDot dir
             exists <- doesDirectoryExist dir'
             if exists
@@ -157,7 +144,21 @@ setup initDir tmpDir w = void $ do
                         >>= (filterM $ doesFileExist . (dir' </>))
                 else return []
 
-        completionDir :: FilePath -> IO (Maybe FilePath)
+    initialDirExists <- liftIO $ doesDirectoryExist initialDir
+    initialDirListing <- liftIO $ if initialDirExists
+        then getDirListing initialDir
+        else return []
+    initialFileListing <- liftIO $ getFileListing initialDir
+
+    itxBasePath <-
+        UI.input # set UI.type_ "text" # set UI.name "base-path-input"
+            # set UI.id_ "base-path-input"
+            # set value initialDir
+
+    let eBaseDir = UI.valueChange itxBasePath
+    bBaseDir <- initialDir `stepper` eBaseDir
+
+    let completionDir :: FilePath -> IO (Maybe FilePath)
         completionDir dir = do
             let dir' = blankDirToDot dir
             exists <- doesDirectoryExist dir'
@@ -172,8 +173,8 @@ setup initDir tmpDir w = void $ do
                     return $ guard exists' >> Just dir''
 
         eExistingBaseDir = filterJust . unsafeMapIO completionDir $ eBaseDir
-        eDirListing = toDirListing eExistingBaseDir
-        eFileListing = toFileListing eBaseDir
+        eDirListing = unsafeMapIO getDirListing $ eExistingBaseDir
+        eFileListing = unsafeMapIO getFileListing $ eBaseDir
 
     bDirListing <- initialDirListing `stepper` eDirListing
     bFileListing <- initialFileListing `stepper` eFileListing
