@@ -47,7 +47,7 @@ main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
     staticDir <- (</> "wwwroot") <$> getDataDir
     consoleGreeting $! port
     startGUI defaultConfig
-        { tpPort = port
+        { tpPort = Just port
         , tpCustomHTML = Just "index.html"
         , tpStatic = Just staticDir
         } $ setup initDir tmpDir

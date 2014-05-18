@@ -233,7 +233,7 @@ instance IsAnnotation CaptAnnotation where
             )
             # alignBL # align dirAlign
             # scale (_captAnnSize ann)
-            # rotate (Deg $ _captAnnAngle ann)
+            # rotate (_captAnnAngle ann @@ deg)
         }
         where
         captionStyle = mempty # bold
@@ -293,7 +293,7 @@ instance IsAnnotation CarAnnotation where
                 (cardinalDirToR2 . _captAnnAlignment . _carAnnCaption $ ann))
                 (renderAnnotation . rotateAnnotation (- _carAnnAngle ann) $
                     _carAnnCaption ann)
-            # rotate (Deg $ _carAnnAngle ann)
+            # rotate (_carAnnAngle ann @@ deg)
             # translate (r2 $ _carAnnPosition ann)
         }
 
@@ -350,7 +350,7 @@ instance IsAnnotation SegAnnotation where
                 (cardinalDirToR2 . _captAnnAlignment . _segAnnCaption $ ann))
                 (renderAnnotation . rotateAnnotation (- _segAnnAngle ann) $
                     _segAnnCaption ann)
-            # rotate (Deg $ _segAnnAngle ann)
+            # rotate (_segAnnAngle ann @@ deg)
             # translate (r2 $ _segAnnPosition ann)
         }
 
@@ -400,7 +400,7 @@ instance IsAnnotation SplitAnnotation where
                 pos = (fromIntegral posX, fromIntegral posY)
             in fromSegments
                 [ straight (r2 (fromIntegral $ _splAnnLength ann, 0)
-                # rotate (Deg $ cardinalDirToAngle $ _splAnnDirection ann)) ]
+                # rotate (cardinalDirToAngle (_splAnnDirection ann) @@ deg)) ]
             # stroke
             # lw 0.25 # lc (_splAnnColour ann)
             # (flip $ beside

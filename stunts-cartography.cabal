@@ -1,5 +1,5 @@
 Name:                stunts-cartography
-Version:             0.4.0.1
+Version:             0.4.0.2
 Synopsis:            Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
 Description:         Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
 Category:            Game, Graphics
@@ -75,15 +75,15 @@ Executable sc-trk-viewer
 
   Build-Depends:     base >= 4.6 && < 5
                     ,threepenny-gui == 0.4.*
-                    ,diagrams-core == 1.0.*
-                    ,diagrams-lib == 1.0.*
-                    ,diagrams-cairo == 1.0.*
+                    ,diagrams-core == 1.1.*
+                    ,diagrams-lib == 1.1.*
+                    ,diagrams-cairo == 1.1.*
                     ,parsec >= 3.1.3 && < 3.2
                     ,parsec-permutation == 0.1.*
                     ,zip-conduit == 0.2.*
                     ,lens
-                    ,conduit
-                    ,json
+                    ,conduit < 1.0
+                    ,aeson
                     ,colour
                     ,data-default
                     ,containers

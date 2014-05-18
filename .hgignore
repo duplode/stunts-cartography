@@ -37,3 +37,6 @@ dist_threepenny-expm/**
 
 laptrace/*.ods
 laptrace/*.dat
+
+cabal.sandbox.config
+.cabal-sandbox/*

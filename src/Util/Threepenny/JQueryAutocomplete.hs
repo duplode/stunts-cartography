@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Util.Threepenny.JQueryAutocomplete
     ( autocompleteSetup
     , autocompleteInit
@@ -12,9 +13,7 @@ module Util.Threepenny.JQueryAutocomplete
 -- TODO: The module name is obviously provisional.
 import Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny as UI
-import Text.JSON
-import Text.JSON.String (runGetJSON, readJSObject, readJSString)
-import Text.JSON.Types (JSValue(..))
+import Data.Aeson
 import Data.Maybe (fromJust)
 import Control.Monad (join)
 
@@ -56,20 +55,20 @@ autocompleteInit el = do
 -- TODO: Implement the other sources, as well as a getter for source.
 autocompleteArraySource :: WriteAttr Element [String]
 autocompleteArraySource = mkWriteAttr $ \items x ->
-    runFunction $ fun x (showJSON items)
+    runFunction $ fun x (toJSON items)
     where
-    fun :: Element -> JSValue -> JSFunction ()
+    fun :: Element -> Value -> JSFunction ()
     fun = ffi "$(%1).autocomplete(\"option\", \"source\", %2);"
 
 autocompleteAssocSource :: WriteAttr Element [(String, String)]
 autocompleteAssocSource = mkWriteAttr $ \items x ->
-    runFunction $ fun x (showJSON $ pairsToItemObjects items)
+    runFunction $ fun x (toJSON $ pairsToItemObjects items)
     where
-    fun :: Element -> JSValue -> JSFunction ()
+    fun :: Element -> Value -> JSFunction ()
     fun = ffi "$(%1).autocomplete(\"option\", \"source\", %2);"
-    pairsToItemObjects :: [(String, String)] -> [JSObject String]
+    pairsToItemObjects :: [(String, String)] -> [Value]
     pairsToItemObjects = map $
-        \(lab, val) -> toJSObject [("label", lab), ("value", val)]
+        \(lab, val) -> object [("label", toJSON lab), ("value", toJSON val)]
 
 -- Note that all of these attributes could just as well be ReadWriteAttr.
 -- We are not bothering for now; one of the reasons being that the relevant
