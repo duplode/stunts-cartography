@@ -40,3 +40,4 @@ laptrace/*.dat
 
 cabal.sandbox.config
 .cabal-sandbox/*
+cabal.config
