@@ -99,14 +99,16 @@ writeImageOutput trackName trkBS = do
             fbkDir <- createFlipbookDir tmpDir trackName
 
             -- Five digits are enough for Stunts replays of any length.
-            let renderPage (ix, pg) = liftIO $ renderCairo
+            let renderPage (ix, pg) = renderCairo
                     (fbkDir </> (printf "%05d.png" ix)) (Width renWidth) pg
 
-            -- mconcat is performed twice on fbks to prevent a space leak.
-            -- Thanks to laziness neither the backdrop nor the pages are
+            -- fbks is, in effect, mconcat'ed twice (first through
+            -- zipFlipbookPages and then through concatFlipbookBackdrops)
+            -- to prevent a space leak.
+            -- Thanks to laziness, neither the backdrop nor the pages are
             -- actually rendered twice; therefore, this implementation is
             -- acceptable until a more elegant solution, if any, is found.
-            mapM renderPage $
+            liftIO $ mapM_ renderPage $
                 zip ([0..] :: [Int]) . map (withEnvelope wholeMap) $
                     zipFlipbookPages fbks
 
