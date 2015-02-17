@@ -229,7 +229,7 @@ instance IsAnnotation CaptAnnotation where
                 <> uncurry rect (textBounds $ _captAnnText ann)
                 # fcA (computeBgColour (_captAnnColour ann)
                     `withOpacity` (_captAnnBgOpacity ann))
-                # lw 0
+                # lwG 0
             )
             # alignBL # align dirAlign
             # scale (_captAnnSize ann)
@@ -345,7 +345,7 @@ instance IsAnnotation SegAnnotation where
                 [ straight (r2 (_segAnnLength ann, 0))
                 ]
             # stroke
-            # lw 0.25 # lc (_segAnnColour ann)
+            # lwG 0.25 # lc (_segAnnColour ann)
             # (flip $ beside
                 (cardinalDirToR2 . _captAnnAlignment . _segAnnCaption $ ann))
                 (renderAnnotation . rotateAnnotation (- _segAnnAngle ann) $
@@ -402,7 +402,7 @@ instance IsAnnotation SplitAnnotation where
                 [ straight (r2 (fromIntegral $ _splAnnLength ann, 0)
                 # rotate (cardinalDirToAngle (_splAnnDirection ann) @@ deg)) ]
             # stroke
-            # lw 0.25 # lc (_splAnnColour ann)
+            # lwG 0.25 # lc (_splAnnColour ann)
             # (flip $ beside
                 (cardinalDirToR2 . _splAnnCaptAlignment $ ann))
                 (renderAnnotation $ defAnn
@@ -428,7 +428,7 @@ renderCaption colour captBgOpacity captAlign captAngle captSize caption =
         text caption
         # fc colour # applyStyle captionStyle
         <> uncurry rect (textBounds caption)
-        # fcA (computeBgColour colour `withOpacity` captBgOpacity) # lw 0
+        # fcA (computeBgColour colour `withOpacity` captBgOpacity) # lwG 0
     )
     # align dirAlign # scale captSize # rotate (Deg captAngle)
     where

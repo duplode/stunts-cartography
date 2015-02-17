@@ -10,6 +10,7 @@ import Control.Lens.Operators
 import qualified Control.Lens as L
 
 import Text.Parsec
+import Text.Parsec.Prim (runP)
 import qualified Text.Parsec.Token as P
 import Text.Parsec.Permutation
 

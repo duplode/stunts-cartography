@@ -56,7 +56,7 @@ baseTerrainPic tt = case tt of
     Slope ->
         genericSquare slopeCl
         # atop (vrule 0.5 # translateX 0.25
-            # lw 0.1 # lc hillCl # lineCap LineCapRound)
+            # lwG 0.1 # lc hillCl # lineCap LineCapRound)
     AngledMargin ->
         diagonalTriangle waterCl
     OuterAngledSlope ->
@@ -109,14 +109,14 @@ baseElementPic' env c q sf et = do
         cornerArc cl w l =
             arc (0 @@ turn) (1/4 @@ turn)
             # alignBL # scale (l - 1/2) # moveOriginBy (r2 (l/2, l/2))
-            # lw w # lc cl
+            # lwG w # lc cl
 
         isoscelesTransition cl ratio =
             let sidePad = polygon (with
                     & polyType .~ PolySides [1/4 @@ turn]
                                             [ roadW * (ratio - 1) / 2, 1 ]
                     & polyOrient .~ OrientV )
-                    # lw 0 # fc cl # centerXY
+                    # lwG 0 # fc cl # centerXY
             in centerY $
             sidePad # reflectY
             ===
@@ -165,11 +165,11 @@ baseElementPic' env c q sf et = do
             StartFinish ->
                 baseElementPicNoO env sf Road
                 # atop (eqTriangle (sfRelW * roadW)
-                    # fc signCl # rotateBy (-1/4))
+                    # lwG 0.01 # fc signCl # rotateBy (-1/4))
             SlalomRoad ->
                 let slalomBlock = square (slalomRelW * roadW) # scaleX 0.5
                         # translate (r2 (-3/16, -(1 - slalomRelW) * roadW / 2))
-                        # lw 0 # fc blockCl
+                        # lwG 0 # fc blockCl
                 in baseElementPicNoO env sf Road
                 # atop slalomBlock
                 # atop (slalomBlock # reflectX # reflectY)
@@ -195,7 +195,7 @@ baseElementPic' env c q sf et = do
                 # atop (baseElementPicNoO env sf Road)
                 # atop (eqTriangle (2 * sqrt 3 / 3) # alignT
                     # scaleY (1/2) # scaleX (roadW * hwDivideRelW)
-                    # rotateBy (1/4) # lw 0 # fc highwayCl)
+                    # rotateBy (1/4) # lwG 0 # fc highwayCl)
             ElevatedSpan ->
                 spanSegment bridgeMeshCl # opacity 0.75
             SpanOverRoad ->
@@ -269,7 +269,7 @@ baseElementPic' env c q sf et = do
                     # alignBL # shearX (1 / (2 * roadW)) # centerXY)
                 # atop (fromSegments [ straight (r2 (1/2, -roadW)) ]
                     # translate (r2 (-1/4, roadW / 2))
-                    # lw (corkWallRelW * roadW) # lc warningCl)
+                    # lwG (corkWallRelW * roadW) # lc warningCl)
                 # scaleX 2
             Looping ->
                 let loopW = min (loopRelW * roadW) loopMaxW
@@ -282,30 +282,30 @@ baseElementPic' env c q sf et = do
                     [ r2 (loopD, 0)
                     , r2 (-2 * loopD, -2 * loopB)
                     , r2 (loopD, 0)]
-                    # centerXY # lw roadW # lc meshCl)
+                    # centerXY # lwG roadW # lc meshCl)
             Chicane ->
                 fromSegments [ bezier3 (r2 (1, 0)) (r2 (1, -1)) (r2 (2, -1)) ]
                 # stroke # centerXY
-                # lw roadW # lc (surfaceToColor sf)
+                # lwG roadW # lc (surfaceToColor sf)
             CorkUpDown ->
                 baseElementPicNoO env sf Road
                 # translate (r2 (-0.5, 0.5))
-                # atop (circle 0.5 # lw (bridgeRelW * roadW) # lc bridgeCl)
-                # atop (circle 0.5 # lw roadW # lc tarmacCl)
+                # atop (circle 0.5 # lwG (bridgeRelW * roadW) # lc bridgeCl)
+                # atop (circle 0.5 # lwG roadW # lc tarmacCl)
                 # atop (spanSegment tarmacCl
                     # rampCorrection q
                     # reflectByChirality c `under` translation (r2 (0.5, -bridgeH))
                     # translate (r2 (0.5, 0.5 - bridgeH)))
             Pine ->
-                eqTriangle (5/8) # lc darkleafCl # fc leafCl
+                eqTriangle (5/8) # lwG 0.01 # lc darkleafCl # fc leafCl
                 ===
-                square (1/8) # fc woodCl
+                square (1/8) # lwG 0.01 # fc woodCl
             Palm ->
                 let leaf = arc (1/8 @@ turn) (3/8 @@ turn)
                         # closeLine # strokeLoop
-                        # scale 0.25 # lc darkleafCl # fc leafCl
+                        # scale 0.25 # lwG 0.01 # lc darkleafCl # fc leafCl
                 in beside unitY
-                    (square (2/3) # scaleX (1/8) # fc woodCl)
+                    (square (2/3) # scaleX (1/8) # lwG 0.01 # fc woodCl)
                     ((leaf ||| leaf # reflectX) # centerX)
             Cactus ->
                 (
@@ -316,22 +316,22 @@ baseElementPic' env c q sf et = do
                     # stroke # centerXY
                     # lineJoin LineJoinRound
                     <> vrule (1/2))
-                # lw 0.15 # lc cactusCl # lineCap LineCapRound
+                # lwG 0.15 # lc cactusCl # lineCap LineCapRound
             TennisCourt ->
                 (
-                    hrule (3/4) # lw 0.1 # lc netCl
-                    <> square (3/4) # fc tennisCl)
+                    hrule (3/4) # lwG 0.1 # lc netCl
+                    <> square (3/4) # lwG 0.01 # fc tennisCl)
                 # scaleX 0.5
             Ship ->
                 (
                     polygon (with
                         & polyType .~ PolySides [-1/4 @@ turn, -1/8 @@ turn]
                                                 [ 1/4, 2/4, sqrt 2 * 1 / 4 ]
-                        ) # lw 0 # fc shipCl
+                        ) # lwG 0 # fc shipCl
                     ===
-                    (vrule (1/2) # lc miscLightCl # alignT
+                    (vrule (1/2) # lwG 0.01 # lc miscLightCl # alignT
                         ||| strutX (1/10) ||| square (1/5) # alignT
-                        # lw 0 # fc miscDarkCl)
+                        # lwG 0 # fc miscDarkCl)
                     # centerX)
                 # centerXY
             Barn ->
@@ -342,7 +342,7 @@ baseElementPic' env c q sf et = do
                 in (
                     diagLine <> reflectY diagLine
                     <> arc' (1/6) (0 @@ turn) (1 @@ turn))
-                # translateX (1/20) # lw 0.025 # lc miscLightCl
+                # translateX (1/20) # lwG 0.025 # lc miscLightCl
                 <> (
                     (reflectY roofArc <> roofArc) # scaleX 0.4
                     # lc barnCl # fc barnCl
@@ -352,64 +352,64 @@ baseElementPic' env c q sf et = do
                 (
                     (
                         decoratePath (rect (1/4) (1/4))
-                            (replicate 4 $ square (3/16) # lw 0  # fc miscDarkCl)
-                        ||| strutX (1/16) ||| rect (1/8) (1/4) # lw 0 # fc miscDarkCl)
+                            (replicate 4 $ square (3/16) # lwG 0  # fc miscDarkCl)
+                        ||| strutX (1/16) ||| rect (1/8) (1/4) # lwG 0 # fc miscDarkCl)
                     # alignR
-                    <> rect (11/16) (1/2) # alignR # lw 0 # fc officeCl)
+                    <> rect (11/16) (1/2) # alignR # lwG 0 # fc officeCl)
                 # centerXY
             Windmill ->
-                let blades = hrule (1/2) # lw 0.05 # rotateBy (1/8)
-                        # lw 0 # lc windmillDetailsCl
+                let blades = hrule (1/2) # lwG 0.05 # rotateBy (1/8)
+                        # lwG 0 # lc windmillDetailsCl
                 in (
                     reflectY blades <> blades
                     <> eqTriangle (2/5) # rotateBy (1/4) # centerXY
-                    # lw 0 # fc windmillCl)
+                    # lwG 0 # fc windmillCl)
                 ||| rect (3/20) (2/5) # fc windmillCl
-                # alignL # lw 0
+                # alignL # lwG 0
             GasStation ->
                 (
                     vrule (3/10) # alignT
-                    # lw 0.1 # lc gasRoofCl # lineCap LineCapRound
+                    # lwG 0.1 # lc gasRoofCl # lineCap LineCapRound
                     <> (
                         (
                             rect (3/16) (1/6) # alignR
-                            # lw 0 # fc blueWindowCl
+                            # lwG 0 # fc blueWindowCl
                             ===
                             strutY (1/16)
                             ===
                             rect (1/10) (3/32) # alignR
-                            # lw 0 # fc ethanolCl
+                            # lwG 0 # fc ethanolCl
                             ===
                             strutY (1/16)
                             ===
                             rect (1/10) (3/32) # alignR
-                            # lw 0 # fc petrolCl)
+                            # lwG 0 # fc petrolCl)
                         # centerY
                         <> roundedRect' (3/10) (3/5)
                             (with & radiusTL .~ 1/16)
                         # alignR
-                        # lw 0 # fc masonryCl)
+                        # lwG 0 # fc masonryCl)
                     # alignL)
                 # centerXY
             Joe's ->
                 let neonSign = text "Joe's" # scale (1/6) # fc neonCl
                         <> rect (1/2) (1/4)
-                        # lw 0 # fc miscDarkCl
+                        # lwG 0 # fc miscDarkCl
                 in (
                         (
                         neonSign
                         ===
                         vrule (1/4)
-                        # lw 0.1 # lc miscDarkCl # lineCap LineCapSquare)
+                        # lwG 0.1 # lc miscDarkCl # lineCap LineCapSquare)
                     # rotateBy (1/4) # alignR # translateY (-1/10)
                     <> (
                         eqTriangle (3/4) # rotateBy (1/4) # scaleX 0.25
-                        # lw 0 # fc joesDetailsCl
+                        # lwG 0 # fc joesDetailsCl
                         ||| (
                             rect (1/5) (3/10) # alignR
-                            # lw 0 # fc joesDetailsCl
+                            # lwG 0 # fc joesDetailsCl
                             <> rect (1/3) (3/5) # alignR
-                            # lw 0 # fc joesCl)
+                            # lwG 0 # fc joesCl)
                        )
                    # alignTR)
                # centerXY
@@ -420,14 +420,14 @@ baseElementPic' env c q sf et = do
             _ -> mempty
 
 
-emptySquare = square 1 # lw (1/20)
+emptySquare = square 1 # lwG (1/20)
 
-genericSquare cl = square 1 # lw 0 # fc cl
+genericSquare cl = square 1 # lwG 0 # fc cl
 
 diagonalTriangle cl = polygon (with
     & polyType .~ PolySides [-3/8 @@ turn]
                             [ 1, sqrt 2 ]
-    ) # centerXY # lw 0 # fc cl
+    ) # centerXY # lwG 0 # fc cl
 
 rightTriangle cl h =
     polygon (with
@@ -435,7 +435,7 @@ rightTriangle cl h =
                                 [ h, 1 ]
         & polyOrient .~ OrientV)
     # alignB # centerX # reflectY # translateY (h / 2)
-    # lw 0 # fc cl
+    # lwG 0 # fc cl
 
 getTilePic :: Tile -> CartoM (Diagram BEDia R2)
 getTilePic tile =

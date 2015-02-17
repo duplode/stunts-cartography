@@ -86,13 +86,13 @@ renderIndicesIfRequired = do
 gridLines :: (Monoid m, Semigroup m, TrailLike (QDiagram BEDia R2 m))
           => QDiagram BEDia R2 m
 gridLines =
-    vcat' (with & sep .~ 1) (replicate 31 $ hrule 30) # alignBL
-    <> hcat' (with & sep .~ 1) (replicate 31 $ vrule 30) # alignBL
+    vcat' (with & sep .~ 1) (replicate 31 $ hrule 30 # lwG 0.01) # alignBL
+    <> hcat' (with & sep .~ 1) (replicate 31 $ vrule 30 # lwG 0.01) # alignBL
 
 catTiles = cat' unitX (with & sep .~ 1 & catMethod .~ Distrib)
 catRows = cat' unitY (with & sep .~ 1 & catMethod .~ Distrib)
 
-plainStripe = square 1 # scaleX 30 # translateX 14.5 # fc plainCl # lw 0
+plainStripe = square 1 # scaleX 30 # translateX 14.5 # fc plainCl # lwG 0
 
 separateTilesBySize :: [Tile] -> ([Tile], [Tile])
 separateTilesBySize = unzip . map separate
@@ -108,5 +108,5 @@ yIndices (yMin, yMax) =
     cat unitY (map indexCell [yMin..yMax]) # alignBR
 
 indexCell n =
-    square 1 # lw 0
+    square 1 # lwG 0
     # atop (text (show n) # scale 0.5)

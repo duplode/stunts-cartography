@@ -175,7 +175,7 @@ instance IsAnnotation TraceAnnotation where
             <>
             if ann ^. traceAnnVisible then
                 fromVertices (map (p2 . tracePosXZ) $ ann ^. traceAnnPoints)
-                # lc (ann ^. traceAnnColour) # lw 0.05
+                # lc (ann ^. traceAnnColour) # lwG 0.05
             else
                 mempty
         }
