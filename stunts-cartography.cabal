@@ -63,6 +63,7 @@ Executable sc-trk-viewer
                     ,Annotation.LapTrace
                     ,Annotation.LapTrace.Vec
                     ,Annotation.LapTrace.Parser.Simple
+                    ,Annotation.CairoText
                     ,Pics.MM
                     ,Paths
 

@@ -74,11 +74,11 @@ import Control.Lens.Operators hiding ((#))
 import qualified Control.Lens as L
 import Data.Default
 import Diagrams.Prelude
-import qualified Diagrams.Backend.Cairo.Text as CairoText
 import Data.Colour.SRGB
 import Data.Colour.RGBSpace.HSV
 import Types.Diagrams (BEDia)
 import Pics.MM
+import qualified Annotation.CairoText as CairoText
 
 data CardinalDirection = E
                        | N
@@ -226,7 +226,8 @@ instance IsAnnotation CaptAnnotation where
             in (
                 text (_captAnnText ann)
                 # fc (_captAnnColour ann) # applyStyle captionStyle
-                <> uncurry rect (textBounds $ _captAnnText ann)
+                <> uncurry rect
+                    (CairoText.textBounds captionStyle $ _captAnnText ann)
                 # fcA (computeBgColour (_captAnnColour ann)
                     `withOpacity` (_captAnnBgOpacity ann))
                 # lwG 0
@@ -237,14 +238,6 @@ instance IsAnnotation CaptAnnotation where
         }
         where
         captionStyle = mempty # bold
-        -- The font metric corrections were defined by trial-and-error.
-        extentsToBounds (fe, te) =
-            let (_, h) = unr2 $ te ^. CairoText.textSize
-                (xa, _) = unr2 $ te ^. CairoText.advance
-                fh = fe ^. CairoText.height
-            in ((xa + h) / (0.8 * fh), 2 * h / fh)
-        textBounds = extentsToBounds
-            . CairoText.unsafeCairo . CairoText.getExtents captionStyle
 
 instance LocatableAnnotation CaptAnnotation where
     annPosition = _captAnnPosition
