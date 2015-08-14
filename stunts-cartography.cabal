@@ -53,6 +53,7 @@ Executable sc-trk-viewer
                     ,Util.ZipConduit
                     ,Util.Reactive.Threepenny
                     ,Util.Threepenny.Alertify
+                    ,Util.Threepenny.JQueryAutocomplete
                     ,Widgets.BoundedInput
                     ,Replay
                     ,Types.Diagrams
@@ -66,6 +67,7 @@ Executable sc-trk-viewer
                     ,Annotation.CairoText
                     ,Pics.MM
                     ,Paths
+                    ,Paths_stunts_cartography
 
 
   if flag (resourcesWithExecutables)
