@@ -1,4 +1,5 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Annotation.LapTrace.Parser.Simple
     ( rawtrace
     , laptrace

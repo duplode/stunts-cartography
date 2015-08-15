@@ -1,5 +1,6 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
 module Pics
     ( getTerrainPic
     , getTilePic
@@ -44,8 +45,8 @@ reflectByChirality c = case c of
     Sinistral -> reflectY
     _ -> id
 
-baseTerrainPic :: (Monoid m, Semigroup m, TrailLike (QDiagram b R2 m))
-               => TerrainType -> QDiagram b R2 m
+baseTerrainPic :: (Monoid' m, TrailLike (QDiagram b V2 Double m))
+               => TerrainType -> QDiagram b V2 Double m
 baseTerrainPic tt = case tt of
     Plain ->
         mempty
@@ -67,8 +68,8 @@ baseTerrainPic tt = case tt of
     _ ->
         genericSquare chasmCl
 
-getTerrainPic :: (Monoid m, Semigroup m, TrailLike (QDiagram b R2 m))
-              => Tile -> QDiagram b R2 m
+getTerrainPic :: (Monoid' m, TrailLike (QDiagram b V2 Double m))
+               => Tile -> QDiagram b V2 Double m
 getTerrainPic tile =
     baseTerrainPic (getTerrainType tile)
     # rotateByOrient (getTerrainOrientation tile)
@@ -82,7 +83,7 @@ baseElementPicNoO env = baseElementPicNoC env Q1
 -- orientations weren't it for the "vertical" offset in the bridge graphics.
 baseElementPic :: Chirality -> Orientation
                -> ElementSurface -> ElementType
-               -> CartoM (Diagram BEDia R2)
+               -> CartoM (Diagram BEDia)
 baseElementPic c q sf et = do
     env <- ask
     return $ baseElementPic' env c q sf et
@@ -100,14 +101,14 @@ baseElementPic' env c q sf et = do
             . scaleX (1 + deltaX) . scaleY (1 + deltaY)
 
         rampCorrection q =
-            shearY (corrSignumY q * bridgeH) `under` translationX 0.5
+            shearY (corrSignumY q * bridgeH) `underT` translationX 0.5
 
         rampBaseCorrection q = scaleY (corrSignumY q)
 
         alignWithRoadY = juxtapose unitY (hrule 1 # translateY (-roadW / 2))
 
         cornerArc cl w l =
-            arc (0 @@ turn) (1/4 @@ turn)
+            arc xDir (1/4 @@ turn)
             # alignBL # scale (l - 1/2) # moveOriginBy (r2 (l/2, l/2))
             # lwG w # lc cl
 
@@ -245,7 +246,7 @@ baseElementPic' env c q sf et = do
                 rightTriangle bankCl (roadW * bankRelH)
                 # centerY # translateY (-roadW * (1 - bankRelH) / 2)
                 # atop (baseElementPicNoO env sf Road
-                    # shearY (roadW * bankRelH) `under` translationX (0.5))
+                    # shearY (roadW * bankRelH) `underT` translationX (0.5))
                 # reflectY # rotateBy (-1/4)
             BankedRoad ->
                 baseElementPicNoO env sf Road # rotateBy (-1/4)
@@ -276,7 +277,7 @@ baseElementPic' env c q sf et = do
                     loopB = (loopW - roadW) / 2
                     loopD = loopB / (2 * roadW)
                     loopLeg = baseElementPicNoO env sf Road
-                        # shearY loopB `under` translationX (0.5)
+                        # shearY loopB `underT` translationX (0.5)
                 in centerX (loopLeg ||| loopLeg # rotateBy (1/2))
                 # atop (fromOffsets
                     [ r2 (loopD, 0)
@@ -285,7 +286,7 @@ baseElementPic' env c q sf et = do
                     # centerXY # lwG roadW # lc meshCl)
             Chicane ->
                 fromSegments [ bezier3 (r2 (1, 0)) (r2 (1, -1)) (r2 (2, -1)) ]
-                # stroke # centerXY
+                # strokePath # centerXY
                 # lwG roadW # lc (surfaceToColor sf)
             CorkUpDown ->
                 baseElementPicNoO env sf Road
@@ -294,14 +295,14 @@ baseElementPic' env c q sf et = do
                 # atop (circle 0.5 # lwG roadW # lc tarmacCl)
                 # atop (spanSegment tarmacCl
                     # rampCorrection q
-                    # reflectByChirality c `under` translation (r2 (0.5, -bridgeH))
+                    # reflectByChirality c `underT` translation (r2 (0.5, -bridgeH))
                     # translate (r2 (0.5, 0.5 - bridgeH)))
             Pine ->
                 eqTriangle (5/8) # lwG 0.01 # lc darkleafCl # fc leafCl
                 ===
                 square (1/8) # lwG 0.01 # fc woodCl
             Palm ->
-                let leaf = arc (1/8 @@ turn) (3/8 @@ turn)
+                let leaf = arc (angleDir (1/8 @@ turn)) (3/8 @@ turn)
                         # closeLine # strokeLoop
                         # scale 0.25 # lwG 0.01 # lc darkleafCl # fc leafCl
                 in beside unitY
@@ -313,7 +314,7 @@ baseElementPic' env c q sf et = do
                                 , (3/8) ^& 0
                                 , 0 ^& (1/4)
                                 ]
-                    # stroke # centerXY
+                    # strokePath # centerXY
                     # lineJoin LineJoinRound
                     <> vrule (1/2))
                 # lwG 0.15 # lc cactusCl # lineCap LineCapRound
@@ -335,13 +336,13 @@ baseElementPic' env c q sf et = do
                     # centerX)
                 # centerXY
             Barn ->
-                let roofArc = wedge (1/2) (1/4 @@ turn) (5/12 @@ turn)
+                let roofArc = wedge (1/2) (angleDir (1/4 @@ turn)) (5/12 @@ turn)
                         # closeLine # strokeLoop
                         # centerY
                     diagLine = hrule (1/3) # rotateBy (1/8)
                 in (
                     diagLine <> reflectY diagLine
-                    <> arc' (1/6) (0 @@ turn) (1 @@ turn))
+                    <> arc' (1/6) xDir (1 @@ turn))
                 # translateX (1/20) # lwG 0.025 # lc miscLightCl
                 <> (
                     (reflectY roofArc <> roofArc) # scaleX 0.4
@@ -351,7 +352,7 @@ baseElementPic' env c q sf et = do
             OfficeBuilding ->
                 (
                     (
-                        decoratePath (rect (1/4) (1/4))
+                        atPoints (concat . pathVertices $ rect (1/4) (1/4))
                             (replicate 4 $ square (3/16) # lwG 0  # fc miscDarkCl)
                         ||| strutX (1/16) ||| rect (1/8) (1/4) # lwG 0 # fc miscDarkCl)
                     # alignR
@@ -437,7 +438,7 @@ rightTriangle cl h =
     # alignB # centerX # reflectY # translateY (h / 2)
     # lwG 0 # fc cl
 
-getTilePic :: Tile -> CartoM (Diagram BEDia R2)
+getTilePic :: Tile -> CartoM (Diagram BEDia)
 getTilePic tile =
     let c = getTileChirality tile
         q = getTileOrientation tile

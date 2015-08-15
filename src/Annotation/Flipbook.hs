@@ -6,8 +6,6 @@ module Annotation.Flipbook
     , concatFlipbookBackdrops
     ) where
 
-import Control.Lens.Operators hiding ((#))
-
 import Data.List (groupBy)
 import Diagrams.Prelude
 
@@ -16,8 +14,8 @@ import Annotation
 import Annotation.LapTrace
 
 class ToFlipbook a where
-    toFlipbook :: a -> [Diagram BEDia R2]
-    flipbookBackdrop :: a -> Diagram BEDia R2
+    toFlipbook :: a -> [Diagram BEDia]
+    flipbookBackdrop :: a -> Diagram BEDia
 
 -- Annotations.LapTrace.initializeTrace is supposed to be called with the
 -- single frame option disabled before using this instance.
@@ -40,7 +38,7 @@ instance ToFlipbook TraceAnnotation where
     flipbookBackdrop = renderAnnotation
 
 -- Frame replication to account for frame rate variations.
-spillOverEmpty :: [(Bool, Diagram BEDia R2)] -> [Diagram BEDia R2]
+spillOverEmpty :: [(Bool, Diagram BEDia)] -> [Diagram BEDia]
 spillOverEmpty = concatMap (overwriteWithHead . map snd)
     . groupBy (((not . fst) .) . flip const)
     where
@@ -49,8 +47,8 @@ spillOverEmpty = concatMap (overwriteWithHead . map snd)
 
 -- Generic concrete instance.
 data RenderedFlipbook = RenderedFlipbook
-    { renderedFlipbookPages :: [Diagram BEDia R2]
-    , renderedFlipbookBackdrop :: Diagram BEDia R2
+    { renderedFlipbookPages :: [Diagram BEDia]
+    , renderedFlipbookBackdrop :: Diagram BEDia
     }
 
 instance ToFlipbook RenderedFlipbook where
@@ -66,10 +64,10 @@ instance ToFlipbook SomeFlipbook where
 
 -- A less complex alternative to the monoid instance for the common use case.
 -- The signatures can be more general, if the need arises.
-zipFlipbookPages :: [SomeFlipbook] -> [Diagram BEDia R2]
+zipFlipbookPages :: [SomeFlipbook] -> [Diagram BEDia]
 zipFlipbookPages = foldr (zipStillLastWith mappend . toFlipbook) []
 
-concatFlipbookBackdrops :: [SomeFlipbook] -> Diagram BEDia R2
+concatFlipbookBackdrops :: [SomeFlipbook] -> Diagram BEDia
 concatFlipbookBackdrops = mconcat . map flipbookBackdrop
 
 -- Zipping so that the final length is that of the longer list. The shorter

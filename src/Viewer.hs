@@ -7,7 +7,7 @@ module Main
 
 import Control.Monad
 import qualified Control.Monad.RWS as RWS
-import Control.Monad.Error
+import Control.Monad.Except
 import Control.Exception (catch, SomeException)
 import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Monoid
@@ -451,7 +451,7 @@ setup initDir tmpDir w = void $ do
             let basePath = Pm.baseDirectory params
                 trkPath = basePath </> trkRelPath
 
-            outcome <- runErrorT $ do
+            outcome <- runExceptT $ do
 
                 trkExists <- liftIO $ doesFileExist trkPath
                 unless trkExists . void $
@@ -469,14 +469,14 @@ setup initDir tmpDir w = void $ do
                     throwError "Bad file size (.TRK files must have 1802 bytes)."
 
                 -- Decide on input format.
-                let imgWriter :: FilePath -> CartoT (ErrorT String UI) Pm.PostRenderInfo
+                let imgWriter :: FilePath -> CartoT (ExceptT String UI) Pm.PostRenderInfo
                     imgWriter = case fileExt of
                         ".TRK" -> writeImageFromTrk
                         ".RPL" -> writeImageFromRpl
                         _      -> error "Unrecognized input extension."
 
                 -- Parse annotations and render the map.
-                let goCarto :: CartoT (ErrorT String UI) Pm.PostRenderInfo
+                let goCarto :: CartoT (ExceptT String UI) Pm.PostRenderInfo
                     goCarto = do
                         anns <- (lift . lift $ txaAnns # get value)
                             >>= parseAnnotations
