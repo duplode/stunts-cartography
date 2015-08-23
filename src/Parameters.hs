@@ -123,8 +123,8 @@ data PostRenderInfo = PostRenderInfo
     { renderedTrackHorizon :: Horizon
     , trackName :: String
     , trackData :: LB.ByteString
-    , outputPath :: FilePath
-    , flipbookPath :: Maybe FilePath
+    , outputRelPath :: FilePath
+    , flipbookRelPath :: Maybe FilePath
     }
 
 -- Rendering state.

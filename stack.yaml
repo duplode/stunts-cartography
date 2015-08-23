@@ -9,9 +9,10 @@ packages:
   extra-dep: true
 - location:
     git: https://github.com/duplode/threepenny-gui
-    commit: e426c839f2776cb6cb118943b3f8b3a690236c56
+    commit: 893e20285f44307205fe00e47ef18b12b313bf1a
   extra-dep: true
 extra-deps:
 - parsec-permutation-0.1.2.0
 - websockets-snap-0.9.2.0
+  #- threepenny-gui-0.6.0.3
 resolver: lts-3.0

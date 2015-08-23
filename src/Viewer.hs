@@ -16,7 +16,7 @@ import Text.Read (readMaybe)
 import Text.Printf (printf)
 import System.Directory
     (doesFileExist, doesDirectoryExist, getDirectoryContents)
-import System.FilePath ((</>), takeExtension, addExtension)
+import System.FilePath ((</>), takeExtension, addExtension, takeFileName)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Console.GetOpt
 import System.Environment (getArgs)
@@ -47,9 +47,10 @@ main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
     staticDir <- (</> "wwwroot") <$> getDataDir
     consoleGreeting $! port
     startGUI defaultConfig
-        { tpPort = Just port
-        , tpCustomHTML = Just "index.html"
-        , tpStatic = Just staticDir
+        { jsPort = Just port
+        , jsCustomHTML = Just "index.html"
+        , jsStatic = Just staticDir
+        , jsExtraDirs = [("tmp", tmpDir)]
         } $ setup initDir tmpDir
 
 -- Command line option processing.
@@ -493,16 +494,19 @@ setup initDir tmpDir w = void $ do
 
                 -- Update the UI.
                 lift $ do
-                    when (isJust $ Pm.flipbookPath postRender) $ alertifySuccess
+                    when (isJust $ Pm.flipbookRelPath postRender) $ alertifySuccess
                         "Flipbook ready! Use the flipbook link on the left to save it."
                     element theBody #. horizonClass (Pm.renderedTrackHorizon postRender)
-                    let outType = Pm.outputType params
-                    trackImage <- loadTrackImage outType $ Pm.outputPath postRender
-                    trkUri <- loadTmpTrk tmpDir postRender
-                    terrainUri <- loadTmpTerrainTrk tmpDir postRender
-                    mFlipbookUri <- maybe (return Nothing)
-                        ((Just <$>) . loadFile "application/zip")
-                            $ Pm.flipbookPath postRender
+                    let trackImage = "dir/tmp/"
+                            ++ backslashesToSlashes (Pm.outputRelPath postRender)
+                            -- Cachebreaker. Cf. http://stackoverflow.com/q/30260610
+                            ++ "#" ++ show (Pm.numberOfRuns st')
+                    trkUri <- (("dir/tmp/" ++) . takeFileName . backslashesToSlashes)
+                        <$> loadTmpTrk tmpDir postRender
+                    terrainUri <- (("dir/tmp/" ++) . takeFileName . backslashesToSlashes)
+                        <$> loadTmpTerrainTrk tmpDir postRender
+                    let mFlipbookUri = (("dir/tmp/" ++) . takeFileName . backslashesToSlashes)
+                            <$> Pm.flipbookRelPath postRender
                     element imgMap # set UI.src trackImage
                     element lnkTrk # set UI.href trkUri
                     element lnkTerrTrk # set UI.href terrainUri
@@ -574,10 +578,10 @@ unsetHref = removeAttr "href"
 loadTmpTrkBase :: (String -> String) -> (LB.ByteString -> LB.ByteString)
                -> FilePath -> Pm.PostRenderInfo -> UI String
 loadTmpTrkBase fName fTrk tmpDir postRender = do
-    let trkName = "_" ++ fName (Pm.trackName postRender)
+    let trkName = fName (Pm.trackName postRender)
         tmpTrkPath = addExtension (tmpDir </> trkName) ".TRK"
     liftIO $ LB.writeFile tmpTrkPath . fTrk $ Pm.trackData postRender
-    loadFile "application/octet-stream" tmpTrkPath
+    return tmpTrkPath
 
 loadTmpTrk :: FilePath -> Pm.PostRenderInfo -> UI String
 loadTmpTrk = loadTmpTrkBase id id
@@ -595,11 +599,16 @@ horizonClass horizon = case horizon of
     Tropical -> "tropical-horizon"
     _        -> "unknown-horizon"
 
-loadTrackImage :: OutputType -> FilePath -> UI String
-loadTrackImage outType outPath = case outType of
-    PNG -> loadFile "image/png" outPath
-    SVG -> loadFile "image/svg+xml" outPath
-    _   -> error "Unsupported output format."
+-- A function with this signature used to be necessary to set up the
+-- correct MIME type before calling loadFile from Threepenny 0.5.
+-- loadTrackImage :: OutputType -> FilePath -> UI String
+
+-- Ad-hoc URL sanitising for our limited purposes.
+-- TODO: Do this in a less stringly-typed way.
+backslashesToSlashes :: String -> String
+backslashesToSlashes = fmap $ \c -> case c of
+    '\\' -> '/'
+    _    -> c
 
 intToOutputType :: Int -> OutputType
 intToOutputType n = case n of

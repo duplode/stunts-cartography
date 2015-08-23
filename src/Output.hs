@@ -48,6 +48,7 @@ writeImageFromRpl rplPath = do
         then uncurry writeImageOutput $ trkFromRplSimple rplData
         else lift $ throwError "No track data in RPL file."
 
+-- Note that the returned paths do not include the boilerplate prefix.
 writeImageOutput :: (MonadIO m, Functor m)
                  => String -> LB.ByteString
                  -> CartoT (ExceptT String m) Pm.PostRenderInfo
@@ -89,8 +90,8 @@ writeImageOutput trackName trkBS = do
                 { Pm.renderedTrackHorizon = horizon
                 , Pm.trackName = trackName
                 , Pm.trackData = trkBS
-                , Pm.outputPath = outFile
-                , Pm.flipbookPath = Nothing
+                , Pm.outputRelPath = outRelPath
+                , Pm.flipbookRelPath = Nothing
                 }
 
         _ -> do
@@ -99,7 +100,8 @@ writeImageOutput trackName trkBS = do
 
             -- Ignoring the output type, at least for now.
             modify Pm.incrementNumberOfRuns
-            fbkDir <- createFlipbookDir tmpDir trackName
+            fbkRelDir <- createFlipbookDir tmpDir trackName
+            let fbkDir = tmpDir </> fbkRelDir
 
             -- Five digits are enough for Stunts replays of any length.
             let renderPage (ix, pg) = renderCairo
@@ -115,12 +117,14 @@ writeImageOutput trackName trkBS = do
                 zip ([0..] :: [Int]) . map (withEnvelope wholeMap) $
                     zipFlipbookPages fbks
 
-            let backdropFile = fbkDir </> "backdrop.png"
+            let backdropRelFile = fbkRelDir </> "backdrop.png"
+                backdropFile = tmpDir </> backdropRelFile
                 fullBackdrop = concatFlipbookBackdrops fbks <> wholeMap
             liftIO $ renderCairo backdropFile (mkWidth renWidth) fullBackdrop
 
             nRuns <- gets Pm.numberOfRuns
-            let zipFile = tmpDir </> ("flipbook-" ++ show nRuns ++ ".zip")
+            let zipRelFile = "flipbook-" ++ show nRuns ++ ".zip"
+                zipFile = tmpDir </> zipRelFile
             liftIO $ writeDirContentsZip fbkDir zipFile
 
             endTime <- liftIO getCPUTime
@@ -135,19 +139,20 @@ writeImageOutput trackName trkBS = do
                 { Pm.renderedTrackHorizon = horizon
                 , Pm.trackName = trackName
                 , Pm.trackData = trkBS
-                , Pm.outputPath = backdropFile
-                , Pm.flipbookPath = Just zipFile
+                , Pm.outputRelPath = backdropRelFile
+                , Pm.flipbookRelPath = Just zipRelFile
                 }
 
+-- Note that the returned path does not include the boilerplate prefix.
 createFlipbookDir :: (MonadIO m) => FilePath -> String -> CartoT m FilePath
 createFlipbookDir tmpDir trackName =
     gets Pm.numberOfRuns >>= liftIO . createIt
     where
-    dirTemplate = tmpDir </> ("flipbook-" ++ trackName ++ "-")
+    dirTemplate = "flipbook-" ++ trackName ++ "-"
     createIt n = do
         let dirPath = dirTemplate ++ show n
         r <- tryJust (guard . isAlreadyExistsError) $
-            createDirectory dirPath
+            createDirectory (tmpDir </> dirPath)
         case r of
             Left _  -> createIt (n + 1)
             Right _ -> return dirPath
