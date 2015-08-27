@@ -336,8 +336,7 @@ baseElementPic' env c q sf et = do
                     # centerX)
                 # centerXY
             Barn ->
-                let roofArc = wedge (1/2) (angleDir (1/4 @@ turn)) (5/12 @@ turn)
-                        # closeLine # strokeLoop
+                let roofArc = wedge (1/2) (angleDir (1/4 @@ turn)) (1/6 @@ turn)
                         # centerY
                     diagLine = hrule (1/3) # rotateBy (1/8)
                 in (
@@ -345,8 +344,8 @@ baseElementPic' env c q sf et = do
                     <> arc' (1/6) xDir (1 @@ turn))
                 # translateX (1/20) # lwG 0.025 # lc miscLightCl
                 <> (
-                    (reflectY roofArc <> roofArc) # scaleX 0.4
-                    # lc barnCl # fc barnCl
+                    (reflectY roofArc <> roofArc) # scaleX 0.5 # scaleY 1.5
+                    # lwG 0 # fc barnCl
                     ||| rect (2/5) (1/2) # lc barnCl # fc barnCl)
                 # centerXY
             OfficeBuilding ->
