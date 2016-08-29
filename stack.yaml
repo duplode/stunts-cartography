@@ -4,15 +4,12 @@ flags:
 packages:
 - '.'
 - location:
-    git: https://github.com/duplode/zip-conduit
-    commit: 1eefc8bd91d5f38b760bce1fb8dd16d6e05a671d
-  extra-dep: true
-- location:
     git: https://github.com/duplode/threepenny-gui
-    commit: 893e20285f44307205fe00e47ef18b12b313bf1a
+    commit: 5e01dcf482c412258d21893ceba3714ae7e6cc51
   extra-dep: true
 extra-deps:
 - parsec-permutation-0.1.2.0
 - websockets-snap-0.9.2.0
-  #- threepenny-gui-0.6.0.3
-resolver: lts-3.0
+- zip-conduit-0.2.2.2
+  #- threepenny-gui-0.6.0.6
+resolver: lts-6.14
