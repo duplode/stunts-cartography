@@ -25,7 +25,7 @@ import Diagrams.Core
 import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
 import qualified Util.ByteString as LB
 import Util.Misc
-import Util.ZipConduit
+import Util.Zip
 import Replay
 import Composition
 import qualified Parameters as Pm

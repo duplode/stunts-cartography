@@ -50,7 +50,7 @@ Executable sc-trk-viewer
                     ,Track
                     ,Util.Misc
                     ,Util.ByteString
-                    ,Util.ZipConduit
+                    ,Util.Zip
                     ,Util.Reactive.Threepenny
                     ,Util.Threepenny.Alertify
                     ,Util.Threepenny.JQueryAutocomplete
@@ -83,10 +83,9 @@ Executable sc-trk-viewer
                     ,diagrams-cairo == 1.3.*
                     ,parsec >= 3.1.3 && < 3.2
                     ,parsec-permutation == 0.1.*
-                    ,zip-conduit == 0.2.*
+                    ,zip == 0.1.*
+                    ,path
                     ,lens
-                    ,conduit
-                    ,conduit-extra
                     ,aeson
                     ,colour
                     ,data-default
