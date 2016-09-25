@@ -73,6 +73,8 @@ module Annotation
 import Diagrams.Prelude hiding (E)
 import Data.Colour.SRGB
 import Data.Colour.RGBSpace.HSV
+import Graphics.SVGFonts (textSVG', TextOpts(..))
+import Graphics.SVGFonts.Fonts (bit)
 import Types.Diagrams (BEDia)
 import Pics.MM
 -- import qualified Annotation.CairoText as CairoText
@@ -220,25 +222,23 @@ instance IsAnnotation CaptAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
             let dirAlign = - cardinalDirToR2 (_captAnnAlignment ann)
+                captText = textSVG' with
+                        { textFont = bit
+                        , textHeight = _captAnnSize ann
+                        } (_captAnnText ann)
+                    # stroke # fillRule EvenOdd
+                    # fc (_captAnnColour ann) # lwG 0
             in (
-                text (_captAnnText ann)
-                # fc (_captAnnColour ann) # applyStyle captionStyle
-                -- Caption background.
-                -- Disabled until a replacement for Cairo.Text is set up.
-                {-
-                <> uncurry rect
-                    (CairoText.textBounds captionStyle $ _captAnnText ann)
-                # fcA (computeBgColour (_captAnnColour ann)
-                    `withOpacity` (_captAnnBgOpacity ann))
-                # lwG 0
-                -}
+                captText
+                <> ( boundingRect captText
+                    # lwG 0
+                    # fcA (computeBgColour (_captAnnColour ann)
+                        `withOpacity` (_captAnnBgOpacity ann))
+                    )
             )
             # alignBL # align dirAlign
-            # scale (_captAnnSize ann)
             # rotate (_captAnnAngle ann @@ deg)
         }
-        where
-        captionStyle = mempty # bold
 
 instance LocatableAnnotation CaptAnnotation where
     annPosition = _captAnnPosition
@@ -455,3 +455,31 @@ instance IsAnnotation SplitAnnotation where
         , segAnnCaptSize = 0.75
         }
  -}
+
+-- This is the IsAnnotation instance for CaptAnnotation before the move
+-- to SVGFonts.
+{-
+instance IsAnnotation CaptAnnotation where
+    annotation ann = Annotation
+        { annotationDiagram =
+            let dirAlign = - cardinalDirToR2 (_captAnnAlignment ann)
+            in (
+                text (_captAnnText ann)
+                # fc (_captAnnColour ann) # applyStyle captionStyle
+                -- Caption background.
+                -- Disabled until a replacement for Cairo.Text is set up.
+                {-
+                <> uncurry rect
+                    (CairoText.textBounds captionStyle $ _captAnnText ann)
+                # fcA (computeBgColour (_captAnnColour ann)
+                    `withOpacity` (_captAnnBgOpacity ann))
+                # lwG 0
+                -}
+            )
+            # alignBL # align dirAlign
+            # scale (_captAnnSize ann)
+            # rotate (_captAnnAngle ann @@ deg)
+        }
+        where
+        captionStyle = mempty # bold
+-}
