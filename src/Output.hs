@@ -20,7 +20,6 @@ import System.IO.Error (isAlreadyExistsError)
 import System.CPUTime
 import Text.Printf (printf)
 import Diagrams.Prelude
-import Diagrams.Backend.Cairo
 import Diagrams.Core
 import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
 import qualified Util.ByteString as LB
@@ -34,14 +33,14 @@ import Annotation.Flipbook
 import Types.CartoM
 import Types.Diagrams
 
-writeImageFromTrk :: (MonadIO m, Functor m)
-                  => FilePath -> CartoT (ExceptT String m) Pm.PostRenderInfo
+writeImageFromTrk :: (BeDi b, MonadIO m, Functor m)
+                  => FilePath -> CartoT b (ExceptT String m) Pm.PostRenderInfo
 writeImageFromTrk trkPath =
     liftIO (LB.readFile trkPath)
         >>= writeImageOutput (takeBaseName trkPath)
 
-writeImageFromRpl :: (MonadIO m, Functor m)
-                  => FilePath -> CartoT (ExceptT String m) Pm.PostRenderInfo
+writeImageFromRpl :: (BeDi b, MonadIO m, Functor m)
+                  => FilePath -> CartoT b (ExceptT String m) Pm.PostRenderInfo
 writeImageFromRpl rplPath = do
     rplData <- liftIO $ LB.readFile rplPath
     if trackDataHasTheCorrectSize rplData
@@ -49,9 +48,9 @@ writeImageFromRpl rplPath = do
         else lift $ throwError "No track data in RPL file."
 
 -- Note that the returned paths do not include the boilerplate prefix.
-writeImageOutput :: (MonadIO m, Functor m)
+writeImageOutput :: (BeDi b, MonadIO m, Functor m)
                  => String -> LB.ByteString
-                 -> CartoT (ExceptT String m) Pm.PostRenderInfo
+                 -> CartoT b (ExceptT String m) Pm.PostRenderInfo
 writeImageOutput trackName trkBS = do
     let rawTrk = veryRawReadTrack trkBS
         horizon = horizonFromRawTrack rawTrk
@@ -71,16 +70,16 @@ writeImageOutput trackName trkBS = do
             let outRelPath = case outType of
                     PNG -> "stunts-cartography-map.png"
                     SVG -> "stunts-cartography-map.svg"
-                    _   -> error "Unsupported output format."
+                    --_   -> error "Unsupported output format."
                 outFile = tmpDir </> outRelPath
 
             startTime <- liftIO getCPUTime
             wholeMap <- wholeMapDiagram tiles
-            liftIO $ renderCairo outFile (mkWidth renWidth) wholeMap
+            liftIO $ renderBeDi outFile (mkWidth renWidth) wholeMap
             endTime <- liftIO getCPUTime
 
             let fullDeltaTime :: Double
-                fullDeltaTime = fromIntegral (endTime - startTime) / 10^9
+                fullDeltaTime = fromIntegral (endTime - startTime) / 10**9
             tell . Pm.logFromList $
                 printf "Rendering time (core + output writing): %0.0fms.\r\n"
                     fullDeltaTime
@@ -104,7 +103,7 @@ writeImageOutput trackName trkBS = do
             let fbkDir = tmpDir </> fbkRelDir
 
             -- Five digits are enough for Stunts replays of any length.
-            let renderPage (ix, pg) = renderCairo
+            let renderPage (ix, pg) = renderBeDi
                     (fbkDir </> (printf "%05d.png" ix)) (mkWidth renWidth) pg
 
             -- fbks is, in effect, mconcat'ed twice (first through
@@ -120,7 +119,7 @@ writeImageOutput trackName trkBS = do
             let backdropRelFile = fbkRelDir </> "backdrop.png"
                 backdropFile = tmpDir </> backdropRelFile
                 fullBackdrop = concatFlipbookBackdrops fbks <> wholeMap
-            liftIO $ renderCairo backdropFile (mkWidth renWidth) fullBackdrop
+            liftIO $ renderBeDi backdropFile (mkWidth renWidth) fullBackdrop
 
             nRuns <- gets Pm.numberOfRuns
             let zipRelFile = "flipbook-" ++ show nRuns ++ ".zip"
@@ -130,7 +129,7 @@ writeImageOutput trackName trkBS = do
             endTime <- liftIO getCPUTime
             tell . Pm.logFromList $ "Flipbook rendering complete.\r\n"
             let fullDeltaTime :: Double
-                fullDeltaTime = fromIntegral (endTime - startTime) / 10^12
+                fullDeltaTime = fromIntegral (endTime - startTime) / 10**12
             tell . Pm.logFromList $
                 printf "Rendering time (core + output writing): %0.3fs.\r\n"
                     fullDeltaTime
@@ -144,7 +143,8 @@ writeImageOutput trackName trkBS = do
                 }
 
 -- Note that the returned path does not include the boilerplate prefix.
-createFlipbookDir :: (MonadIO m) => FilePath -> String -> CartoT m FilePath
+createFlipbookDir :: (BeDi b, MonadIO m)
+                  => FilePath -> String -> CartoT b m FilePath
 createFlipbookDir tmpDir trackName =
     gets Pm.numberOfRuns >>= liftIO . createIt
     where
@@ -159,14 +159,16 @@ createFlipbookDir tmpDir trackName =
 
 
 -- TODO: Possibly generalize the CartoM computations in Composition and below.
-wholeMapDiagram :: (Monad m) => [Tile] -> CartoT m (Diagram BEDia)
+wholeMapDiagram :: (BeDi b, Monad m) => [Tile] -> CartoT b m (Diagram b)
 wholeMapDiagram tiles = mapRWST (return . runIdentity) $ do
     params <- ask
     let minBounds :: (Double, Double)
-        minBounds = fromIntegral *** fromIntegral $ Pm.minTileBounds params
+        minBounds = Pm.minTileBounds params
         (minX, minY) = minBounds
         deltaBounds = Pm.deltaTileBounds params
         (deltaX, deltaY) = deltaBounds
+        --adjustPositionForClip :: (V t ~ V2, N t ~ Double, HasOrigin t)
+                              -- => t -> t
         adjustPositionForClip = moveOriginBy (r2 minBounds # reflectX # reflectY)
         clipRect = unitSquare # scaleX deltaX # scaleY deltaY
             # alignBL # adjustPositionForClip

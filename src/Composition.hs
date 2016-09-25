@@ -17,9 +17,9 @@ import Util.Misc
 import Pics.Palette (plainCl)
 import qualified Parameters as Pm
 import Types.CartoM
-import Types.Diagrams (BEDia)
+import Types.Diagrams
 
-renderTerrain :: [Tile] -> CartoM (Diagram BEDia)
+renderTerrain :: BeDi b => [Tile] -> CartoM b (Diagram b)
 renderTerrain tiles =
     let terrRows = map (beneath plainStripe . catTiles)
             `liftM` mapM (mapM getCachedTerrPic) (splitAtEvery30th tiles)
@@ -30,7 +30,7 @@ renderTerrain tiles = do
     let tileRows = splitAtEvery30th tiles
 -}
 
-renderElements :: [Tile] -> CartoM (Diagram BEDia)
+renderElements :: BeDi b => [Tile] -> CartoM b (Diagram b)
 renderElements tiles = do
     let makeElementRows ts = map catTiles
             `liftM` mapM (mapM getCachedElemPic) (splitAtEvery30th ts)
@@ -39,7 +39,7 @@ renderElements tiles = do
     largeElementRows <- makeElementRows leTiles
     return $ catRows smallElementRows <> catRows largeElementRows
 
-getCachedElemPic :: Tile -> CartoM (Diagram BEDia)
+getCachedElemPic :: BeDi b => Tile -> CartoM b (Diagram b)
 getCachedElemPic tile = do
     let el = tileElement tile
     mDia <- M.lookup el <$> gets Pm.elementCache
@@ -50,7 +50,7 @@ getCachedElemPic tile = do
             modify $ Pm.insertIntoElementCache el newDia
             return newDia
 
-getCachedTerrPic :: Tile -> CartoM (Diagram BEDia)
+getCachedTerrPic :: BeDi b => Tile -> CartoM b (Diagram b)
 getCachedTerrPic tile = do
     let te = tileTerrain tile
     mDia <- M.lookup te <$> gets Pm.terrainCache
@@ -61,7 +61,7 @@ getCachedTerrPic tile = do
             modify $ Pm.insertIntoTerrainCache te newDia
             return newDia
 
-renderMap :: [Tile] -> CartoM (Diagram BEDia)
+renderMap :: BeDi b => [Tile] -> CartoM b (Diagram b)
 renderMap tiles = do
     renderedTerrain <- renderTerrain tiles
     renderedElements <- renderElements tiles
@@ -77,15 +77,15 @@ renderIndices = do
         cat unitX [boundedYIndices, strutX deltaX, boundedYIndices]
         <> cat unitY [boundedXIndices, strutY deltaY, boundedXIndices]
 
-renderIndicesIfRequired :: CartoM (Diagram BEDia)
+renderIndicesIfRequired :: BeDi b => CartoM b (Diagram b)
 renderIndicesIfRequired = do
     required <- asks Pm.drawIndices
     if required
         then renderIndices
         else return mempty
 
-gridLines :: (Monoid' m, TrailLike (QDiagram BEDia V2 Double m))
-          => QDiagram BEDia V2 Double m
+gridLines :: (BeDi b, Monoid' m, TrailLike (QDiagram b V2 Double m))
+          => QDiagram b V2 Double m
 gridLines =
     vcat' (with & sep .~ 1) (replicate 31 $ hrule 30 # lwG 0.01) # alignBL
     <> hcat' (with & sep .~ 1) (replicate 31 $ vrule 30 # lwG 0.01) # alignBL

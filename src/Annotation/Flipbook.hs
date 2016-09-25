@@ -1,4 +1,8 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Annotation.Flipbook
     ( ToFlipbook (toFlipbook, flipbookBackdrop)
     , SomeFlipbook(..)
@@ -13,13 +17,13 @@ import Types.Diagrams
 import Annotation
 import Annotation.LapTrace
 
-class ToFlipbook a where
-    toFlipbook :: a -> [Diagram BEDia]
-    flipbookBackdrop :: a -> Diagram BEDia
+class BeDi b => ToFlipbook b a where
+    toFlipbook :: a -> [Diagram b]
+    flipbookBackdrop :: a -> Diagram b
 
 -- Annotations.LapTrace.initializeTrace is supposed to be called with the
 -- single frame option disabled before using this instance.
-instance ToFlipbook TraceAnnotation where
+instance BeDi b => ToFlipbook b TraceAnnotation where
     toFlipbook ann =
         let ((ifr, freq), baseCar) = ann ^. traceAnnOverlays . periodicCarsSpec
             pointIsIncluded p =
@@ -38,7 +42,7 @@ instance ToFlipbook TraceAnnotation where
     flipbookBackdrop = renderAnnotation
 
 -- Frame replication to account for frame rate variations.
-spillOverEmpty :: [(Bool, Diagram BEDia)] -> [Diagram BEDia]
+spillOverEmpty :: [(Bool, Diagram b)] -> [Diagram b]
 spillOverEmpty = concatMap (overwriteWithHead . map snd)
     . groupBy (((not . fst) .) . flip const)
     where
@@ -46,28 +50,28 @@ spillOverEmpty = concatMap (overwriteWithHead . map snd)
     overwriteWithHead (x:xs) = x : map (const x) xs
 
 -- Generic concrete instance.
-data RenderedFlipbook = RenderedFlipbook
-    { renderedFlipbookPages :: [Diagram BEDia]
-    , renderedFlipbookBackdrop :: Diagram BEDia
+data RenderedFlipbook b = RenderedFlipbook
+    { renderedFlipbookPages :: [Diagram b]
+    , renderedFlipbookBackdrop :: Diagram b
     }
 
-instance ToFlipbook RenderedFlipbook where
+instance BeDi b => ToFlipbook b (RenderedFlipbook b) where
     toFlipbook = renderedFlipbookPages
     flipbookBackdrop = renderedFlipbookBackdrop
 
 -- Existential wrapper.
-data SomeFlipbook = forall a. ToFlipbook a => SomeFlipbook a
+data SomeFlipbook b = forall a. ToFlipbook b a => SomeFlipbook a
 
-instance ToFlipbook SomeFlipbook where
+instance BeDi b => ToFlipbook b (SomeFlipbook b) where
     toFlipbook (SomeFlipbook ann) = toFlipbook ann
     flipbookBackdrop (SomeFlipbook ann) = flipbookBackdrop ann
 
 -- A less complex alternative to the monoid instance for the common use case.
 -- The signatures can be more general, if the need arises.
-zipFlipbookPages :: [SomeFlipbook] -> [Diagram BEDia]
+zipFlipbookPages :: BeDi b => [SomeFlipbook b] -> [Diagram b]
 zipFlipbookPages = foldr (zipStillLastWith mappend . toFlipbook) []
 
-concatFlipbookBackdrops :: [SomeFlipbook] -> Diagram BEDia
+concatFlipbookBackdrops :: BeDi b => [SomeFlipbook b] -> Diagram b
 concatFlipbookBackdrops = mconcat . map flipbookBackdrop
 
 -- Zipping so that the final length is that of the longer list. The shorter
@@ -82,16 +86,16 @@ zipStillLastWith f (x:xs) (y:ys)  = f x y : zipStillLastWith f xs ys
 
 -- The monoid instance is easy on the eyes when used; however, the conversion to
 -- an intermediate wrapper can complicate things.
-instance Monoid SomeFlipbook where
-    mempty = SomeFlipbook $ RenderedFlipbook
+instance BeDi b => Monoid (SomeFlipbook b) where
+    mempty = SomeFlipbook $ (RenderedFlipbook
         { renderedFlipbookPages = []
         , renderedFlipbookBackdrop = mempty
-        }
+        } :: RenderedFlipbook b)
     mappend (SomeFlipbook ann1) (SomeFlipbook ann2) =
-        SomeFlipbook $ RenderedFlipbook
+        SomeFlipbook $ (RenderedFlipbook
             { renderedFlipbookPages =
                 zipStillLastWith mappend (toFlipbook ann1) (toFlipbook ann2)
             , renderedFlipbookBackdrop =
                 mappend (flipbookBackdrop ann1) (flipbookBackdrop ann2)
-            }
+            } :: RenderedFlipbook b)
 

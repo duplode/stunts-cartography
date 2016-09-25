@@ -8,7 +8,7 @@ module Pics.MM
 
 import Diagrams.Prelude
 import Pics.Palette (sunroofCl, windshieldCl)
-import Types.Diagrams (BEDia)
+import Types.Diagrams
 
 acura cl =
     (

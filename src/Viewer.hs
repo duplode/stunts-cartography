@@ -26,7 +26,9 @@ import Data.Char (toUpper)
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
 import Util.Reactive.Threepenny (concatE, union, setter)
-import Diagrams.Backend.Cairo (OutputType(..))
+import qualified Diagrams.Backend.Cairo as Cairo
+import qualified Diagrams.Backend.SVG as SVG
+import qualified Diagrams.Backend.Rasterific as Rasterific
 
 import Output
 import qualified Util.ByteString as LB
@@ -36,6 +38,7 @@ import Util.Misc (retrieveFileSize)
 import Annotation (Annotation)
 import Annotation.Parser (parseAnnotations, parseFlipbook)
 import Types.CartoM
+import Types.Diagrams
 import Paths
 import qualified Widgets.BoundedInput as BI
 import Util.Threepenny.Alertify
@@ -250,8 +253,8 @@ setup initDir tmpDir w = void $ do
     currentValue bDrawIndices >>= (element chkDrawIndices #) . set UI.checked_
 
     -- Preset selection and ratio field initialization.
-    let presetDefAndSetter :: (Pm.RenderingParameters -> a)
-                           -> Event (Pm.RenderingParameters)
+    let presetDefAndSetter :: (Pm.RenderingParameters b -> a)
+                           -> Event (Pm.RenderingParameters b)
                            -> (a, Event (a -> a))
         presetDefAndSetter fParam eParams =
             (fParam Pm.def, setter $ fParam <$> eParams)
@@ -442,9 +445,10 @@ setup initDir tmpDir w = void $ do
 
     -- The main action proper.
 
-    let runRenderMap :: Pm.RenderingParameters -> Pm.RenderingState
-                     -> UI (Pm.RenderingState, Pm.RenderingLog)
-        runRenderMap params st = do
+    let runRenderMap :: BeDi b => b
+                     -> Pm.RenderingParameters b -> Pm.RenderingState b
+                     -> UI (Pm.RenderingState b, Pm.RenderingLog)
+        runRenderMap _ params st = do
 
             element btnGo # set UI.enabled False
 
@@ -470,14 +474,15 @@ setup initDir tmpDir w = void $ do
                     throwError "Bad file size (.TRK files must have 1802 bytes)."
 
                 -- Decide on input format.
-                let imgWriter :: FilePath -> CartoT (ExceptT String UI) Pm.PostRenderInfo
+                let imgWriter :: BeDi b
+                              => FilePath -> CartoT b (ExceptT String UI) Pm.PostRenderInfo
                     imgWriter = case fileExt of
                         ".TRK" -> writeImageFromTrk
                         ".RPL" -> writeImageFromRpl
                         _      -> error "Unrecognized input extension."
 
                 -- Parse annotations and render the map.
-                let goCarto :: CartoT (ExceptT String UI) Pm.PostRenderInfo
+                let goCarto :: BeDi b => CartoT b (ExceptT String UI) Pm.PostRenderInfo
                     goCarto = do
                         anns <- (lift . lift $ txaAnns # get value)
                             >>= parseAnnotations
@@ -562,7 +567,7 @@ setup initDir tmpDir w = void $ do
         -- TODO: Ensure it is okay to run appendToLog and then renderLog
         -- like this.
         onEvent eParamsAndStateAfterEStyleCheck $
-            (\(p, st) -> runRenderMap p st
+            (\(p, st) -> runRenderMap Cairo.Cairo p st
                 >>= \(st', w) -> liftIO $ fireRenState st'
                     >> appendToLog w >> renderLog ())
 
@@ -617,7 +622,7 @@ intToOutputType n = case n of
         _ -> error "Unknown output format."
 
 -- The order in the case statement matches that in the style-preset-select.
-intToPresetRenderingParams :: Int -> Pm.RenderingParameters
+intToPresetRenderingParams :: Int -> Pm.RenderingParameters b
 intToPresetRenderingParams n = case n of
     0 -> Pm.defaultRenderingParameters
     1 -> Pm.widerRoadsRenderingParameters

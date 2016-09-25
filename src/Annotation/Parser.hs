@@ -32,10 +32,11 @@ import Data.Colour (Colour)
 import Data.Colour.Names (readColourName, yellow)
 import Data.Colour.SRGB (sRGB24read)
 import Types.CartoM
+import Types.Diagrams
 import Control.Monad.RWS (tell, asks)
 import qualified Parameters as Pm
 
-parseAnnotations :: (MonadIO m) => String -> CartoT m [Annotation]
+parseAnnotations :: (BeDi b, MonadIO m) => String -> CartoT b m [Annotation b]
 parseAnnotations input = do
     result <- runPT annotations () "" input
     case result of
@@ -184,7 +185,7 @@ splitDir = cardinalDir "^"
 
 traceSpec :: (MonadIO m)
           => ([(VecDouble, VecDouble)] -> TraceAnnotation -> TraceAnnotation)
-          -> ParsecT String u (CartoT m) TraceAnnotation
+          -> ParsecT String u (CartoT b m) TraceAnnotation
 traceSpec fInitTrace = do
     symbol "Trace"
     opt <- runPermParser $
@@ -258,7 +259,7 @@ carOnTrace mMoment = do
         )
 
 -- Flipbook parsers.
-parseFlipbook :: (MonadIO m) => String -> CartoT m [SomeFlipbook]
+parseFlipbook :: (BeDi b, MonadIO m) => String -> CartoT b m [SomeFlipbook b]
 parseFlipbook input = do
     result <- runPT flipbookSpec () "" input
     case result of

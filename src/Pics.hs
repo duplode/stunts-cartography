@@ -20,7 +20,7 @@ import Pics.Palette
 import qualified Parameters as Pm
 import Pics.MM (acura)
 import Types.CartoM
-import Types.Diagrams (BEDia)
+import Types.Diagrams
 
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
 rotateByOrient = rotateBy . (/4) . fromIntegral . fromEnum
@@ -45,7 +45,7 @@ reflectByChirality c = case c of
     Sinistral -> reflectY
     _ -> id
 
-baseTerrainPic :: (Monoid' m, TrailLike (QDiagram b V2 Double m))
+baseTerrainPic :: (BeDi b, Monoid' m, TrailLike (QDiagram b V2 Double m))
                => TerrainType -> QDiagram b V2 Double m
 baseTerrainPic tt = case tt of
     Plain ->
@@ -68,7 +68,7 @@ baseTerrainPic tt = case tt of
     _ ->
         genericSquare chasmCl
 
-getTerrainPic :: (Monoid' m, TrailLike (QDiagram b V2 Double m))
+getTerrainPic :: (BeDi b, Monoid' m, TrailLike (QDiagram b V2 Double m))
                => Tile -> QDiagram b V2 Double m
 getTerrainPic tile =
     baseTerrainPic (getTerrainType tile)
@@ -81,9 +81,10 @@ baseElementPicNoO env = baseElementPicNoC env Q1
 
 -- Note that baseElementPic would work without recieving chiralities or
 -- orientations weren't it for the "vertical" offset in the bridge graphics.
-baseElementPic :: Chirality -> Orientation
+baseElementPic :: BeDi b
+               => Chirality -> Orientation
                -> ElementSurface -> ElementType
-               -> CartoM (Diagram BEDia)
+               -> CartoM b (Diagram b)
 baseElementPic c q sf et = do
     env <- ask
     return $ baseElementPic' env c q sf et
@@ -437,7 +438,7 @@ rightTriangle cl h =
     # alignB # centerX # reflectY # translateY (h / 2)
     # lwG 0 # fc cl
 
-getTilePic :: Tile -> CartoM (Diagram BEDia)
+getTilePic :: BeDi b => Tile -> CartoM b (Diagram b)
 getTilePic tile =
     let c = getTileChirality tile
         q = getTileOrientation tile

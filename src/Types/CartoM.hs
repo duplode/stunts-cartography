@@ -5,8 +5,9 @@ import Control.Monad.Identity
 import Parameters
 
 -- CartoT, the Cartography monad transformer.
-type CartoT m = RWST RenderingParameters RenderingLog RenderingState m
+type CartoT b m =
+    RWST (RenderingParameters b) RenderingLog (RenderingState b) m
 
 -- CartoM, the Cartography monad.
-type CartoM = CartoT Identity
+type CartoM b = CartoT b Identity
 

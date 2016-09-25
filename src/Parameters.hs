@@ -21,13 +21,12 @@ import qualified Data.Sequence as Seq
 import qualified Data.Foldable as Fold
 import Data.Default
 import Diagrams.Prelude
-import Diagrams.Backend.Cairo (OutputType(..))
 import Track (Horizon(..), Element, Terrain)
 import qualified Util.ByteString as LB
 import Annotation (Annotation)
 import Annotation.LapTrace (TraceAnnotation)
 import Annotation.Flipbook
-import Types.Diagrams (BEDia)
+import Types.Diagrams
 
 -- Data types which shift information across the various layers of the
 -- rendering programs. It is probably a good idea to import it qualified, for
@@ -35,7 +34,7 @@ import Types.Diagrams (BEDia)
 
 -- Static environment.
 
-data RenderingParameters = RenderingParameters
+data RenderingParameters b = RenderingParameters
     { roadWidth :: Double
     , bridgeHeight :: Double
     , bridgeRelativeWidth :: Double
@@ -46,8 +45,8 @@ data RenderingParameters = RenderingParameters
     , xTileBounds :: (Int, Int)
     , yTileBounds :: (Int, Int)
 
-    , annotationSpecs :: [Annotation]
-    , flipbookSpec :: [SomeFlipbook]
+    , annotationSpecs :: [Annotation b]
+    , flipbookSpec :: [SomeFlipbook b]
 
     , pixelsPerTile :: Double
     , outputType :: OutputType
@@ -73,7 +72,7 @@ defaultRenderingParameters = RenderingParameters
     , baseDirectory = "."
     }
 
-instance Default RenderingParameters where
+instance Default (RenderingParameters b) where
     def = defaultRenderingParameters
 
 widerRoadsRenderingParameters = def
@@ -92,17 +91,17 @@ classicRenderingParameters = def
     , bankingRelativeHeight = 2 / 5
     }
 
-minTileBounds :: (Num a) => RenderingParameters -> (a, a)
+minTileBounds :: (Num a) => RenderingParameters b -> (a, a)
 minTileBounds params =
     (fromIntegral . fst $ xTileBounds params, fromIntegral . fst $ yTileBounds params)
 
-maxTileBounds :: (Num a) => RenderingParameters -> (a, a)
+maxTileBounds :: (Num a) => RenderingParameters b -> (a, a)
 maxTileBounds params =
     (fromIntegral . snd $ xTileBounds params, fromIntegral . snd $ yTileBounds params)
 
 -- The bounds are *tile* bounds. That means that a minBound of 0 and a maxBound
 -- of 0 include *one* tile, the zeroth tile.
-deltaTileBounds :: (Num a) => RenderingParameters -> (a, a)
+deltaTileBounds :: (Num a) => RenderingParameters b -> (a, a)
 deltaTileBounds params =
     let (xMin, xMax) = xTileBounds params
         (yMin, yMax) = yTileBounds params
@@ -112,7 +111,7 @@ deltaTileBounds params =
 newtype RenderingElemStyle = RenderingElemStyle (Double, Double, Double, Double)
     deriving (Eq)
 
-toElemStyle :: RenderingParameters -> RenderingElemStyle
+toElemStyle :: RenderingParameters b -> RenderingElemStyle
 toElemStyle params = RenderingElemStyle
     ( roadWidth params, bridgeHeight params
     , bridgeRelativeWidth params, bankingRelativeHeight params)
@@ -129,37 +128,37 @@ data PostRenderInfo = PostRenderInfo
 
 -- Rendering state.
 
-data RenderingState = RenderingState
-    { elementCache :: Map Element (Diagram BEDia)
-    , terrainCache :: Map Terrain (Diagram BEDia)
+data RenderingState b = RenderingState
+    { elementCache :: Map Element (Diagram b)
+    , terrainCache :: Map Terrain (Diagram b)
     , numberOfRuns :: Int
     }
 
-initialRenderingState :: RenderingState
+initialRenderingState :: RenderingState b
 initialRenderingState = RenderingState
     { elementCache = M.empty
     , terrainCache = M.empty
     , numberOfRuns = 0
     }
 
-instance Default RenderingState where
+instance Default (RenderingState b) where
     def = initialRenderingState
 
-clearElementCache :: RenderingState -> RenderingState
+clearElementCache :: RenderingState b -> RenderingState b
 clearElementCache st = st{ elementCache = M.empty }
 
-clearTerrainCache :: RenderingState -> RenderingState
+clearTerrainCache :: RenderingState b -> RenderingState b
 clearTerrainCache st = st{ terrainCache = M.empty }
 
-insertIntoElementCache :: Element -> Diagram BEDia
-                       -> RenderingState -> RenderingState
+insertIntoElementCache :: Element -> Diagram b
+                       -> RenderingState b -> RenderingState b
 insertIntoElementCache el dia st = st{ elementCache = M.insert el dia $ elementCache st }
 
-insertIntoTerrainCache :: Terrain -> Diagram BEDia
-                       -> RenderingState -> RenderingState
+insertIntoTerrainCache :: Terrain -> Diagram b
+                       -> RenderingState b -> RenderingState b
 insertIntoTerrainCache te dia st = st{ terrainCache = M.insert te dia $ terrainCache st }
 
-incrementNumberOfRuns :: RenderingState -> RenderingState
+incrementNumberOfRuns :: RenderingState b -> RenderingState b
 incrementNumberOfRuns st = st{ numberOfRuns = numberOfRuns st + 1 }
 
 -- Opaque Writer type.

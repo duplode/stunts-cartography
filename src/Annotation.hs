@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 module Annotation
     ( CardinalDirection(..)
     , Annotation(..)
@@ -73,7 +74,7 @@ module Annotation
 import Diagrams.Prelude hiding (E)
 import Data.Colour.SRGB
 import Data.Colour.RGBSpace.HSV
-import Types.Diagrams (BEDia)
+import Types.Diagrams
 import Pics.MM
 -- import qualified Annotation.CairoText as CairoText
 
@@ -123,14 +124,14 @@ limitedPolychromeSV sv@(s, _) =
         then polychromeSV sv
         else monochromeSV sv
 
-newtype Annotation
+newtype Annotation b
     = Annotation
-    { annotationDiagram :: Diagram BEDia
+    { annotationDiagram :: Diagram b
     }
 
 class IsAnnotation a where
-    annotation :: a -> Annotation
-    renderAnnotation :: a -> Diagram BEDia
+    annotation :: BeDi b => a -> Annotation b
+    renderAnnotation :: BeDi b => a -> Diagram b
 
     renderAnnotation = annotationDiagram . annotation
 
@@ -238,6 +239,7 @@ instance IsAnnotation CaptAnnotation where
             # rotate (_captAnnAngle ann @@ deg)
         }
         where
+        captionStyle :: Style V2 Double
         captionStyle = mempty # bold
 
 instance LocatableAnnotation CaptAnnotation where
