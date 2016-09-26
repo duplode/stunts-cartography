@@ -7,6 +7,10 @@ import Diagrams.Prelude (Style, R2, unr2)
 import qualified Diagrams.Backend.Cairo.Text as CairoText
 
 -- Isolating the Cairo.Text-based hacks in a separate module.
+-- These functions were used along with diagrams-cairo 1.2 to provide
+-- caption backgrounds. Currently there are better options -- pango
+-- support in diagrams-cairo and the SVGFonts package.
+
 -- The font metric corrections were defined by trial-and-error.
 extentsToBounds :: (CairoText.FontExtents, CairoText.TextExtents)
                 -> (Double, Double)

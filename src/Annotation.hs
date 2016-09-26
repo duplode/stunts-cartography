@@ -70,15 +70,14 @@ module Annotation
 
 -- It might be sensible to import this qualified if you need the constructors.
 
-import Control.Lens.Operators hiding ((#))
-import qualified Control.Lens as L
-import Data.Default
-import Diagrams.Prelude
+import Diagrams.Prelude hiding (E)
 import Data.Colour.SRGB
 import Data.Colour.RGBSpace.HSV
+import Graphics.SVGFonts (textSVG', TextOpts(..))
+import Graphics.SVGFonts.Fonts (bit)
 import Types.Diagrams (BEDia)
 import Pics.MM
-import qualified Annotation.CairoText as CairoText
+-- import qualified Annotation.CairoText as CairoText
 
 data CardinalDirection = E
                        | N
@@ -86,7 +85,7 @@ data CardinalDirection = E
                        | S
                        deriving (Read, Show, Eq, Ord)
 
-cardinalDirToR2 :: CardinalDirection -> R2
+cardinalDirToR2 :: CardinalDirection -> V2 Double
 cardinalDirToR2 x = case x of
     E -> unitX
     N -> unitY
@@ -128,12 +127,12 @@ limitedPolychromeSV sv@(s, _) =
 
 newtype Annotation
     = Annotation
-    { annotationDiagram :: Diagram BEDia R2
+    { annotationDiagram :: Diagram BEDia
     }
 
 class IsAnnotation a where
     annotation :: a -> Annotation
-    renderAnnotation :: a -> Diagram BEDia R2
+    renderAnnotation :: a -> Diagram BEDia
 
     renderAnnotation = annotationDiagram . annotation
 
@@ -205,7 +204,7 @@ data CaptAnnotation = CaptAnnotation
     , _captAnnSize :: Double
     , _captAnnText :: String
     } deriving (Show)
-L.makeLenses ''CaptAnnotation
+makeLenses ''CaptAnnotation
 
 instance Default CaptAnnotation where
     def = CaptAnnotation
@@ -223,21 +222,23 @@ instance IsAnnotation CaptAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
             let dirAlign = - cardinalDirToR2 (_captAnnAlignment ann)
+                captText = textSVG' with
+                        { textFont = bit
+                        , textHeight = _captAnnSize ann
+                        } (_captAnnText ann)
+                    # stroke # fillRule EvenOdd
+                    # fc (_captAnnColour ann) # lwG 0
             in (
-                text (_captAnnText ann)
-                # fc (_captAnnColour ann) # applyStyle captionStyle
-                <> uncurry rect
-                    (CairoText.textBounds captionStyle $ _captAnnText ann)
-                # fcA (computeBgColour (_captAnnColour ann)
-                    `withOpacity` (_captAnnBgOpacity ann))
-                # lwG 0
+                captText
+                <> ( boundingRect captText
+                    # lwG 0
+                    # fcA (computeBgColour (_captAnnColour ann)
+                        `withOpacity` (_captAnnBgOpacity ann))
+                    )
             )
             # alignBL # align dirAlign
-            # scale (_captAnnSize ann)
             # rotate (_captAnnAngle ann @@ deg)
         }
-        where
-        captionStyle = mempty # bold
 
 instance LocatableAnnotation CaptAnnotation where
     annPosition = _captAnnPosition
@@ -263,7 +264,7 @@ data CarAnnotation
      , _carAnnSize :: Double
      , _carAnnCaption :: CaptAnnotation
      } deriving (Show)
-L.makeLenses ''CarAnnotation
+makeLenses ''CarAnnotation
 
 instance Default CarAnnotation where
     def = CarAnnotation
@@ -308,7 +309,7 @@ instance ColourAnnotation CarAnnotation where
     annColourIsProtected = _carAnnColourIsProtected
     protectAnnColour = carAnnColourIsProtected .~ True
     deepOverrideAnnColour cl = overrideAnnColour cl
-        . L.over carAnnCaption (deepOverrideAnnColour cl)
+        . over carAnnCaption (deepOverrideAnnColour cl)
 
 data SegAnnotation
      = SegAnnotation
@@ -329,7 +330,7 @@ instance Default SegAnnotation where
         , _segAnnLength = 1
         , _segAnnCaption = defAnn
         }
-L.makeLenses ''SegAnnotation
+makeLenses ''SegAnnotation
 
 instance IsAnnotation SegAnnotation where
     annotation ann = Annotation
@@ -337,7 +338,7 @@ instance IsAnnotation SegAnnotation where
             fromSegments
                 [ straight (r2 (_segAnnLength ann, 0))
                 ]
-            # stroke
+            # strokePath
             # lwG 0.25 # lc (_segAnnColour ann)
             # (flip $ beside
                 (cardinalDirToR2 . _captAnnAlignment . _segAnnCaption $ ann))
@@ -361,7 +362,7 @@ instance ColourAnnotation SegAnnotation where
     annColourIsProtected = _segAnnColourIsProtected
     protectAnnColour = segAnnColourIsProtected .~ True
     deepOverrideAnnColour cl = overrideAnnColour cl
-        . L.over segAnnCaption (deepOverrideAnnColour cl)
+        . over segAnnCaption (deepOverrideAnnColour cl)
 
 data SplitAnnotation
      = SplitAnnotation
@@ -373,7 +374,7 @@ data SplitAnnotation
      , _splAnnCaptBgOpacity :: Double
      , _splAnnCaptAlignment :: CardinalDirection
      } deriving (Show)
-L.makeLenses ''SplitAnnotation
+makeLenses ''SplitAnnotation
 
 instance Default SplitAnnotation where
     def = SplitAnnotation
@@ -394,7 +395,7 @@ instance IsAnnotation SplitAnnotation where
             in fromSegments
                 [ straight (r2 (fromIntegral $ _splAnnLength ann, 0)
                 # rotate (cardinalDirToAngle (_splAnnDirection ann) @@ deg)) ]
-            # stroke
+            # strokePath
             # lwG 0.25 # lc (_splAnnColour ann)
             # (flip $ beside
                 (cardinalDirToR2 . _splAnnCaptAlignment $ ann))
@@ -454,3 +455,31 @@ instance IsAnnotation SplitAnnotation where
         , segAnnCaptSize = 0.75
         }
  -}
+
+-- This is the IsAnnotation instance for CaptAnnotation before the move
+-- to SVGFonts.
+{-
+instance IsAnnotation CaptAnnotation where
+    annotation ann = Annotation
+        { annotationDiagram =
+            let dirAlign = - cardinalDirToR2 (_captAnnAlignment ann)
+            in (
+                text (_captAnnText ann)
+                # fc (_captAnnColour ann) # applyStyle captionStyle
+                -- Caption background.
+                -- Disabled until a replacement for Cairo.Text is set up.
+                {-
+                <> uncurry rect
+                    (CairoText.textBounds captionStyle $ _captAnnText ann)
+                # fcA (computeBgColour (_captAnnColour ann)
+                    `withOpacity` (_captAnnBgOpacity ann))
+                # lwG 0
+                -}
+            )
+            # alignBL # align dirAlign
+            # scale (_captAnnSize ann)
+            # rotate (_captAnnAngle ann @@ deg)
+        }
+        where
+        captionStyle = mempty # bold
+-}

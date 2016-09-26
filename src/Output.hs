@@ -1,15 +1,18 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
 module Output
     ( writeImageFromTrk
     , writeImageFromRpl
     ) where
 
 import Data.Array
+import Control.Arrow ((***))
 import Control.Monad (guard)
 import Control.Monad.Identity (runIdentity)
 import Control.Monad.RWS hiding ((<>))
-import Control.Monad.Error
+import Control.Monad.Except
 import Control.Exception (tryJust)
 import System.FilePath (takeBaseName, (</>))
 import System.Directory (createDirectory)
@@ -22,7 +25,7 @@ import Diagrams.Core
 import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
 import qualified Util.ByteString as LB
 import Util.Misc
-import Util.ZipConduit
+import Util.Zip
 import Replay
 import Composition
 import qualified Parameters as Pm
@@ -32,22 +35,23 @@ import Types.CartoM
 import Types.Diagrams
 
 writeImageFromTrk :: (MonadIO m, Functor m)
-                  => FilePath -> CartoT (ErrorT String m) Pm.PostRenderInfo
+                  => FilePath -> CartoT (ExceptT String m) Pm.PostRenderInfo
 writeImageFromTrk trkPath =
     liftIO (LB.readFile trkPath)
         >>= writeImageOutput (takeBaseName trkPath)
 
 writeImageFromRpl :: (MonadIO m, Functor m)
-                  => FilePath -> CartoT (ErrorT String m) Pm.PostRenderInfo
+                  => FilePath -> CartoT (ExceptT String m) Pm.PostRenderInfo
 writeImageFromRpl rplPath = do
     rplData <- liftIO $ LB.readFile rplPath
     if trackDataHasTheCorrectSize rplData
         then uncurry writeImageOutput $ trkFromRplSimple rplData
         else lift $ throwError "No track data in RPL file."
 
+-- Note that the returned paths do not include the boilerplate prefix.
 writeImageOutput :: (MonadIO m, Functor m)
                  => String -> LB.ByteString
-                 -> CartoT (ErrorT String m) Pm.PostRenderInfo
+                 -> CartoT (ExceptT String m) Pm.PostRenderInfo
 writeImageOutput trackName trkBS = do
     let rawTrk = veryRawReadTrack trkBS
         horizon = horizonFromRawTrack rawTrk
@@ -72,7 +76,7 @@ writeImageOutput trackName trkBS = do
 
             startTime <- liftIO getCPUTime
             wholeMap <- wholeMapDiagram tiles
-            liftIO $ renderCairo outFile (Width renWidth) wholeMap
+            liftIO $ renderCairo outFile (mkWidth renWidth) wholeMap
             endTime <- liftIO getCPUTime
 
             let fullDeltaTime :: Double
@@ -86,8 +90,8 @@ writeImageOutput trackName trkBS = do
                 { Pm.renderedTrackHorizon = horizon
                 , Pm.trackName = trackName
                 , Pm.trackData = trkBS
-                , Pm.outputPath = outFile
-                , Pm.flipbookPath = Nothing
+                , Pm.outputRelPath = outRelPath
+                , Pm.flipbookRelPath = Nothing
                 }
 
         _ -> do
@@ -96,11 +100,12 @@ writeImageOutput trackName trkBS = do
 
             -- Ignoring the output type, at least for now.
             modify Pm.incrementNumberOfRuns
-            fbkDir <- createFlipbookDir tmpDir trackName
+            fbkRelDir <- createFlipbookDir tmpDir trackName
+            let fbkDir = tmpDir </> fbkRelDir
 
             -- Five digits are enough for Stunts replays of any length.
             let renderPage (ix, pg) = renderCairo
-                    (fbkDir </> (printf "%05d.png" ix)) (Width renWidth) pg
+                    (fbkDir </> (printf "%05d.png" ix)) (mkWidth renWidth) pg
 
             -- fbks is, in effect, mconcat'ed twice (first through
             -- zipFlipbookPages and then through concatFlipbookBackdrops)
@@ -112,12 +117,14 @@ writeImageOutput trackName trkBS = do
                 zip ([0..] :: [Int]) . map (withEnvelope wholeMap) $
                     zipFlipbookPages fbks
 
-            let backdropFile = fbkDir </> "backdrop.png"
+            let backdropRelFile = fbkRelDir </> "backdrop.png"
+                backdropFile = tmpDir </> backdropRelFile
                 fullBackdrop = concatFlipbookBackdrops fbks <> wholeMap
-            liftIO $ renderCairo backdropFile (Width renWidth) fullBackdrop
+            liftIO $ renderCairo backdropFile (mkWidth renWidth) fullBackdrop
 
             nRuns <- gets Pm.numberOfRuns
-            let zipFile = tmpDir </> ("flipbook-" ++ show nRuns ++ ".zip")
+            let zipRelFile = "flipbook-" ++ show nRuns ++ ".zip"
+                zipFile = tmpDir </> zipRelFile
             liftIO $ writeDirContentsZip fbkDir zipFile
 
             endTime <- liftIO getCPUTime
@@ -132,34 +139,35 @@ writeImageOutput trackName trkBS = do
                 { Pm.renderedTrackHorizon = horizon
                 , Pm.trackName = trackName
                 , Pm.trackData = trkBS
-                , Pm.outputPath = backdropFile
-                , Pm.flipbookPath = Just zipFile
+                , Pm.outputRelPath = backdropRelFile
+                , Pm.flipbookRelPath = Just zipRelFile
                 }
 
+-- Note that the returned path does not include the boilerplate prefix.
 createFlipbookDir :: (MonadIO m) => FilePath -> String -> CartoT m FilePath
 createFlipbookDir tmpDir trackName =
     gets Pm.numberOfRuns >>= liftIO . createIt
     where
-    dirTemplate = tmpDir </> ("flipbook-" ++ trackName ++ "-")
+    dirTemplate = "flipbook-" ++ trackName ++ "-"
     createIt n = do
         let dirPath = dirTemplate ++ show n
         r <- tryJust (guard . isAlreadyExistsError) $
-            createDirectory dirPath
+            createDirectory (tmpDir </> dirPath)
         case r of
             Left _  -> createIt (n + 1)
             Right _ -> return dirPath
 
 
 -- TODO: Possibly generalize the CartoM computations in Composition and below.
-wholeMapDiagram :: (Monad m) => [Tile] -> CartoT m (Diagram BEDia R2)
+wholeMapDiagram :: (Monad m) => [Tile] -> CartoT m (Diagram BEDia)
 wholeMapDiagram tiles = mapRWST (return . runIdentity) $ do
     params <- ask
-    let minBounds = Pm.minTileBounds params
+    let minBounds :: (Double, Double)
+        minBounds = fromIntegral *** fromIntegral $ Pm.minTileBounds params
         (minX, minY) = minBounds
         deltaBounds = Pm.deltaTileBounds params
         (deltaX, deltaY) = deltaBounds
         adjustPositionForClip = moveOriginBy (r2 minBounds # reflectX # reflectY)
-        clipRect :: Path R2
         clipRect = unitSquare # scaleX deltaX # scaleY deltaY
             # alignBL # adjustPositionForClip
     wholeMap <- renderMap tiles

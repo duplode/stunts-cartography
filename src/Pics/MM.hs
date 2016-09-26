@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies #-}
+
 module Pics.MM
     ( acura
     , acura'
@@ -5,6 +8,7 @@ module Pics.MM
 
 import Diagrams.Prelude
 import Pics.Palette (sunroofCl, windshieldCl)
+import Types.Diagrams (BEDia)
 
 acura cl =
     (
