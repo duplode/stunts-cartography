@@ -87,7 +87,10 @@ instance Monoid SomeFlipbook where
         { renderedFlipbookPages = []
         , renderedFlipbookBackdrop = mempty
         }
-    mappend (SomeFlipbook ann1) (SomeFlipbook ann2) =
+    mappend = (<>)
+
+instance Semigroup SomeFlipbook where
+    (SomeFlipbook ann1) <> (SomeFlipbook ann2) =
         SomeFlipbook $ RenderedFlipbook
             { renderedFlipbookPages =
                 zipStillLastWith mappend (toFlipbook ann1) (toFlipbook ann2)
