@@ -273,9 +273,9 @@ baseElementPic' env c q sf et = do
                 baseElementPicNoO env sf Road
                 # atop (genericSquare meshCl
                     # scaleY roadW # scaleX (1/2)
-                    # alignBL # shearX (1 / (2 * roadW)) # centerXY)
-                # atop (fromSegments [ straight (r2 (1/2, -roadW)) ]
-                    # translate (r2 (-1/4, roadW / 2))
+                    # alignBL # shearX (-1 / (2 * roadW)) # centerXY)
+                # atop (fromSegments [ straight (r2 (1/2, roadW)) ]
+                    # translate (r2 (-1/4, -roadW / 2))
                     # lwG (corkWallRelW * roadW) # lc warningCl)
                 # scaleX 2
             Looping ->

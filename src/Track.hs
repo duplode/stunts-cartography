@@ -57,11 +57,13 @@ veryRawReadTrack dat = VeryRawTrack elms scen terr
         <$> LB.splitAt 900 dat
 
 -- |Chirality of a track element. Allows distinguishing between mirrored
--- versions of a same base element. 'Dextral' means clockwise; 'Sinistral',
--- anticlockwise and 'Achiral' that it doesn't matter (that is, the mirror
--- image of the element can be superimposed on it after being rotated). To what
--- "clockwise" and  "anticlockwise" refer depends on the track element being
--- considered:
+-- versions of a same base element. 'Dextral' means clockwise and 'Sinistral',
+-- anticlockwise. Achiral elements (that is, those who can be superimposed on
+-- their mirror image after being rotated) are, by convention, nominally
+-- 'Dextral' (achiral elements can be distinguished through the lack of the
+-- 'Chiral' element property). For the chiral elements (that is, those for
+-- which chirality does matter), what "clockwise" and  "anticlockwise" refer to
+-- depends on the track element being considered:
 --
 -- * U/d corks: clockwiseness of the rotation when ascending the cork.
 --
@@ -81,9 +83,9 @@ veryRawReadTrack dat = VeryRawTrack elms scen terr
 --   banked road entrances, have the elevated side of the banking to the left
 --   of the driver.
 --
--- Some of the chiral elements in Stunts unfortunately lack one of the chiral
--- counterparts, and so they are treated as 'Achiral'. Were it not the case,
--- their clockwiseness would be determined in the following way:
+-- The following elements are chiral, but their mirrored counterpart is missing
+-- from Stunts (the 'NoMirroring' element property signals that unfortunate
+-- condition). Nonetheless, they are assigned chiralities as well:
 --
 -- * L/r corks: clockwiseness around the track direction axis (so that the
 --   corks l/r in Stunts are sinistral/anticlockwise).
@@ -96,8 +98,10 @@ veryRawReadTrack dat = VeryRawTrack elms scen terr
 --   track in relation to the first slalom block (so that Stunts slalom blocks
 --   are dextral/clockwise).
 --
-data Chirality = Achiral
-               | Dextral
+-- * Chiral scenery elements (Joe's and the gas station) have the variant in
+--   Stunts arbitrarily taken as the dextral one.
+--
+data Chirality = Dextral
                | Sinistral
                deriving (Eq, Enum, Show, Ord)
 
@@ -105,8 +109,7 @@ data Chirality = Achiral
 --
 flipChirality :: Chirality -> Chirality
 flipChirality Dextral   = Sinistral
-flipChirality Sinistral = Dextral
-flipChirality c         = c
+flipChirality _         = Dextral
 
 -- |Orientation of an element. Each element has four possible orientations,
 -- corresponding to the four cardinal directions in the track grid, though some
@@ -195,7 +198,7 @@ data Connectivity = Isolate      -- ^ Blank tiles and scenery. n x n shape.
                   | Orthogonal   -- ^ Banked roads and transitions. n x 1.
                   | Corner       -- ^ Corners, small and large. n x n.
                   | Oblique      -- ^ Chicanes. n x n. Must be chiral.
-                  | ChiralLinear -- ^ U/d corks. n x n. Must be chiral.
+                  | WideLinear   -- ^ U/d corks. n x n. Must be chiral.
                   | Split        -- ^ Path divide. n x n. Must be chiral.
                   | Crossing     -- ^ Crossroads. 1 x 1 (length ignored).
                   deriving (Eq, Enum, Show)
@@ -291,6 +294,8 @@ data ElementAttribute = Elevated
                       | Banked -- ^ Does not apply to the transitions.
                       | Transition
                       | Chiral
+                      | NoMirroring
+                      | NoRotation
                       | FakeGrass
                       | Scenery
                       | Filler
@@ -313,9 +318,6 @@ blankProperties = ElementProperties Isolate [] Small
 smallLinearProperties :: ElementProperties
 smallLinearProperties = ElementProperties Linear [] Small
 
-largeLinearProperties :: ElementProperties
-largeLinearProperties = ElementProperties Linear [] Large
-
 largeCornerProperties :: ElementProperties
 largeCornerProperties = ElementProperties Corner [] Large
 
@@ -335,6 +337,13 @@ rampProperties = Ramp `addAttribute` transitionProperties
 sceneryProperties :: ElementProperties
 sceneryProperties = Scenery `addAttribute` blankProperties
 
+chiralSceneryProperties :: ElementProperties
+chiralSceneryProperties = Chiral `addAttribute`
+    (NoMirroring `addAttribute` sceneryProperties)
+
+treeProperties :: ElementProperties
+treeProperties = NoRotation `addAttribute` sceneryProperties
+
 fillerProperties :: ElementProperties
 fillerProperties = Filler `addAttribute` blankProperties
 
@@ -344,13 +353,14 @@ eTypeToProps et
     | test Blank = blankProperties
     | testMany roads = smallLinearProperties
     | test Crossroad = ElementProperties Crossing [] Small
+    | test SlalomRoad = ElementProperties Linear [Chiral, NoMirroring] Small
     | testMany elevs = elevatedProperties
     | test SolidRoad = Solid `addAttribute` elevatedProperties
     | test SpanOverRoad = ElementProperties Crossing [Elevated] Small
     | testMany ramps = rampProperties
     | test SolidRamp = Solid `addAttribute` rampProperties
-    | test CorkUpDown = ElementProperties ChiralLinear [Chiral] Large
-    | testMany lLins = largeLinearProperties
+    | test CorkUpDown = ElementProperties WideLinear [Chiral] Large
+    | testMany lLins = ElementProperties Linear [Chiral, NoMirroring] Large
     | testMany trans = transitionProperties
     | test BankedRoad = ElementProperties Orthogonal [] Small
     | test SharpCorner = ElementProperties Corner [] Small
@@ -362,6 +372,8 @@ eTypeToProps et
     | test Chicane = ElementProperties Oblique [Chiral, FakeGrass] Large
     | test BankedTransition = ElementProperties Orthogonal
         [Chiral, Transition] Small
+    | testMany treeLike = treeProperties
+    | testMany chiralScenery = chiralSceneryProperties
     | testMany fillers = fillerProperties
     | otherwise = sceneryProperties -- TODO: consider UnknownElement.
     where
@@ -370,7 +382,6 @@ eTypeToProps et
     roads = [ Road
             , StartFinish
             , Tunnel
-            , SlalomRoad
             , Pipe
             , PipeObstacle
             , Highway
@@ -387,6 +398,16 @@ eTypeToProps et
     trans = [ PipeTransition
             , HighwayTransition
             ]
+    treeLike = [ Cactus
+               , Palm
+               , Pine
+               , TennisCourt
+               , PlayerGhost
+               , OpponentGhost
+               ]
+    chiralScenery = [ Joe's
+                    , GasStation
+                    ]
     fillers = [ FillerQ1
               , FillerQ3
               , FillerQ4
@@ -421,55 +442,55 @@ getAbstractSize = elementSize . eTypeToProps . elementType
 -- invariant elements.
 
 blank :: Orientation -> Element
-blank = Element Blank Tarmac Achiral
+blank = Element Blank Tarmac Dextral
 
 pavedStartFinish :: Orientation -> Element
-pavedStartFinish = Element StartFinish Tarmac Achiral
+pavedStartFinish = Element StartFinish Tarmac Dextral
 
 dirtStartFinish :: Orientation -> Element
-dirtStartFinish = Element StartFinish Dirt Achiral
+dirtStartFinish = Element StartFinish Dirt Dextral
 
 icyStartFinish :: Orientation -> Element
-icyStartFinish = Element StartFinish Ice Achiral
+icyStartFinish = Element StartFinish Ice Dextral
 
 pavedRoad :: Orientation -> Element
-pavedRoad = Element Road Tarmac Achiral
+pavedRoad = Element Road Tarmac Dextral
 
 dirtRoad :: Orientation -> Element
-dirtRoad = Element Road Dirt Achiral
+dirtRoad = Element Road Dirt Dextral
 
 icyRoad :: Orientation -> Element
-icyRoad = Element Road Ice Achiral
+icyRoad = Element Road Ice Dextral
 
 pavedCrossroad :: Orientation -> Element
-pavedCrossroad = Element Crossroad Tarmac Achiral
+pavedCrossroad = Element Crossroad Tarmac Dextral
 
 dirtCrossroad :: Orientation -> Element
-dirtCrossroad = Element Crossroad Dirt Achiral
+dirtCrossroad = Element Crossroad Dirt Dextral
 
 icyCrossroad :: Orientation -> Element
-icyCrossroad = Element Crossroad Ice Achiral
+icyCrossroad = Element Crossroad Ice Dextral
 
 elevatedRoad :: Orientation -> Element
-elevatedRoad = Element ElevatedRoad Tarmac Achiral
+elevatedRoad = Element ElevatedRoad Tarmac Dextral
 
 solidRoad :: Orientation -> Element
-solidRoad = Element SolidRoad Tarmac Achiral
+solidRoad = Element SolidRoad Tarmac Dextral
 
 spanOverRoad :: Orientation -> Element
-spanOverRoad = Element SpanOverRoad Tarmac Achiral
+spanOverRoad = Element SpanOverRoad Tarmac Dextral
 
 elevatedSpan :: Orientation -> Element
-elevatedSpan = Element ElevatedSpan Tarmac Achiral
+elevatedSpan = Element ElevatedSpan Tarmac Dextral
 
 elevatedRamp :: Orientation -> Element
-elevatedRamp = Element ElevatedRamp Tarmac Achiral
+elevatedRamp = Element ElevatedRamp Tarmac Dextral
 
 bridgeRamp :: Orientation -> Element
-bridgeRamp = Element BridgeRamp Tarmac Achiral
+bridgeRamp = Element BridgeRamp Tarmac Dextral
 
 solidRamp :: Orientation -> Element
-solidRamp = Element SolidRamp Tarmac Achiral
+solidRamp = Element SolidRamp Tarmac Dextral
 
 corkUpDownDex :: Orientation -> Element
 corkUpDownDex = Element CorkUpDown Tarmac Dextral
@@ -478,58 +499,58 @@ corkUpDownSin :: Orientation -> Element
 corkUpDownSin = Element CorkUpDown Tarmac Sinistral
 
 looping :: Orientation -> Element
-looping = Element Looping Tarmac Achiral
+looping = Element Looping Tarmac Dextral
 
 corkLeftRight :: Orientation -> Element
-corkLeftRight = Element CorkLeftRight Tarmac Achiral
+corkLeftRight = Element CorkLeftRight Tarmac Sinistral
 
 tunnel :: Orientation -> Element
-tunnel = Element Tunnel Tarmac Achiral
+tunnel = Element Tunnel Tarmac Dextral
 
 slalomRoad :: Orientation -> Element
-slalomRoad = Element SlalomRoad Tarmac Achiral
+slalomRoad = Element SlalomRoad Tarmac Dextral
 
 pipe :: Orientation -> Element
-pipe = Element Pipe Tarmac Achiral
+pipe = Element Pipe Tarmac Dextral
 
 pipeObstacle :: Orientation -> Element
-pipeObstacle = Element PipeObstacle Tarmac Achiral
+pipeObstacle = Element PipeObstacle Tarmac Dextral
 
 pipeTransition :: Orientation -> Element
-pipeTransition = Element PipeTransition Tarmac Achiral
+pipeTransition = Element PipeTransition Tarmac Dextral
 
 highway :: Orientation -> Element
-highway = Element Highway Tarmac Achiral
+highway = Element Highway Tarmac Dextral
 
 highwayTransition :: Orientation -> Element
-highwayTransition = Element HighwayTransition Tarmac Achiral
+highwayTransition = Element HighwayTransition Tarmac Dextral
 
 bankedRoad :: Orientation -> Element
-bankedRoad = Element BankedRoad Tarmac Achiral
+bankedRoad = Element BankedRoad Tarmac Dextral
 
 pavedSharpCorner :: Orientation -> Element
-pavedSharpCorner = Element SharpCorner Tarmac Achiral
+pavedSharpCorner = Element SharpCorner Tarmac Dextral
 
 dirtSharpCorner :: Orientation -> Element
-dirtSharpCorner = Element SharpCorner Dirt Achiral
+dirtSharpCorner = Element SharpCorner Dirt Dextral
 
 icySharpCorner :: Orientation -> Element
-icySharpCorner = Element SharpCorner Ice Achiral
+icySharpCorner = Element SharpCorner Ice Dextral
 
 pavedLargeCorner :: Orientation -> Element
-pavedLargeCorner = Element LargeCorner Tarmac Achiral
+pavedLargeCorner = Element LargeCorner Tarmac Dextral
 
 dirtLargeCorner :: Orientation -> Element
-dirtLargeCorner = Element LargeCorner Dirt Achiral
+dirtLargeCorner = Element LargeCorner Dirt Dextral
 
 icyLargeCorner :: Orientation -> Element
-icyLargeCorner = Element LargeCorner Ice Achiral
+icyLargeCorner = Element LargeCorner Ice Dextral
 
 bankedCorner :: Orientation -> Element
-bankedCorner = Element BankedCorner Tarmac Achiral
+bankedCorner = Element BankedCorner Tarmac Dextral
 
 elevatedCorner :: Orientation -> Element
-elevatedCorner = Element ElevatedCorner Tarmac Achiral
+elevatedCorner = Element ElevatedCorner Tarmac Dextral
 
 pavedSharpSplitDex :: Orientation -> Element
 pavedSharpSplitDex = Element SharpSplit Tarmac Dextral
@@ -568,52 +589,52 @@ bankedTransitionSin :: Orientation -> Element
 bankedTransitionSin = Element BankedTransition Tarmac Sinistral
 
 playerGhost :: Orientation -> Element
-playerGhost = Element PlayerGhost Tarmac Achiral
+playerGhost = Element PlayerGhost Tarmac Dextral
 
 opponentGhost :: Orientation -> Element
-opponentGhost = Element OpponentGhost Tarmac Achiral
+opponentGhost = Element OpponentGhost Tarmac Dextral
 
 palm :: Orientation -> Element
-palm = Element Palm Tarmac Achiral
+palm = Element Palm Tarmac Dextral
 
 cactus :: Orientation -> Element
-cactus = Element Cactus Tarmac Achiral
+cactus = Element Cactus Tarmac Dextral
 
 pine :: Orientation -> Element
-pine = Element Pine Tarmac Achiral
+pine = Element Pine Tarmac Dextral
 
 tennisCourt :: Orientation -> Element
-tennisCourt = Element TennisCourt Tarmac Achiral
+tennisCourt = Element TennisCourt Tarmac Dextral
 
 gasStation :: Orientation -> Element
-gasStation = Element GasStation Tarmac Achiral
+gasStation = Element GasStation Tarmac Dextral
 
 barn :: Orientation -> Element
-barn = Element Barn Tarmac Achiral
+barn = Element Barn Tarmac Dextral
 
 officeBuilding :: Orientation -> Element
-officeBuilding = Element OfficeBuilding Tarmac Achiral
+officeBuilding = Element OfficeBuilding Tarmac Dextral
 
 windmill :: Orientation -> Element
-windmill = Element Windmill Tarmac Achiral
+windmill = Element Windmill Tarmac Dextral
 
 ship :: Orientation -> Element
-ship = Element Ship Tarmac Achiral
+ship = Element Ship Tarmac Dextral
 
 joe's :: Orientation -> Element
-joe's = Element Joe's Tarmac Achiral
+joe's = Element Joe's Tarmac Dextral
 
 fillerQ1 :: Orientation -> Element
-fillerQ1 = Element FillerQ1 Tarmac Achiral
+fillerQ1 = Element FillerQ1 Tarmac Dextral
 
 fillerQ3 :: Orientation -> Element
-fillerQ3 = Element FillerQ3 Tarmac Achiral
+fillerQ3 = Element FillerQ3 Tarmac Dextral
 
 fillerQ4 :: Orientation -> Element
-fillerQ4 = Element FillerQ4 Tarmac Achiral
+fillerQ4 = Element FillerQ4 Tarmac Dextral
 
 unknownElement :: Orientation -> Element
-unknownElement = Element UnknownElement Tarmac Achiral
+unknownElement = Element UnknownElement Tarmac Dextral
 
 -- |Builds an element from the .TRK byte value.
 byteToElement :: Word8 -> Element
