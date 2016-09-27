@@ -56,80 +56,30 @@ veryRawReadTrack dat = VeryRawTrack elms scen terr
     (elms, (scen, terr)) = fmap (LB.take 900) . fromJust . LB.uncons
         <$> LB.splitAt 900 dat
 
--- |For extra simplicity, we use just one simple datatype to represent
--- orientation and direction. The values 'Q1'..'Q4' stand for the four
--- trigonometric quadrants. The relevant conventions are:
---
--- * For most linear elements, 'Q1' means that the track runs in the direction
---   of the angle 0; Q2 implies a pi/2 direction, and so forth.
---
--- * Ramps and u/d corks are considered to face their ascending direction.
---
--- * Entrance/exit tiles (pipes, highways, s/f lines) are considered to face
---   their entrance direction.
---
--- * The major exception are straight banked roads and banked road transitions,
---   whose orientation is given by the ascending direction of the banking.
---
--- * For corners, 'Q1'..'Q4' indicate the quadrant spanned by the arc of the
---   corner.
---
--- * The orientation of a split is that of the straight path when the split
---   is driven as a path divide, and not as a rejoinder.
---
--- * The orientation of a scenery element is given by the direction the front
---   side of the building/vehicle/etc. faces.
---
--- * The orientation of filler tiles is ignored.
---
--- * Straight hill slopes recieve orientations as if they were ramps. Angled
---   terrain pieces recieve orientations as if they were small corners
---   centered in the tile vertex which is fully inside water or atop the hill.
---
-data Orientation = Q1 -- ^ First quadrant, [0, pi/2[
-                 | Q2 -- ^ Second quadrant, [pi/2, pi[
-                 | Q3 -- ^ Third quadrant, [pi, 3*pi/2[
-                 | Q4 -- ^ Fourth quadrant, [3*pi/2, 2*pi[
-                 deriving (Eq, Ord, Show)
-
--- |The Enum instance for 'Orientation' is defined so that 'succ' corresponds
--- to anticlockwise rotation by pi/2.
---
-instance Enum Orientation where
-    toEnum 0    = Q1
-    toEnum 1    = Q2
-    toEnum 2    = Q3
-    toEnum 3    = Q4
-    toEnum x    = toEnum (x `mod` 4)
-    fromEnum Q1 = 0
-    fromEnum Q2 = 1
-    fromEnum Q3 = 2
-    fromEnum Q4 = 3
-
--- |Applies an arbitrary number of quarter turns to an 'Orientation'.
-rotateOrientation :: Int -- ^ Number of quarter-turns. Positive values rotate
-                         -- anticlockwise; negative ones, clockwise.
-                  -> Orientation
-                  -> Orientation
-rotateOrientation turns = toEnum . (+ turns) . fromEnum
-
--- |Chirality of a track element. 'Dextral' means clockwise; 'Sinistral',
--- anticlockwise and 'Achiral' that it doesn't matter. To what "clockwise" and
--- "anticlockwise" refer depends on the track element being considered:
+-- |Chirality of a track element. Allows distinguishing between mirrored
+-- versions of a same base element. 'Dextral' means clockwise; 'Sinistral',
+-- anticlockwise and 'Achiral' that it doesn't matter (that is, the mirror
+-- image of the element can be superimposed on it after being rotated). To what
+-- "clockwise" and  "anticlockwise" refer depends on the track element being
+-- considered:
 --
 -- * U/d corks: clockwiseness of the rotation when ascending the cork.
 --
 -- * Chicanes: clockwiseness when tracing an arc from the axis of the direction
---   of the car when entering the chicane to the exit point of the chicane. In a
---   possibly less confusing way: a dextral/clockwise chicane can be rotated so
---   that it looks like a plot of the tangent function (as opposed to a plot of
---   the cotangent).
+--   of the car when entering the chicane to the exit point of the chicane. 
+--   Right-left chicanes are dextral/clockwise, while left-right ones are
+--   sinistral/anticlockwise. Putting it in another way: a dextral/clockwise
+--   chicane can be rotated so that it looks like a plot of the tangent
+--   function (as opposed to a plot of the cotangent).
 --
 -- * Dual-way splits: clockwiseness of the corner when driven as a path divide
 --   (as opposed to a path rejoinder).
 --
 -- * Banked road transitions: clockwiseness of the only banked corner that fits
---   the transition when driven as a banked road entrance.
+--   the transition when driven as a banked road entrance. The
+--   dextral/clockwise banked transitions are those which, when driven as
+--   banked road entrances, have the elevated side of the banking to the left
+--   of the driver.
 --
 -- Some of the chiral elements in Stunts unfortunately lack one of the chiral
 -- counterparts, and so they are treated as 'Achiral'. Were it not the case,
@@ -157,6 +107,82 @@ flipChirality :: Chirality -> Chirality
 flipChirality Dextral   = Sinistral
 flipChirality Sinistral = Dextral
 flipChirality c         = c
+
+-- |Orientation of an element. Each element has four possible orientations,
+-- corresponding to the four cardinal directions in the track grid, though some
+-- of them may be equivalent depending on the element shape. To make it
+-- possible to use a single set of four values to indicate the orientations of
+-- all track elements as unambiguously as possible, we abstract from the
+-- individual element shapes and use the values 'Q1'..'Q4', which stand for
+-- the four trigonometric quadrants (that is, 'Q1' is the east-to-north
+-- quadrant, and the next quadrants follow in counterclockwise order). The
+-- conventions for assigning quadrant to elements are:
+--
+-- * For most linear elements, 'Q1' means that the track runs in the direction
+--   of the angle 0 (towards east); Q2 implies a pi/2 direction (towards
+--   north), and so forth.
+--
+-- * For ramps and u/d corks, the track direction mentioned above is taken to
+--   ascending one (that is, the one in which the ramp is climbed).
+--
+-- * For entrance and exit tiles (pipes, highways, s/f lines), the relevant
+--   track direction is the entrance one (for instance, the one leading into
+--   the pipe).
+--
+-- * The major exception are straight banked roads and banked road transitions,
+--   whose orientation is given by the ascending direction of the banking.
+--
+-- * For simple and banked corners, 'Q1'..'Q4' indicate the quadrant spanned
+--   by the arc of the corner.
+--
+-- * The orientation of a split is that of the straight path when the split
+--   is driven as a path divide, and not as a rejoinder.
+--
+-- * The orientation of a scenery element is given by the direction the front
+--   side of the building/vehicle/etc. faces.
+--
+-- * The orientation of filler tiles is ignored.
+--
+-- * Straight hill slopes recieve orientations as if they were ramps. Angled
+--   terrain pieces recieve orientations as if they were small corners
+--   centered in the tile vertex which is fully inside water or atop the hill.
+--
+-- Some consequences worth mentioning of these conventions:
+--
+-- * Reflecting a chiral element (be it dextral or sinistral) with 'Q1'
+--   orientation across the east-west axis flips the chirality but preserves
+--   the 'Q1' orientation.
+--
+-- * The straight banked road and both (dextral and sinistral) banked road
+--   transitions can be connected end-to-end in a valid three-tile track
+--   segment.
+--
+data Orientation = Q1 -- ^ First quadrant, [0, pi/2[
+                 | Q2 -- ^ Second quadrant, [pi/2, pi[
+                 | Q3 -- ^ Third quadrant, [pi, 3*pi/2[
+                 | Q4 -- ^ Fourth quadrant, [3*pi/2, 2*pi[
+                 deriving (Eq, Ord, Show)
+
+-- |The Enum instance for 'Orientation' is defined so that 'succ' corresponds
+-- to anticlockwise rotation by pi/2.
+--
+instance Enum Orientation where
+    toEnum 0    = Q1
+    toEnum 1    = Q2
+    toEnum 2    = Q3
+    toEnum 3    = Q4
+    toEnum x    = toEnum (x `mod` 4)
+    fromEnum Q1 = 0
+    fromEnum Q2 = 1
+    fromEnum Q3 = 2
+    fromEnum Q4 = 3
+
+-- |Applies an arbitrary number of quarter turns to an 'Orientation'.
+rotateOrientation :: Int -- ^ Number of quarter-turns. Positive values rotate
+                         -- anticlockwise; negative ones, clockwise.
+                  -> Orientation
+                  -> Orientation
+rotateOrientation turns = toEnum . (+ turns) . fromEnum
 
 -- |Connectivity of a track element. Together with the chirality, it determines
 -- at which tile sides the element connects to others in a track path. It also

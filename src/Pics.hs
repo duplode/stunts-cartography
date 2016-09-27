@@ -22,6 +22,8 @@ import Pics.MM (acura)
 import Types.CartoM
 import Types.Diagrams (BEDia)
 
+-- Applies the specified orientation to a base picuture, which should have
+-- Q1 orientation and the desired chirality already applied.
 --rotateByOrient :: Orientation -> ("Dia" -> "Dia")
 rotateByOrient = rotateBy . (/4) . fromIntegral . fromEnum
 
@@ -40,6 +42,10 @@ moveOriginBySize q (lx, ly) =
     let delta l = (fromIntegral l - 1) / 2
     in moveOriginBy $ r2 (corrSignumX q * delta lx, corrSignumY q * delta ly)
 
+-- Applies the specified chirality to a reference (dextral) picture. This works
+-- partly because of the conventions for assigning chiralities and orientations
+-- and partly because the chirality is applied to the base picture before the
+-- orientation.
 --reflectByChirality :: Chirality -> ("Dia" -> "Dia")
 reflectByChirality c = case c of
     Sinistral -> reflectY
