@@ -4,10 +4,9 @@ flags:
 packages:
 - '.'
 - location:
-    git: https://github.com/duplode/threepenny-gui
-    commit: 7e4e3a41cbb5e55312d4375612790d633ccf1e7a
+    git: https://github.com/HeinrichApfelmus/threepenny-gui
+    commit: edeceee8f6891bffd0d92078efd581a7a4123fb4
   extra-dep: true
 extra-deps:
 - parsec-permutation-0.1.2.0
-- websockets-snap-0.10.0.0
-resolver: lts-7.1
+resolver: lts-8.2
