@@ -311,9 +311,10 @@ baseElementPic' env c q sf et = do
                 let leaf = arc (angleDir (1/8 @@ turn)) (3/8 @@ turn)
                         # closeLine # strokeLoop
                         # scale 0.25 # lwG 0.01 # lc darkleafCl # fc leafCl
-                in beside unitY
-                    (square (2/3) # scaleX (1/8) # lwG 0.01 # fc woodCl)
-                    ((leaf ||| leaf # reflectX) # centerX)
+                in vsep (-31/40)
+                    [ square (2/3) # scaleX (1/8) # lwG 0.01 # fc woodCl
+                    , (leaf ||| leaf # reflectX) # centerX
+                    ]
             Cactus ->
                 (
                     fromOffsets [ 0 ^& (-3/16)
