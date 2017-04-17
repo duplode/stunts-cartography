@@ -486,6 +486,7 @@ setup initDir tmpDir w = void $ do
                         lift . lift $ unless (null fbks) $ alertifyLog'
                             "Flipbook rendering usually takes a few minutes. Please stand by..."
                             StandardLog 10000
+                        lift . lift $ flushCallBuffer
                         RWS.local (\p -> p
                             { Pm.annotationSpecs = anns
                             , Pm.flipbookSpec = fbks
