@@ -166,9 +166,11 @@ incrementNumberOfRuns st = st{ numberOfRuns = numberOfRuns st + 1 }
 
 newtype RenderingLog = RenderingLog { unRenderingLog :: Seq Char }
 
+instance Semigroup RenderingLog where
+    x <> y = RenderingLog $ (unRenderingLog x) >< (unRenderingLog y)
+
 instance Monoid RenderingLog where
     mempty = RenderingLog Seq.empty
-    x `mappend` y = RenderingLog $ (unRenderingLog x) >< (unRenderingLog y)
 
 logFromList :: String -> RenderingLog
 logFromList = RenderingLog . Seq.fromList

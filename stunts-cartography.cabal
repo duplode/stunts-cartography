@@ -32,10 +32,10 @@ flag resourcesWithExecutables
 
 flag repldump2carto
     description: Builds the repldump2carto utility.
-    default:     False
+    default:     True
 
 Source-Repository head
-  type: hg
+  type: git
   location: https://bitbucket.org/duplode/stunts-cartography
 
 
@@ -77,14 +77,14 @@ Executable sc-trk-viewer
   Hs-Source-Dirs:   src
 
   Build-Depends:     base >= 4.6 && < 5
-                    ,threepenny-gui == 0.8.*
+                    ,threepenny-gui >= 0.8
                     ,diagrams-core == 1.4.*
                     ,diagrams-lib == 1.4.*
-                    ,SVGFonts == 1.6.*
+                    ,SVGFonts >= 1.6
                     ,diagrams-cairo == 1.4.*
                     ,parsec >= 3.1.3 && < 3.2
                     ,parsec-permutation == 0.1.*
-                    ,zip == 0.1.*
+                    ,zip >= 1.0
                     ,path
                     ,lens
                     ,aeson

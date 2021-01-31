@@ -75,6 +75,7 @@ import Data.Colour.SRGB
 import Data.Colour.RGBSpace.HSV
 import Graphics.SVGFonts (textSVG', TextOpts(..))
 import Graphics.SVGFonts.Fonts (bit)
+import System.IO.Unsafe
 import Types.Diagrams (BEDia)
 import Pics.MM
 -- import qualified Annotation.CairoText as CairoText
@@ -223,7 +224,9 @@ instance IsAnnotation CaptAnnotation where
         { annotationDiagram =
             let dirAlign = - cardinalDirToR2 (_captAnnAlignment ann)
                 captText = textSVG' with
-                        { textFont = bit
+                        { textFont = unsafePerformIO bit
+                        -- The unsafePerformIO above used to be done by
+                        -- SVGFonts itself before its 1.7 version.
                         , textHeight = _captAnnSize ann
                         } (_captAnnText ann)
                     # stroke # fillRule EvenOdd
