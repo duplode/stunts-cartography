@@ -2,7 +2,7 @@ module Pics.Palette where
 
 import Diagrams.Prelude
 
-plainCl = forestgreen
+plainCl = mediumseagreen
 waterCl = dodgerblue
 hillCl = lightgreen
 slopeCl = limegreen
