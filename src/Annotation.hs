@@ -238,6 +238,7 @@ instance IsAnnotation CaptAnnotation where
             in (
                 captText
                 <> ( boundingRect captText
+                    # frame 0.2
                     # lwG 0
                     # fcA (computeBgColour (_captAnnColour ann)
                         `withOpacity` (_captAnnBgOpacity ann))
