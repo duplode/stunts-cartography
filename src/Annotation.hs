@@ -247,6 +247,8 @@ instance IsAnnotation CaptAnnotation where
             # center # (if _captAnnInvert ann then reflectX . reflectY else id)
             # align dirAlign
             # rotate (_captAnnAngle ann @@ deg)
+            -- The translation should only matter for standalone captions.
+            # translate (r2 $ _captAnnPosition ann)
         }
 
 instance LocatableAnnotation CaptAnnotation where

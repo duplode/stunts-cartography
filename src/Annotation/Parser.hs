@@ -53,6 +53,7 @@ annotations = whiteSpace >> pAnnotation `manyTill` eof
 pAnnotation = (try (annotation <$> car)
     <|> try (annotation <$> seg)
     <|> try (annotation <$> splitSeg)
+    <|> try (annotation <$> standaloneCaption)
     <|> try (annotation <$> traceSpec (initializeTrace True))
     ) <* annDelimiter
 
@@ -175,6 +176,26 @@ caption = do
             . maybe id (captAnnInvert .~) mInv
             . maybe id (captAnnBgOpacity .~) mBg
     return $ setCapt mOpt $ defAnn & captAnnText .~ txt
+
+-- Standalone captions.
+standaloneCaption = do
+    symbol "Text"
+    txt <- stringLiteral
+    opt <- runPermParser $
+        (,,,,,) <$> oncePerm xy
+                <*> optionMaybePerm size
+                <*> optionMaybePerm angle
+                <*> optionMaybePerm invert
+                <*> optionMaybePerm colour
+                <*> optionMaybePerm bg
+    let setCapt = \(pos, mSz, mAng, mInv, mCl, mBg) ->
+            maybeCustomiseAnnColour mCl
+            . maybe id (captAnnSize .~) mSz
+            . maybe id (captAnnAngle .~) mAng
+            . maybe id (captAnnInvert .~) mInv
+            . maybe id (captAnnBgOpacity .~) mBg
+            . (captAnnPosition .~ pos)
+    return $ setCapt opt $ defAnn & captAnnText .~ txt
 
 cardinalDir :: (Monad m) => String -> ParsecT String u m CardinalDirection
 cardinalDir leading = do
