@@ -3,6 +3,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Annotation
     ( CardinalDirection(..)
+    , CarSprite(..)
     , Annotation(..)
     , IsAnnotation (annotation)
     , renderAnnotation
@@ -41,6 +42,7 @@ module Annotation
     , carAnnAngle
     , carAnnSize
     , carAnnCaption
+    , carAnnSprite
 
     , SegAnnotation
     , segAnnColour
@@ -265,6 +267,23 @@ instance ColourAnnotation CaptAnnotation where
     annColourIsProtected = _captAnnColourIsProtected
     protectAnnColour = captAnnColourIsProtected .~ True
 
+data CarSprite
+    = Acura
+    | XMarker
+    | CircleMarker
+    | DiamondMarker
+    deriving (Eq, Ord, Show, Enum)
+
+spriteDiagram :: CarSprite -> Colour Double -> Double -> Diagram BEDia
+spriteDiagram spr = case spr of
+    Acura -> acura'
+    XMarker -> xMarker
+    CircleMarker -> circleMarker
+    DiamondMarker -> diamondMarker
+
+-- CarAnnotation isn't just for cars, as the base sprite can be changed
+-- while keeping the same functionality. It might be a good idea to
+-- rename the type accordingly.
 data CarAnnotation
      = CarAnnotation
      { _carAnnColour :: Colour Double
@@ -274,6 +293,7 @@ data CarAnnotation
      , _carAnnAngle :: Double
      , _carAnnSize :: Double
      , _carAnnCaption :: CaptAnnotation
+     , _carAnnSprite :: CarSprite
      } deriving (Show)
 makeLenses ''CarAnnotation
 
@@ -286,12 +306,13 @@ instance Default CarAnnotation where
         , _carAnnAngle = 0
         , _carAnnSize = 0.5
         , _carAnnCaption = defAnn
+        , _carAnnSprite = Acura
         }
 
 instance IsAnnotation CarAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
-            acura' (_carAnnColour ann) 1
+            spriteDiagram (_carAnnSprite ann) (_carAnnColour ann) 1
             # opacity (_carAnnOpacity ann)
             # scale (_carAnnSize ann)
             # (flip $ beside

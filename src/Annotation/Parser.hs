@@ -50,7 +50,10 @@ parseAnnotations input = do
 -- TODO: Add better error messages.
 annotations = whiteSpace >> pAnnotation `manyTill` eof
 
-pAnnotation = (try (annotation <$> car)
+pAnnotation = (try (annotation <$> car "Car" Acura)
+    <|> try (annotation <$> car "X" XMarker)
+    <|> try (annotation <$> car "Circle" CircleMarker)
+    <|> try (annotation <$> car "Diamond" DiamondMarker)
     <|> try (annotation <$> seg)
     <|> try (annotation <$> splitSeg)
     <|> try (annotation <$> standaloneCaption)
@@ -60,10 +63,10 @@ pAnnotation = (try (annotation <$> car)
 annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
 
 detectAnnStart = choice . map (lookAhead . try . symbol) $
-    ["Car", "Seg", "Split", "Trace"]
+    ["Car", "X", "Circle", "Diamond", "Text", "Seg", "Split", "Trace"]
 
-car = do
-    symbol "Car"
+car leadSym spr = do
+    symbol leadSym
     opt <- runPermParser $
         (,,,,,) <$> oncePerm xy
                 <*> optionMaybePerm colour
@@ -78,6 +81,7 @@ car = do
         & carAnnSize .~ sz
         & carAnnCaption .~ capt
         & carAnnOpacity .~ bg
+        & carAnnSprite .~ spr
 
 seg = do
     symbol "Seg"
