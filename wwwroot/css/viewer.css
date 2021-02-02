@@ -9,7 +9,7 @@ p, li {
 #left-bar {
   float: left;
   clear: none;
-  width: 12em;
+  width: 14em;
   margin: 0 0 0 0;
   padding: 0em 0.5em 0em 0.25em;
   line-height: 110%;
@@ -18,7 +18,7 @@ p, li {
 #main-wrap {
   float: none;
   clear: none;
-  margin: 0 16em 0 14em;
+  margin: 0 16em 0 16em;
   padding: 0.25em 0.25em 0.25em 0.5em;
 }
 

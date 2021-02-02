@@ -380,7 +380,7 @@ setup initDir tmpDir w = void $ do
                 , element itxTrkPath
                 ]
             , UI.p #+
-                [ string "Save generated files: ", UI.br
+                [ string "Save: "
                 , element lnkTrk, string " - "
                 , element lnkTerrTrk, string " - "
                 , element lnkFlipbook
