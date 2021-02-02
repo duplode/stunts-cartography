@@ -18,10 +18,9 @@ Data-Files:          wwwroot/css/*.css
                      wwwroot/images/*.png
                      wwwroot/lib/alertify.min.js
                      wwwroot/lib/README-alertify.md
-                     wwwroot/lib/jquery-ui-autocomplete/jquery-ui-1.10.4.custom.min.js
-                     wwwroot/lib/jquery-ui-autocomplete/MIT-LICENSE.txt
-                     wwwroot/css/jquery-ui-autocomplete/ui-lightness/jquery-ui-1.10.4.custom.min.css
-                     wwwroot/css/jquery-ui-autocomplete/ui-lightness/images/*.gif
+                     wwwroot/lib/jquery-ui-autocomplete/jquery-ui.min.js
+                     wwwroot/lib/jquery-ui-autocomplete/LICENSE.txt
+                     wwwroot/css/jquery-ui-autocomplete/ui-lightness/jquery-ui.min.css
                      wwwroot/css/jquery-ui-autocomplete/ui-lightness/images/*.png
 
 flag resourcesWithExecutables

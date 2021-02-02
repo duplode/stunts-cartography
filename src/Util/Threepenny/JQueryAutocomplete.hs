@@ -22,7 +22,7 @@ import Control.Monad (join)
 -- through the tpCustomHTML file in the Threepenny configuration.
 autocompleteSetup :: Window -> FilePath -> UI ()
 autocompleteSetup w libDir = do
-    let jsPath = libDir ++ "jquery-ui-autocomplete/jquery-ui-1.10.4.custom.min.js"
+    let jsPath = libDir ++ "jquery-ui-autocomplete/jquery-ui.min.js"
         addScriptTag :: JSFunction ()
         addScriptTag = ffi $ unlines
             [ "(function(){"
@@ -39,7 +39,7 @@ autocompleteSetup w libDir = do
             ]
     callFunction addScriptTag
     mapM_ (UI.addStyleSheet w)
-        ["jquery-ui-autocomplete/ui-lightness/jquery-ui-1.10.4.custom.min.css"]
+        ["jquery-ui-autocomplete/ui-lightness/jquery-ui.min.css"]
 
 -- Initializes an autocomplete with no options set.
 autocompleteInit :: UI Element -> UI Element
