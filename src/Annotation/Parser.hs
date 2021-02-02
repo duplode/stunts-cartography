@@ -97,13 +97,14 @@ splitSeg = do
     symbol "Split"
     ix <- fromIntegral <$> integer
     opt <- runPermParser $
-        (,,,,,) <$> oncePerm xyInt
-                <*> optionPerm yellow colour
-                <*> optionPerm 0 bg
-                <*> oncePerm splitDir
-                <*> oncePerm sizeInt
-                <*> optionMaybePerm alignment
-    let (pos, cl, captBg, splD, len, mCaptAl) = opt
+        (,,,,,,) <$> oncePerm xyInt
+                 <*> optionPerm yellow colour
+                 <*> optionPerm 0 bg
+                 <*> oncePerm splitDir
+                 <*> oncePerm sizeInt
+                 <*> optionMaybePerm alignment
+                 <*> optionMaybePerm invert
+    let (pos, cl, captBg, splD, len, mCaptAl, mCaptInv) = opt
     let captAl = fromMaybe splD mCaptAl
     return $ defAnn
         & splAnnColour .~ cl
@@ -113,6 +114,7 @@ splitSeg = do
         & splAnnLength .~ len
         & splAnnCaptBgOpacity .~ captBg
         & splAnnCaptAlignment .~ fromMaybe splD mCaptAl
+        & splAnnCaptInvert .~ fromMaybe False mCaptInv
 
 xy = do
     symbol "@"
@@ -151,20 +153,26 @@ sizeInt = do
     symbol "*"
     fromIntegral <$> integer
 
+invert = do
+    symbol "%"
+    return True
+
 -- Captions associated to another annotation.
 caption = do
     txt <- stringLiteral
     mOpt <- optionMaybe . try . braces $
-        runPermParser $ (,,,,) <$> optionMaybePerm alignment
-                               <*> optionMaybePerm size
-                               <*> optionMaybePerm angle
-                               <*> optionMaybePerm colour
-                               <*> optionMaybePerm bg
-    let setCapt = maybe id $ \(mAl, mSz, mAng, mCl, mBg) ->
+        runPermParser $ (,,,,,) <$> optionMaybePerm alignment
+                                <*> optionMaybePerm size
+                                <*> optionMaybePerm angle
+                                <*> optionMaybePerm invert
+                                <*> optionMaybePerm colour
+                                <*> optionMaybePerm bg
+    let setCapt = maybe id $ \(mAl, mSz, mAng, mInv, mCl, mBg) ->
             maybeCustomiseAnnColour mCl
             . maybe id (captAnnAlignment .~) mAl
             . maybe id (captAnnSize .~) mSz
             . maybe id (captAnnAngle .~) mAng
+            . maybe id (captAnnInvert .~) mInv
             . maybe id (captAnnBgOpacity .~) mBg
     return $ setCapt mOpt $ defAnn & captAnnText .~ txt
 

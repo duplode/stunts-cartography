@@ -57,6 +57,7 @@ module Annotation
     , splAnnIndex
     , splAnnCaptBgOpacity
     , splAnnCaptAlignment
+    , splAnnCaptInvert
 
     , CaptAnnotation
     , captAnnPosition
@@ -64,6 +65,7 @@ module Annotation
     , captAnnBgOpacity
     , captAnnAlignment
     , captAnnAngle
+    , captAnnInvert
     , captAnnSize
     , captAnnText
     ) where
@@ -202,6 +204,7 @@ data CaptAnnotation = CaptAnnotation
     , _captAnnBgOpacity :: Double
     , _captAnnAlignment :: CardinalDirection
     , _captAnnAngle :: Double
+    , _captAnnInvert :: Bool
     , _captAnnSize :: Double
     , _captAnnText :: String
     } deriving (Show)
@@ -215,6 +218,7 @@ instance Default CaptAnnotation where
         , _captAnnBgOpacity = 0
         , _captAnnAlignment = E
         , _captAnnAngle = 0
+        , _captAnnInvert = False
         , _captAnnSize = 0.4
         , _captAnnText = ""
         }
@@ -239,7 +243,8 @@ instance IsAnnotation CaptAnnotation where
                         `withOpacity` (_captAnnBgOpacity ann))
                     )
             )
-            # alignBL # align dirAlign
+            # center # (if _captAnnInvert ann then reflectX . reflectY else id)
+            # align dirAlign
             # rotate (_captAnnAngle ann @@ deg)
         }
 
@@ -376,6 +381,7 @@ data SplitAnnotation
      , _splAnnIndex :: Int
      , _splAnnCaptBgOpacity :: Double
      , _splAnnCaptAlignment :: CardinalDirection
+     , _splAnnCaptInvert :: Bool
      } deriving (Show)
 makeLenses ''SplitAnnotation
 
@@ -388,6 +394,7 @@ instance Default SplitAnnotation where
         , _splAnnIndex = 1
         , _splAnnCaptBgOpacity = 1
         , _splAnnCaptAlignment = N
+        , _splAnnCaptInvert = False
         }
 
 instance IsAnnotation SplitAnnotation where
@@ -406,6 +413,7 @@ instance IsAnnotation SplitAnnotation where
                     & captAnnColour .~ _splAnnColour ann
                     & captAnnBgOpacity .~ _splAnnCaptBgOpacity ann
                     & captAnnAlignment .~ _splAnnCaptAlignment ann
+                    & captAnnInvert .~ _splAnnCaptInvert ann
                     & captAnnSize .~ 0.75
                     & captAnnText .~ show (_splAnnIndex ann)
                     )

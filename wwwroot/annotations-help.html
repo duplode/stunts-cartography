@@ -32,7 +32,7 @@ be changed are <code><span class="anns-fixed">underlined</span></code>.</p>
 <code><span class="anns-fixed anns-mandatory">Car</span>
  <span class="anns-mandatory">@15.5 10</span>
  ^45 *0.5 #orange
- "Mark Nailwood" { #yellow $50 ^0 *0.5 'N }</code>
+ "Mark Nailwood" { #yellow $50 ^0 *0.5 'N % }</code>
 
 <p><code>Car</code> adds a car annotation, similar to the one used for the
 0x02/0x03 ghost car track elements.</p>
@@ -102,7 +102,14 @@ be changed are <code><span class="anns-fixed">underlined</span></code>.</p>
     <td>'</td><td>Caption and car alignment</td>
     <td>Alignment of the caption in relation to the car. The value must be one
       of <code>E</code>, <code>N</code>, <code>W</code> and <code>S</code>
-      (which stand for the four cardinal directions).</td>
+      , which stand for the four cardinal directions. The alignment is defined
+      as if the car faced eastward, so <code>E</code> will draw the text ahead
+      of the car, <code>N</code> to its left, and so forth.</td>
+  </tr>
+  <tr>
+    <td>%</td><td>Caption text inversion</td>
+    <td>Inverts the direction of the caption text. Useful if a choice of
+      positioning leads to upside down text.</td>
   </tr>
 </table>
 
@@ -112,7 +119,7 @@ be changed are <code><span class="anns-fixed">underlined</span></code>.</p>
  <span class="anns-mandatory">@17.5 10.25</span>
  <span class="anns-mandatory">^90</span>
  <span class="anns-mandatory">*3.5</span>
- #orange "Start of braking zone" { #ffa500 $25 ^30 *0.5 'N }</code>
+ #orange "Start of braking zone" { #ffa500 $25 ^30 *0.5 'N % }</code>
 
 <p><code>Seg</code> adds a line segment over the map.</p>
 
@@ -135,13 +142,13 @@ be changed are <code><span class="anns-fixed">underlined</span></code>.</p>
   </tr>
 </table>
 
-<p>Other options work as described for <code>Car</code> above.
+<p>Other options work as described for <code>Car</code> above.</p>
 
 <h2><code>Split</code></h2>
 
 <code><span class="anns-fixed anns-mandatory">Split</span>
  <span class="anns-fixed anns-mandatory">1</span>
- <span class="anns-mandatory">@22 14</span>
+ <span class="anns-mandatory">@7 14</span>
  <span class="anns-mandatory">^E</span>
  <span class="anns-mandatory">*5</span>
  #yellow $40 'W</code>
@@ -187,15 +194,19 @@ specialised properties.</p>
       of <code>E</code>, <code>N</code>, <code>W</code> and <code>S</code>.
       </td>
   </tr>
+  <tr>
+    <td>%</td><td>Caption text inversion</td>
+    <td>Inverts the direction of the caption text.</td>
+  </tr>
 </table>
 
 <h2><code>Trace</code></h2>
 
 <code><span class="anns-fixed anns-mandatory">Trace</span>
-  <span class="anns-mandatory">:"146zctg.dat"</span>
-  #red !
+  <span class="anns-mandatory">:"070ZGUT.dat"</span>
+  #plum !
   <!-- TODO: Add notation to indicate "conditionally mandatory" parameters -->
-  + {Car @0 "CTG"}
+  + {Car @0 "GUT"}
   ~1 1 {Car}
   </code>
 
@@ -222,7 +233,7 @@ companion tool repldump-to-carto.</p>
   <tr>
     <td>!</td><td>Visibility</td>
     <td>Add an exclamation mark to make the trace line, but not cars or other
-      decorations. invisible.</td>
+      decorations, invisible.</td>
   </tr>
   <tr>
     <td>+ { }</td><td>Individual car decoration</td>
