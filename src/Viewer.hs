@@ -248,6 +248,12 @@ setup initDir tmpDir w = void $ do
     bDrawIndices <- True `stepper` UI.checkedChange chkDrawIndices
     currentValue bDrawIndices >>= (element chkDrawIndices #) . set UI.checked_
 
+    chkTransparentBg <-
+        UI.input # set UI.type_ "checkbox" # set UI.name "transparent-bg-chk"
+            # set UI.id_ "transparent-bg-chk"
+    bTransparentBg <- False `stepper` UI.checkedChange chkTransparentBg
+    currentValue bTransparentBg >>= (element chkTransparentBg #) . set UI.checked_
+
     -- Preset selection and ratio field initialization.
     let presetDefAndSetter :: (Pm.RenderingParameters -> a)
                            -> Event (Pm.RenderingParameters)
@@ -302,6 +308,7 @@ setup initDir tmpDir w = void $ do
             <**> ((\x -> \p -> p {Pm.bridgeRelativeWidth = x}) <$> bBridgeRelW)
             <**> ((\x -> \p -> p {Pm.bankingRelativeHeight = x})
                 <$> bBankingRelH)
+            <**> ((\x -> \p -> p {Pm.transparentBg = x}) <$> bTransparentBg)
             <**> ((\x -> \p -> p {Pm.pixelsPerTile = x}) <$> bPxPtPerTile)
             <**> ((\x -> \p -> p {Pm.xTileBounds = x}) <$> bBoundsX)
             <**> ((\x -> \p -> p {Pm.yTileBounds = x}) <$> bBoundsY)
@@ -396,6 +403,9 @@ setup initDir tmpDir w = void $ do
                 , element bidBridgeRelW, UI.br
                 , string "Banking relative height:", UI.br
                 , element bidBankingRelH
+                ]
+            , UI.p #+
+                [ string "Transparent low ground?", element chkTransparentBg
                 ]
             , UI.p #+
                 [ string "Grid?", element chkDrawGrid

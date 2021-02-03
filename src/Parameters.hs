@@ -41,6 +41,8 @@ data RenderingParameters = RenderingParameters
     , bridgeRelativeWidth :: Double
     , bankingRelativeHeight :: Double
 
+    , transparentBg :: Bool
+
     , drawGridLines :: Bool
     , drawIndices :: Bool
     , xTileBounds :: (Int, Int)
@@ -61,6 +63,7 @@ defaultRenderingParameters = RenderingParameters
     , bridgeHeight = 0
     , bridgeRelativeWidth = 2
     , bankingRelativeHeight = 1 / 2
+    , transparentBg = False
     , pixelsPerTile = 32 -- TODO: Slight misnomer.
     , drawGridLines = True
     , drawIndices = True

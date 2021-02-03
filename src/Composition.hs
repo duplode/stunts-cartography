@@ -20,10 +20,12 @@ import Types.CartoM
 import Types.Diagrams (BEDia)
 
 renderTerrain :: [Tile] -> CartoM (Diagram BEDia)
-renderTerrain tiles =
-    let terrRows = map (beneath plainStripe . catTiles)
+renderTerrain tiles = do
+    omitBg <- asks Pm.transparentBg
+    let bg = if omitBg then mempty else plainStripe
+        terrRows = map (beneath bg . catTiles)
             `liftM` mapM (mapM getCachedTerrPic) (splitAtEvery30th tiles)
-    in catRows <$> terrRows
+    catRows <$> terrRows
 {-
 renderTerrain :: [Tile] -> CartoM (Diagram BEDia R2)
 renderTerrain tiles = do
