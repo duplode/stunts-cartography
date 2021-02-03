@@ -367,9 +367,12 @@ makeLenses ''SegAnnotation
 instance IsAnnotation SegAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
-            fromSegments
+            let centerDelta = angleV (_segAnnAngle ann @@ deg)
+                    # scale (_segAnnLength ann / 2)
+            in fromSegments
                 [ straight (r2 (_segAnnLength ann, 0))
                 ]
+            # centerXY
             # strokePath
             # lwG 0.25 # lc (_segAnnColour ann)
             # (flip $ beside
@@ -377,7 +380,7 @@ instance IsAnnotation SegAnnotation where
                 (renderAnnotation . rotateAnnotation (- _segAnnAngle ann) $
                     _segAnnCaption ann)
             # rotate (_segAnnAngle ann @@ deg)
-            # translate (r2 $ _segAnnPosition ann)
+            # translate (r2 (_segAnnPosition ann) + centerDelta)
         }
 
 instance LocatableAnnotation SegAnnotation where
@@ -426,9 +429,12 @@ instance IsAnnotation SplitAnnotation where
         { annotationDiagram =
             let (posX, posY) = _splAnnPosition ann
                 pos = (fromIntegral posX, fromIntegral posY)
+                centerDelta = cardinalDirToR2 (_splAnnDirection ann)
+                    # scale (fromIntegral (_splAnnLength ann) / 2)
             in fromSegments
                 [ straight (r2 (fromIntegral $ _splAnnLength ann, 0)
                 # rotate (cardinalDirToAngle (_splAnnDirection ann) @@ deg)) ]
+            # centerXY
             # strokePath
             # lwG 0.25 # lc (_splAnnColour ann)
             # (flip $ beside
@@ -441,7 +447,7 @@ instance IsAnnotation SplitAnnotation where
                     & captAnnSize .~ 0.75
                     & captAnnText .~ show (_splAnnIndex ann)
                     )
-            # translate (r2 pos)
+            # translate (r2 pos + centerDelta)
         }
 
 {-
