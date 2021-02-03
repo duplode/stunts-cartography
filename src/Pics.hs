@@ -74,10 +74,33 @@ baseTerrainPic tt = case tt of
     _ ->
         genericSquare chasmCl
 
+-- A minimalistic terrain tile set, similar to the one from dreadnaut's
+-- 4DOPEN tool.
+twoToneTerrainPic :: (Monoid' m, TrailLike (QDiagram b V2 Double m))
+               => TerrainType -> QDiagram b V2 Double m
+twoToneTerrainPic tt = case tt of
+    Slope ->
+        genericSquare hillCl
+        # scaleX (1/2) # alignL
+    OuterAngledSlope ->
+        diagonalTriangle hillCl
+        # alignTR
+        # scale (1/2)
+    InnerAngledSlope ->
+        -- Not using diagonalTriangle plainCl here because drawing low
+        -- ground diagrams clashes with the transparent low ground
+        -- option.
+        polygon (with
+            & polyType .~ PolySides [-1/4 @@ turn, -1/8 @@ turn, -1/8 @@ turn]
+                            [ 1, 1/2, sqrt 2 / 2, 1/2 ]
+            ) # centerXY # lwG 0 # fc hillCl
+    _ -> baseTerrainPic tt
+
 getTerrainPic :: (Monoid' m, TrailLike (QDiagram b V2 Double m))
-               => Tile -> QDiagram b V2 Double m
-getTerrainPic tile =
-    baseTerrainPic (getTerrainType tile)
+               => Bool -> Tile -> QDiagram b V2 Double m
+getTerrainPic twoTone tile =
+    (if twoTone then twoToneTerrainPic else baseTerrainPic)
+        (getTerrainType tile)
     # rotateByOrient (getTerrainOrientation tile)
 
 
@@ -85,7 +108,7 @@ baseElementPicNoC env = baseElementPic' env Dextral
 
 baseElementPicNoO env = baseElementPicNoC env Q1
 
--- Note that baseElementPic would work without recieving chiralities or
+-- Note that baseElementPic would work without receiving chiralities or
 -- orientations weren't it for the "vertical" offset in the bridge graphics.
 baseElementPic :: Chirality -> Orientation
                -> ElementSurface -> ElementType

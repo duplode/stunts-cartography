@@ -41,6 +41,7 @@ data RenderingParameters = RenderingParameters
     , bridgeRelativeWidth :: Double
     , bankingRelativeHeight :: Double
 
+    , twoToneTerrain :: Bool
     , transparentBg :: Bool
 
     , drawGridLines :: Bool
@@ -63,6 +64,7 @@ defaultRenderingParameters = RenderingParameters
     , bridgeHeight = 0
     , bridgeRelativeWidth = 2
     , bankingRelativeHeight = 1 / 2
+    , twoToneTerrain = False
     , transparentBg = False
     , pixelsPerTile = 32 -- TODO: Slight misnomer.
     , drawGridLines = True
@@ -112,13 +114,16 @@ deltaTileBounds params =
     in (fromIntegral $ xMax - xMin + 1, fromIntegral $ yMax - yMin + 1)
 
 -- Opaque type for tracking changes in the interface.
-newtype RenderingElemStyle = RenderingElemStyle (Double, Double, Double, Double)
+-- We might, in principle, separate element and terrain parameters; however,
+-- performance gains are expected to be minimal.
+newtype RenderingElemStyle = RenderingElemStyle (Double, Double, Double, Double, Bool)
     deriving (Eq)
 
 toElemStyle :: RenderingParameters -> RenderingElemStyle
 toElemStyle params = RenderingElemStyle
     ( roadWidth params, bridgeHeight params
-    , bridgeRelativeWidth params, bankingRelativeHeight params)
+    , bridgeRelativeWidth params, bankingRelativeHeight params
+    , twoToneTerrain params)
 
 -- Extra output from the rendering.
 

@@ -254,6 +254,12 @@ setup initDir tmpDir w = void $ do
     bTransparentBg <- Pm.transparentBg Pm.def `stepper` UI.checkedChange chkTransparentBg
     currentValue bTransparentBg >>= (element chkTransparentBg #) . set UI.checked
 
+    chkTwoToneTerrain <-
+        UI.input # set UI.type_ "checkbox" # set UI.name "two-tone-chk"
+            # set UI.id_ "two-tone-chk"
+    bTwoToneTerrain <- Pm.twoToneTerrain Pm.def `stepper` UI.checkedChange chkTwoToneTerrain
+    currentValue bTwoToneTerrain >>= (element chkTwoToneTerrain #) . set UI.checked
+
     -- Preset selection and ratio field initialization.
     let presetDefAndSetter :: (Pm.RenderingParameters -> a)
                            -> Event (Pm.RenderingParameters)
@@ -309,6 +315,7 @@ setup initDir tmpDir w = void $ do
             <**> ((\x -> \p -> p {Pm.bankingRelativeHeight = x})
                 <$> bBankingRelH)
             <**> ((\x -> \p -> p {Pm.transparentBg = x}) <$> bTransparentBg)
+            <**> ((\x -> \p -> p {Pm.twoToneTerrain = x}) <$> bTwoToneTerrain)
             <**> ((\x -> \p -> p {Pm.pixelsPerTile = x}) <$> bPxPtPerTile)
             <**> ((\x -> \p -> p {Pm.xTileBounds = x}) <$> bBoundsX)
             <**> ((\x -> \p -> p {Pm.yTileBounds = x}) <$> bBoundsY)
@@ -405,7 +412,8 @@ setup initDir tmpDir w = void $ do
                 , element bidBankingRelH
                 ]
             , UI.p #+
-                [ string "Transparent low ground?", element chkTransparentBg
+                [ string "Two-tone terrain?", element chkTwoToneTerrain, UI.br
+                , string "Transparent low ground?", element chkTransparentBg
                 ]
             , UI.p #+
                 [ string "Grid?", element chkDrawGrid
@@ -553,7 +561,8 @@ setup initDir tmpDir w = void $ do
 
             -- The immediate trigger of the main action.
             eParamsAndStateAfterEStyleCheck =
-                (flip (,) . Pm.clearElementCache <$> bRenState
+                (flip (,) . Pm.clearTerrainCache . Pm.clearElementCache
+                    <$> bRenState
                     <@> eRenParamsDiffEStyle)
                 `union` (flip (,) <$> bRenState
                     <@> eRenParamsSameEStyle)

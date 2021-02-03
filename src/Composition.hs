@@ -59,7 +59,8 @@ getCachedTerrPic tile = do
     case mDia of
         Just dia -> return dia
         Nothing -> do
-            let newDia = getTerrainPic tile
+            twoTone <- asks Pm.twoToneTerrain
+            let newDia = getTerrainPic twoTone tile
             modify $ Pm.insertIntoTerrainCache te newDia
             return newDia
 
