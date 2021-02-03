@@ -239,20 +239,20 @@ setup initDir tmpDir w = void $ do
     chkDrawGrid <-
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-lines-chk"
             # set UI.id_ "grid-lines-chk"
-    bDrawGrid <- True `stepper` UI.checkedChange chkDrawGrid
-    currentValue bDrawGrid >>= (element chkDrawGrid #) . set UI.checked_
+    bDrawGrid <- Pm.drawGridLines Pm.def `stepper` UI.checkedChange chkDrawGrid
+    currentValue bDrawGrid >>= (element chkDrawGrid #) . set UI.checked
 
     chkDrawIndices <-
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
             # set UI.id_ "grid-indices-chk"
-    bDrawIndices <- True `stepper` UI.checkedChange chkDrawIndices
-    currentValue bDrawIndices >>= (element chkDrawIndices #) . set UI.checked_
+    bDrawIndices <- Pm.drawIndices Pm.def `stepper` UI.checkedChange chkDrawIndices
+    currentValue bDrawIndices >>= (element chkDrawIndices #) . set UI.checked
 
     chkTransparentBg <-
         UI.input # set UI.type_ "checkbox" # set UI.name "transparent-bg-chk"
             # set UI.id_ "transparent-bg-chk"
-    bTransparentBg <- False `stepper` UI.checkedChange chkTransparentBg
-    currentValue bTransparentBg >>= (element chkTransparentBg #) . set UI.checked_
+    bTransparentBg <- Pm.transparentBg Pm.def `stepper` UI.checkedChange chkTransparentBg
+    currentValue bTransparentBg >>= (element chkTransparentBg #) . set UI.checked
 
     -- Preset selection and ratio field initialization.
     let presetDefAndSetter :: (Pm.RenderingParameters -> a)
