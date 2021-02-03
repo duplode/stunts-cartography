@@ -53,6 +53,7 @@ Executable sc-trk-viewer
                     ,Util.Reactive.Threepenny
                     ,Util.Threepenny.Alertify
                     ,Util.Threepenny.JQueryAutocomplete
+                    ,Util.SVGFonts
                     ,Widgets.BoundedInput
                     ,Replay
                     ,Types.Diagrams
@@ -75,7 +76,7 @@ Executable sc-trk-viewer
     CPP-Options:      -DCABAL
   Hs-Source-Dirs:   src
 
-  Build-Depends:     base >= 4.6 && < 5
+  Build-Depends:     base >= 4.9 && < 5
                     ,threepenny-gui >= 0.8
                     ,diagrams-core == 1.4.*
                     ,diagrams-lib == 1.4.*
@@ -96,6 +97,9 @@ Executable sc-trk-viewer
                     ,directory
                     ,filepath
                     ,temporary
+                    ,template-haskell
+                    ,cereal
+                    ,file-embed
 
 Executable repldump2carto
   Hs-Source-Dirs:    repldump/src
