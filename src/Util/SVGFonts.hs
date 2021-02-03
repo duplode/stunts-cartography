@@ -6,6 +6,7 @@ import Graphics.SVGFonts.ReadFont (PreparedFont)
 import Language.Haskell.TH.Syntax
 import Instances.TH.Lift
 import Data.Serialize
+import Codec.Compression.Zlib
 import Data.Either (fromRight)
 
 -- A compile-time alternative to unsafePerformIO SVGFonts.bit
@@ -14,5 +15,7 @@ import Data.Either (fromRight)
 -- different choices of n.
 bit :: PreparedFont Double
 bit = fromRight
-    (error "Util.SVGFonts.Bit: deserialization failure")
-    (decode $(runIO SVGFonts.bit >>= lift . encode @(PreparedFont Double)))
+    (error "Util.SVGFonts.bit: deserialization failure")
+    (decodeLazy . decompress $
+        $(runIO SVGFonts.bit >>= lift
+            . compress . encodeLazy @(PreparedFont Double)))
