@@ -99,7 +99,7 @@ Executable sc-trk-viewer
                     ,temporary
                     ,template-haskell
                     ,cereal
-                    ,file-embed
+                    ,th-lift-instances
 
 Executable repldump2carto
   Hs-Source-Dirs:    repldump/src
