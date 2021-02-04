@@ -31,7 +31,7 @@ instance ToFlipbook TraceAnnotation where
                 let phaselessFrame = traceFrame p - ifr
                 in phaselessFrame >= 0 && phaselessFrame `rem` freq == 0
             adjustedFbkCapt p c = fbkCapt
-                 & overrideAnnColour (annColour c)
+                 & overrideAnnColour (c ^. annColour)
                  & replaceMagicStrings p
             renderAt c p =
                 if pointIsIncluded p

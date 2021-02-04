@@ -161,19 +161,19 @@ formatFrameAsGameTime x = (if mm > 0 then show mm ++ ":" else "")
 
 replaceMagicStrings :: TextAnnotation a => TracePoint -> a -> a
 replaceMagicStrings p c =
-    let txt = annText c
+    let txt = c ^. annText
         ix = traceFrame p
     in case txt of
-        "{{FRAMENUMBER}}" -> setAnnText (show ix) c
-        "{{GAMETIME}}" -> setAnnText (formatFrameAsGameTime ix) c
+        "{{FRAMENUMBER}}" -> c & annText .~ show ix
+        "{{GAMETIME}}" -> c & annText .~ formatFrameAsGameTime ix
         _ -> c
 
 putCarOnTracePoint :: TracePoint -> CarAnnotation -> CarAnnotation
 putCarOnTracePoint p =
     replaceMagicStrings p
     . scaleAnnotation (1 + tracePosY p / 4)
-    . orientAnnotation (traceRotXZ p)
-    . locateAnnotation (tracePosXZ p)
+    . (annAngle .~ traceRotXZ p)
+    . (annPosition .~ tracePosXZ p)
 
 tracePointsFromData :: [(VecDouble, VecDouble)] -> [TracePoint]
 tracePointsFromData dat = map mkPoint $ zip [0..] dat
@@ -216,8 +216,7 @@ instance IsAnnotation TraceAnnotation where
 
 -- TODO: Double-check how overriding works in complex cases such as this one.
 instance ColourAnnotation TraceAnnotation where
-    annColour = _traceAnnColour
-    setAnnColour = (traceAnnColour .~)
+    annColour = traceAnnColour
     annColourIsProtected = const False -- TODO: Not implemented yet.
     protectAnnColour ann = ann
     deepOverrideAnnColour cl ann = overrideAnnColour cl ann

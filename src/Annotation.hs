@@ -10,22 +10,18 @@ module Annotation
     , defAnn
     , LocatableAnnotation
         ( annPosition
-        , locateAnnotation
         , translateAnnotation
         )
     , OrientableAnnotation
         ( annAngle
-        , orientAnnotation
         , rotateAnnotation
         )
     , ResizableAnnotation
         ( annSize
-        , resizeAnnotation
         , scaleAnnotation
         )
     , ColourAnnotation
         ( annColour
-        , setAnnColour
         , annColourIsProtected
         , protectAnnColour
         , customiseAnnColour
@@ -34,7 +30,6 @@ module Annotation
         )
     , TextAnnotation
         ( annText
-        , setAnnText
         )
     , maybeCustomiseAnnColour
     , maybeDeepOverrideAnnColour
@@ -148,41 +143,36 @@ defAnn :: (Default a, IsAnnotation a) => a
 defAnn = def
 
 class (IsAnnotation a) => LocatableAnnotation a where
-    annPosition :: a -> (Double, Double)
-    locateAnnotation :: (Double, Double) -> a -> a
+    annPosition :: Lens' a (Double, Double)  -- a -> (Double, Double)
     translateAnnotation :: (Double, Double) -> a -> a
 
-    translateAnnotation (dx, dy) ann =
-        let (xi, yi) = annPosition ann
-        in locateAnnotation (xi + dx, yi + dy) ann
+    translateAnnotation (dx, dy) =
+        annPosition %~ (\(xi, yi) -> (xi + dx, yi + dy))
 
 -- Angles are assumed to be in degrees, for simplicity.
 class (IsAnnotation a) => OrientableAnnotation a where
-    annAngle :: a -> Double
-    orientAnnotation :: Double -> a -> a
+    annAngle :: Lens' a Double
     rotateAnnotation :: Double -> a -> a
 
-    rotateAnnotation da ann = orientAnnotation (da + annAngle ann) ann
+    rotateAnnotation da = annAngle %~ (da +)
 
 class (IsAnnotation a) => ResizableAnnotation a where
-    annSize :: a -> Double
-    resizeAnnotation :: Double -> a -> a
+    annSize :: Lens' a Double
     scaleAnnotation :: Double -> a -> a
 
-    scaleAnnotation qs ann = resizeAnnotation (qs * annSize ann) ann
+    scaleAnnotation qs = annSize %~ (qs *)
 
 -- Colour overriding for nested annotations.
 -- Note that opacity is not handled, as it is not subject to overriding.
 class (IsAnnotation a) => ColourAnnotation a where
-    annColour :: a -> Colour Double
-    setAnnColour :: Colour Double -> a -> a
+    annColour :: Lens' a (Colour Double)
     annColourIsProtected :: a -> Bool
     protectAnnColour :: a -> a
     customiseAnnColour :: Colour Double -> a -> a
     overrideAnnColour :: Colour Double -> a -> a
     deepOverrideAnnColour :: Colour Double -> a -> a
 
-    customiseAnnColour cl = protectAnnColour . setAnnColour cl
+    customiseAnnColour cl = protectAnnColour . (annColour .~ cl)
     -- Using an override implemented in terms of customise means that no deep
     -- colour definition by the user can be overriden. That appears to be
     -- adequate for the typical use cases.
@@ -203,8 +193,7 @@ maybeDeepOverrideAnnColour :: (ColourAnnotation a)
 maybeDeepOverrideAnnColour = maybe id deepOverrideAnnColour
 
 class IsAnnotation a => TextAnnotation a where
-    annText :: a -> String
-    setAnnText :: String -> a -> a
+    annText :: Lens' a String
 
 data CaptAnnotation = CaptAnnotation
     { _captAnnPosition :: (Double, Double)
@@ -259,22 +248,18 @@ instance IsAnnotation CaptAnnotation where
         }
 
 instance LocatableAnnotation CaptAnnotation where
-    annPosition = _captAnnPosition
-    locateAnnotation = (captAnnPosition .~)
+    annPosition = captAnnPosition
 
 instance OrientableAnnotation CaptAnnotation where
-    annAngle = _captAnnAngle
-    orientAnnotation = (captAnnAngle .~)
+    annAngle = captAnnAngle
 
 instance ColourAnnotation CaptAnnotation where
-    annColour = _captAnnColour
-    setAnnColour = (captAnnColour .~)
+    annColour = captAnnColour
     annColourIsProtected = _captAnnColourIsProtected
     protectAnnColour = captAnnColourIsProtected .~ True
 
 instance TextAnnotation CaptAnnotation where
-    annText = _captAnnText
-    setAnnText = (captAnnText .~)
+    annText = captAnnText
 
 data CarSprite
     = Acura
@@ -333,28 +318,23 @@ instance IsAnnotation CarAnnotation where
         }
 
 instance LocatableAnnotation CarAnnotation where
-    annPosition = _carAnnPosition
-    locateAnnotation = (carAnnPosition .~)
+    annPosition = carAnnPosition
 
 instance OrientableAnnotation CarAnnotation where
-    annAngle = _carAnnAngle
-    orientAnnotation = (carAnnAngle .~)
+    annAngle = carAnnAngle
 
 instance ResizableAnnotation CarAnnotation where
-    annSize = _carAnnSize
-    resizeAnnotation = (carAnnSize .~)
+    annSize = carAnnSize
 
 instance ColourAnnotation CarAnnotation where
-    annColour = _carAnnColour
-    setAnnColour = (carAnnColour .~)
+    annColour = carAnnColour
     annColourIsProtected = _carAnnColourIsProtected
     protectAnnColour = carAnnColourIsProtected .~ True
     deepOverrideAnnColour cl = overrideAnnColour cl
-        . over carAnnCaption (deepOverrideAnnColour cl)
+        . (carAnnCaption %~ deepOverrideAnnColour cl)
 
 instance TextAnnotation CarAnnotation where
-    annText = _captAnnText . _carAnnCaption
-    setAnnText = (carAnnCaption . captAnnText .~)
+    annText = carAnnCaption . captAnnText
 
 data SegAnnotation
      = SegAnnotation
@@ -397,24 +377,20 @@ instance IsAnnotation SegAnnotation where
         }
 
 instance LocatableAnnotation SegAnnotation where
-    annPosition = _segAnnPosition
-    locateAnnotation = (segAnnPosition .~)
+    annPosition = segAnnPosition
 
 instance OrientableAnnotation SegAnnotation where
-    annAngle = _segAnnAngle
-    orientAnnotation = (segAnnAngle .~)
+    annAngle = segAnnAngle
 
 instance ColourAnnotation SegAnnotation where
-    annColour = _segAnnColour
-    setAnnColour = (segAnnColour .~)
+    annColour = segAnnColour
     annColourIsProtected = _segAnnColourIsProtected
     protectAnnColour = segAnnColourIsProtected .~ True
     deepOverrideAnnColour cl = overrideAnnColour cl
-        . over segAnnCaption (deepOverrideAnnColour cl)
+        . (segAnnCaption %~ deepOverrideAnnColour cl)
 
 instance TextAnnotation SegAnnotation where
-    annText = _captAnnText . _segAnnCaption
-    setAnnText = (segAnnCaption . captAnnText .~)
+    annText = segAnnCaption . captAnnText
 
 data SplitAnnotation
      = SplitAnnotation
