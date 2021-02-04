@@ -5,6 +5,7 @@ module Annotation.LapTrace
     , periodicCarsSpec
 
     , TracePoint(..)
+    , TraceMode(..)
 
     , TraceAnnotation
     , traceAnnPoints
@@ -40,6 +41,9 @@ data TracePoint = TracePoint
     , traceRotYZ :: Double
     , traceRotXY :: Double
     }
+
+data TraceMode = SingleFrameTrace | FlipbookTrace
+    deriving (Eq, Enum)
 
 -- TODO: Add support for different overlays.
 -- TODO: Add support for multiple periodic series.
@@ -83,11 +87,13 @@ instance Default TraceAnnotation where
 -- Trace initialization workhorse. Filters out overlays with invalid frames,
 -- positions each overlay according to the corresponding trace frame and
 -- generates periodic overlays.
-setupTrace :: Bool -> TraceAnnotation -> TraceAnnotation
-setupTrace isSingleFrame ann = ann & traceAnnOverlays .~ arrangeOverlays tovs
+setupTrace :: TraceMode -> TraceAnnotation -> TraceAnnotation
+setupTrace traceMode ann = ann & traceAnnOverlays .~ arrangeOverlays tovs
     where
     pointMap = M.fromList $ map (\p -> (traceFrame p, p)) $ ann^.traceAnnPoints
-    tovs = (if isSingleFrame then appendPeriodic else id)
+    tovs = (case traceMode of
+            SingleFrameTrace -> appendPeriodic
+            FlipbookTrace -> id)
         . eliminateFrameless $ ann ^. traceAnnOverlays
     lookupPoint = flip M.lookup pointMap
 
@@ -153,10 +159,10 @@ tracePointsFromData dat = map mkPoint $ zip [0..] dat
         , traceRotXY = rxy
         }
 
-initializeTrace :: Bool -> [(VecDouble, VecDouble)]
+initializeTrace :: TraceMode -> [(VecDouble, VecDouble)]
                 -> TraceAnnotation -> TraceAnnotation
-initializeTrace isSingleFrame dat =
-    setupTrace isSingleFrame . setTraceData dat
+initializeTrace traceMode dat =
+    setupTrace traceMode . setTraceData dat
 
 setTraceData :: [(VecDouble, VecDouble)]
              -> TraceAnnotation -> TraceAnnotation

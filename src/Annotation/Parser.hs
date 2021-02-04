@@ -57,7 +57,7 @@ pAnnotation = (try (annotation <$> car "Car" Acura)
     <|> try (annotation <$> seg)
     <|> try (annotation <$> splitSeg)
     <|> try (annotation <$> standaloneCaption)
-    <|> try (annotation <$> traceSpec (initializeTrace True))
+    <|> try (annotation <$> traceSpec SingleFrameTrace)
     ) <* annDelimiter
 
 annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
@@ -216,9 +216,9 @@ splitDir = cardinalDir "^"
 
 
 traceSpec :: (MonadIO m)
-          => ([(VecDouble, VecDouble)] -> TraceAnnotation -> TraceAnnotation)
+          => TraceMode
           -> ParsecT String u (CartoT m) TraceAnnotation
-traceSpec fInitTrace = do
+traceSpec traceMode = do
     symbol "Trace"
     opt <- runPermParser $
         (,,,,) <$> oncePerm rawPath
@@ -237,7 +237,7 @@ traceSpec fInitTrace = do
             let eDat = runP laptrace () fullPath rawData
             case eDat of
                 Left e    -> fail $ show e
-                Right dat -> return $ fInitTrace dat
+                Right dat -> return $ initializeTrace traceMode dat
                     . maybeDeepOverrideAnnColour mCl
                     . maybe id (traceAnnVisible .~) mVis
                     . maybe id (\pc -> L.over traceAnnOverlays
@@ -303,7 +303,7 @@ parseFlipbook input = do
             return def
         Right fbks -> return fbks
 
-flipbookSpec = many $ SomeFlipbook <$> traceSpec (initializeTrace False)
+flipbookSpec = many $ SomeFlipbook <$> traceSpec FlipbookTrace
 
 
 floatOrInteger = try float <|> fromIntegral <$> integer
