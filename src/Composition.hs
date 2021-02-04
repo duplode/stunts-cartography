@@ -10,6 +10,7 @@ module Composition
 import Control.Monad (liftM)
 import Control.Monad.RWS hiding ((<>))
 import qualified Data.Map as M (lookup, insert)
+import Data.List.Extra (chunksOf)
 import Diagrams.Prelude
 import Track
 import Pics
@@ -24,7 +25,7 @@ renderTerrain tiles = do
     omitBg <- asks Pm.transparentBg
     let bg = if omitBg then mempty else plainStripe
         terrRows = map (beneath bg . catTiles)
-            `liftM` mapM (mapM getCachedTerrPic) (splitAtEvery30th tiles)
+            `liftM` mapM (mapM getCachedTerrPic) (chunksOf 30 tiles)
     catRows <$> terrRows
 {-
 renderTerrain :: [Tile] -> CartoM (Diagram BEDia R2)
@@ -35,7 +36,7 @@ renderTerrain tiles = do
 renderElements :: [Tile] -> CartoM (Diagram BEDia)
 renderElements tiles = do
     let makeElementRows ts = map catTiles
-            `liftM` mapM (mapM getCachedElemPic) (splitAtEvery30th ts)
+            `liftM` mapM (mapM getCachedElemPic) (chunksOf 30 ts)
         (seTiles, leTiles) = separateTilesBySize tiles
     smallElementRows <- makeElementRows seTiles
     largeElementRows <- makeElementRows leTiles

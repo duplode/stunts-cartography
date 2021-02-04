@@ -94,13 +94,14 @@ Executable sc-trk-viewer
                     ,bytestring
                     ,array
                     ,mtl >= 2.2.1
-                    ,directory
+                    ,directory >= 1.2.7
                     ,filepath
                     ,temporary
                     ,template-haskell
                     ,cereal
                     ,th-lift-instances
                     ,zlib
+                    ,extra >= 1.7.9
 
 Executable repldump2carto
   Hs-Source-Dirs:    repldump/src

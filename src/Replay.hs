@@ -8,7 +8,6 @@ import Control.Monad (guard)
 import Data.Maybe (fromMaybe)
 import Data.Char (chr)
 import qualified Util.ByteString as LB
-import Util.Misc (retrieveFileSize)
 
 -- Extracting tracks from replays. This will eventually be augmented with
 -- proper .RPL processing tools. For now, this is an extremely crude solution.

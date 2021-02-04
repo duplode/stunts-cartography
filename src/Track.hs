@@ -35,7 +35,7 @@ import Control.Applicative ((<$>))
 import qualified Util.ByteString as LB
 import Data.Word (Word8)
 import Data.Array
-import Util.Misc
+import qualified Util.Misc as Util
 
 -- |The .TRK byte string with its components separated and the padding byte
 -- excised.
@@ -953,7 +953,7 @@ rawTrackToTileArray trk = listArray ((0, 0), (29, 29)) tiles
     where
     elmVals = veryRawElements trk
     terVals = LB.concat . reverse
-        . bsSplitAtEvery30th $ veryRawTerrain trk
+        . Util.bsChunksOf 30 $ veryRawTerrain trk
     tiles = zipWith Tile (byteToElement <$> LB.unpack elmVals)
         (byteToTerrain <$> LB.unpack terVals)
     --indices = [ (x, y) | x <- [0..29], y <- [0..29]]

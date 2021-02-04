@@ -15,7 +15,7 @@ import Data.List (sort)
 import Text.Read (readMaybe)
 import Text.Printf (printf)
 import System.Directory
-    (doesFileExist, doesDirectoryExist, getDirectoryContents)
+    (doesFileExist, doesDirectoryExist, getDirectoryContents, getFileSize)
 import System.FilePath ((</>), takeExtension, addExtension, takeFileName)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Console.GetOpt
@@ -32,7 +32,6 @@ import Output
 import qualified Util.ByteString as LB
 import Track (Horizon(..), terrainTrkSimple)
 import qualified Parameters as Pm
-import Util.Misc (retrieveFileSize)
 import Annotation (Annotation)
 import Annotation.Parser (parseAnnotations, parseFlipbook)
 import Types.CartoM
@@ -480,8 +479,8 @@ setup initDir tmpDir w = void $ do
                 unless extIsKnown . void $
                     throwError "Bad file extension (should be .TRK or .RPL, in upper or lower case)."
 
-                mFileSize <- liftIO $ retrieveFileSize trkPath
-                let sizeIsCorrect = mFileSize == Just 1802
+                fileSize <- liftIO $ getFileSize trkPath
+                let sizeIsCorrect = fileSize == 1802
                     badTRKSize = fileExt == ".TRK" && not sizeIsCorrect
                 when badTRKSize . void $
                     throwError "Bad file size (.TRK files must have 1802 bytes)."
