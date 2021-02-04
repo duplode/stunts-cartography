@@ -311,7 +311,7 @@ parseFlipbook input = do
             return def
         Right fbks -> return fbks
 
-flipbookSpec = many $ SomeFlipbook <$> traceSpec FlipbookTrace
+flipbookSpec = whiteSpace >> many (SomeFlipbook <$> traceSpec FlipbookTrace)
 
 
 floatOrInteger = try float <|> fromIntegral <$> integer
