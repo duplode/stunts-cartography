@@ -300,23 +300,35 @@ track map as well as any static annotations.</p>
 
 <h3>Caveats and tips</h3>
 <ul>
-  <li>Regular annotations, such as split markers and stationary cars, can be
-  added to a flipbook through the annotations text area.</li>
-  <li>While the time interval parameter of the periodic car annotations can be
+  <li><p>Regular annotations, such as split markers, stationary cars and
+  unchanging standalone captions, can be added to a flipbook through the
+  annotations text area.</p></li>
+  <li><p>Periodic overlays in trace flipbooks can have an associated caption
+  which is redrawn each frame so that frame information can be displayed
+  through them. Such a caption is specified as a text annotation within
+  <code>&amp; { }</code> after the periodic overlay specification. For
+  instance, here is an example with a timer:</p>
+  <p><code>Trace :"070ZGUT.dat" #plum ! ~0 0.05 {Car} &amp; {Text "{{GAMETIME}}" @2 29 $50}
+    </code></p>
+  <p>If this feature is used to add a timer to a flipbook with multiple traces,
+  the timer should be added to the longest trace, as otherwise the timer will
+  remain frozen for the final frames, after the trace ends.
+  added to a flipbook through the annotations text area.</p></li>
+  <li><p>While the time interval parameter of the periodic car annotations can be
   used when generating a flipbook, one image will be generated for each point
   in the path; for intervals larger than 0.05, frames will be duplicated
-  rather than skipped.</li>
-  <li>Car overlays in a flipbook are scaled from the specified base size
+  rather than skipped.</p></li>
+  <li><p>Car overlays in a flipbook are scaled from the specified base size
   according to the height at each point taken from the replay data, so as to
-  give some visual cues when jumps occur.</li>
-  <li>The set of images can be converted into a video with the appropriate
+  give some visual cues when jumps occur.</p></li>
+  <li><p>The set of images can be converted into a video with the appropriate
   tools. For those familiar with ffmpeg, for instance, a sample command might
-  be:
-    <br>
-    <code>ffmpeg -loop 1 -i backdrop.png -r 20 -i '0%04d.png'
-      -filter_complex overlay -shortest -vcodec libx264 -frames 1329 -r 20
-      foo.mp4</code>
-  </li>
+  be:</p>
+  <p>
+  <code>ffmpeg -loop 1 -i backdrop.png -r 20 -i '0%04d.png'
+    -filter_complex overlay -shortest -vcodec libx264 -frames 1329 -r 20
+    foo.mp4</code>
+  </p></li>
 </ul>
 
 </body>

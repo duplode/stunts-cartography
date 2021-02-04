@@ -32,6 +32,10 @@ module Annotation
         , overrideAnnColour
         , deepOverrideAnnColour
         )
+    , TextAnnotation
+        ( annText
+        , setAnnText
+        )
     , maybeCustomiseAnnColour
     , maybeDeepOverrideAnnColour
 
@@ -198,6 +202,10 @@ maybeDeepOverrideAnnColour :: (ColourAnnotation a)
                            => Maybe (Colour Double) -> a -> a
 maybeDeepOverrideAnnColour = maybe id deepOverrideAnnColour
 
+class IsAnnotation a => TextAnnotation a where
+    annText :: a -> String
+    setAnnText :: String -> a -> a
+
 data CaptAnnotation = CaptAnnotation
     { _captAnnPosition :: (Double, Double)
     , _captAnnColour :: Colour Double
@@ -263,6 +271,10 @@ instance ColourAnnotation CaptAnnotation where
     setAnnColour = (captAnnColour .~)
     annColourIsProtected = _captAnnColourIsProtected
     protectAnnColour = captAnnColourIsProtected .~ True
+
+instance TextAnnotation CaptAnnotation where
+    annText = _captAnnText
+    setAnnText = (captAnnText .~)
 
 data CarSprite
     = Acura
@@ -340,6 +352,10 @@ instance ColourAnnotation CarAnnotation where
     deepOverrideAnnColour cl = overrideAnnColour cl
         . over carAnnCaption (deepOverrideAnnColour cl)
 
+instance TextAnnotation CarAnnotation where
+    annText = _captAnnText . _carAnnCaption
+    setAnnText = (carAnnCaption . captAnnText .~)
+
 data SegAnnotation
      = SegAnnotation
      { _segAnnColour :: Colour Double
@@ -395,6 +411,10 @@ instance ColourAnnotation SegAnnotation where
     protectAnnColour = segAnnColourIsProtected .~ True
     deepOverrideAnnColour cl = overrideAnnColour cl
         . over segAnnCaption (deepOverrideAnnColour cl)
+
+instance TextAnnotation SegAnnotation where
+    annText = _captAnnText . _segAnnCaption
+    setAnnText = (segAnnCaption . captAnnText .~)
 
 data SplitAnnotation
      = SplitAnnotation

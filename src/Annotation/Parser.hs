@@ -215,9 +215,7 @@ alignment = cardinalDir "'"
 splitDir = cardinalDir "^"
 
 
-traceSpec :: (MonadIO m)
-          => TraceMode
-          -> ParsecT String u (CartoT m) TraceAnnotation
+traceSpec :: (MonadIO m) => TraceMode -> ParsecT String u (CartoT m) TraceAnnotation
 traceSpec traceMode = do
     symbol "Trace"
     opt <- runPermParser $
@@ -271,7 +269,13 @@ periodic ovr = do
     symbol "~"
     ifr <- momentToFrame <$> floatOrInteger
     freq <- momentToFrame <$> floatOrInteger
-    (,) (ifr, freq) . snd <$> braces ovr
+    baseCar <- braces ovr
+    fbkCapt <- option defAnn flipbookCaption
+    return $ def
+        & periodicInitialFrame .~ ifr
+        & periodicPeriod .~ freq
+        & periodicBaseCar .~ snd baseCar
+        & periodicFlipbookCaption .~ fbkCapt
 
 -- TODO: Minimize duplication in the car parsers.
 carOnTrace mMoment = do
@@ -289,6 +293,10 @@ carOnTrace mMoment = do
             & carAnnCaption .~ capt
             & carAnnOpacity .~ bg
         )
+
+flipbookCaption = do
+    symbol "&"
+    braces standaloneCaption
 
 -- Flipbook parsers.
 parseFlipbook :: (MonadIO m) => String -> CartoT m [SomeFlipbook]

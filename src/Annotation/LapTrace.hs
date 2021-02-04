@@ -4,6 +4,12 @@ module Annotation.LapTrace
     , carsOverTrace
     , periodicCarsSpec
 
+    , PeriodicCarsSpec
+    , periodicInitialFrame
+    , periodicPeriod
+    , periodicBaseCar
+    , periodicFlipbookCaption
+
     , TracePoint(..)
     , TraceMode(..)
 
@@ -16,6 +22,7 @@ module Annotation.LapTrace
     , putCarOnTracePoint
     , initializeTrace
     , clearOverlays
+    , replaceMagicStrings
     ) where
 
 import Control.Lens.Operators hiding ((#))
@@ -45,20 +52,38 @@ data TracePoint = TracePoint
 data TraceMode = SingleFrameTrace | FlipbookTrace
     deriving (Eq, Enum)
 
+data PeriodicCarsSpec = PeriodicCarsSpec
+   { _periodicInitialFrame :: FrameIndex
+   , _periodicPeriod :: Int
+   , _periodicBaseCar :: CarAnnotation
+   -- This caption is only shown when the trace is rendered as a
+   -- flipbook. It is subject to magic string replacement.
+   , _periodicFlipbookCaption :: CaptAnnotation
+   }
+L.makeLenses ''PeriodicCarsSpec
+
+instance Default PeriodicCarsSpec where
+    def = PeriodicCarsSpec
+       { _periodicInitialFrame = 0
+       , _periodicPeriod = 0
+       , _periodicBaseCar = defAnn
+       , _periodicFlipbookCaption = defAnn
+       }
+
 -- TODO: Add support for different overlays.
 -- TODO: Add support for multiple periodic series.
 data TraceOverlays = TraceOverlays
     { _carsOverTrace :: [(FrameIndex, CarAnnotation)]
-    , _periodicCarsSpec :: ((FrameIndex, Int), CarAnnotation)
+    , _periodicCarsSpec :: PeriodicCarsSpec
     }
 L.makeLenses ''TraceOverlays
 
 instance Default TraceOverlays where
     def = TraceOverlays
         { _carsOverTrace = []
-        -- Initial frame, frequency, base annotation. Only positive
+        -- Initial frame, frequency, base annotations. Only positive
         -- frequencies are supported.
-        , _periodicCarsSpec = ((0, 0), defAnn)
+        , _periodicCarsSpec = def
         }
 
 instance IsAnnotation TraceOverlays where
@@ -111,8 +136,12 @@ setupTrace traceMode ann = ann & traceAnnOverlays .~ arrangeOverlays tovs
         . sortBy (comparing fst)
 
     lastFrame = M.size pointMap - 1
+    -- The flipbook caption is not used here.
     appendPeriodic tovs =
-        let ((ifr, freq), baseCar) = tovs ^. periodicCarsSpec
+        let pcSpec = tovs ^. periodicCarsSpec
+            ifr = pcSpec ^. periodicInitialFrame
+            freq = pcSpec ^. periodicPeriod
+            baseCar = pcSpec ^. periodicBaseCar
             ifr' = max 0 ifr
         in L.over carsOverTrace (++
             if freq > 0 then
@@ -130,19 +159,18 @@ formatFrameAsGameTime x = (if mm > 0 then show mm ++ ":" else "")
     (sm, cc) = (5 * x) `quotRem` 100
     (mm, ss) = sm `quotRem` 60
 
-replaceMagicStringsForCar :: Int -> CarAnnotation -> CarAnnotation
-replaceMagicStringsForCar ix c =
-    let txt = c ^. carAnnCaption . captAnnText
+replaceMagicStrings :: TextAnnotation a => TracePoint -> a -> a
+replaceMagicStrings p c =
+    let txt = annText c
+        ix = traceFrame p
     in case txt of
-        "{{FRAMENUMBER}}" ->
-            L.over carAnnCaption (captAnnText .~ show ix) c
-        "{{GAMETIME}}" ->
-            L.over carAnnCaption (captAnnText .~ formatFrameAsGameTime ix) c
+        "{{FRAMENUMBER}}" -> setAnnText (show ix) c
+        "{{GAMETIME}}" -> setAnnText (formatFrameAsGameTime ix) c
         _ -> c
 
 putCarOnTracePoint :: TracePoint -> CarAnnotation -> CarAnnotation
 putCarOnTracePoint p =
-    replaceMagicStringsForCar (traceFrame p)
+    replaceMagicStrings p
     . scaleAnnotation (1 + tracePosY p / 4)
     . orientAnnotation (traceRotXZ p)
     . locateAnnotation (tracePosXZ p)
@@ -186,6 +214,7 @@ instance IsAnnotation TraceAnnotation where
                 mempty
         }
 
+-- TODO: Double-check how overriding works in complex cases such as this one.
 instance ColourAnnotation TraceAnnotation where
     annColour = _traceAnnColour
     setAnnColour = (traceAnnColour .~)
@@ -194,5 +223,7 @@ instance ColourAnnotation TraceAnnotation where
     deepOverrideAnnColour cl ann = overrideAnnColour cl ann
         & L.over traceAnnOverlays
                 ( L.over carsOverTrace (map (fmap $ deepOverrideAnnColour cl))
-                . L.over periodicCarsSpec (fmap (deepOverrideAnnColour cl))
+                . L.over (periodicCarsSpec . periodicBaseCar) (deepOverrideAnnColour cl)
+                . L.over (periodicCarsSpec . periodicFlipbookCaption)
+                    (deepOverrideAnnColour cl)
                 )

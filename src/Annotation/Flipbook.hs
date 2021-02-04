@@ -21,20 +21,29 @@ class ToFlipbook a where
 -- single frame option disabled before using this instance.
 instance ToFlipbook TraceAnnotation where
     toFlipbook ann =
-        let ((ifr, freq), baseCar) = ann ^. traceAnnOverlays . periodicCarsSpec
+        let pcSpec = ann ^. traceAnnOverlays . periodicCarsSpec
+            ifr = pcSpec ^. periodicInitialFrame
+            freq = pcSpec ^. periodicPeriod
+            baseCar = pcSpec ^. periodicBaseCar
+            fbkCapt = pcSpec ^. periodicFlipbookCaption
+            ifr' = max 0 ifr
             pointIsIncluded p =
                 let phaselessFrame = traceFrame p - ifr
                 in phaselessFrame >= 0 && phaselessFrame `rem` freq == 0
-            fRenderOn c p =
+            adjustedFbkCapt p c = fbkCapt
+                 & overrideAnnColour (annColour c)
+                 & replaceMagicStrings p
+            renderAt c p =
                 if pointIsIncluded p
-                    then (True, renderAnnotation $ putCarOnTracePoint p c)
+                    then (True, renderAnnotation (adjustedFbkCapt p c)
+                        <> renderAnnotation (putCarOnTracePoint p c))
                     else (False, mempty)
             pts = ann ^. traceAnnPoints
         -- Note that freq should actually be called period.
         in case freq of
             0 -> [] -- TODO: Notify the issue (through the parser, probably).
-            1 -> map (snd . fRenderOn baseCar) pts
-            _ -> spillOverEmpty $ map (fRenderOn baseCar) pts
+            1 -> map (snd . renderAt baseCar) pts
+            _ -> spillOverEmpty $ map (renderAt baseCar) pts
     flipbookBackdrop = renderAnnotation
 
 -- Frame replication to account for frame rate variations.
