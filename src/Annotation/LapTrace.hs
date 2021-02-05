@@ -30,6 +30,7 @@ import qualified Control.Lens as L
 import qualified Data.Map as M (Map, fromList, lookup, member, size)
 import Data.Default
 import Data.List (sortBy, dropWhile, takeWhile)
+import Data.List.Extra (replace)
 import Data.Ord (comparing)
 import Data.Maybe (fromMaybe)
 import Text.Printf (printf)
@@ -163,10 +164,8 @@ replaceMagicStrings :: TextAnnotation a => TracePoint -> a -> a
 replaceMagicStrings p c =
     let txt = c ^. annText
         ix = traceFrame p
-    in case txt of
-        "{{FRAMENUMBER}}" -> c & annText .~ show ix
-        "{{GAMETIME}}" -> c & annText .~ formatFrameAsGameTime ix
-        _ -> c
+    in c & annText %~ replace "{{FRAMENUMBER}}" (show ix)
+        . replace "{{GAMETIME}}" (formatFrameAsGameTime ix)
 
 putCarOnTracePoint :: TracePoint -> CarAnnotation -> CarAnnotation
 putCarOnTracePoint p =
