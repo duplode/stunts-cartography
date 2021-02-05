@@ -480,10 +480,14 @@ setup initDir tmpDir w = void $ do
                     throwError "Bad file extension: should be .TRK or .RPL, in upper or lower case."
 
                 fileSize <- liftIO $ getFileSize trkPath
-                let sizeIsCorrect = fileSize >= 1802 && fileSize <= 13802
-                    badTRKSize = fileExt == ".TRK" && not sizeIsCorrect
+                let trkSizeIsCorrect = fileSize >= 1802 && fileSize <= 13802
+                    badTRKSize = fileExt == ".TRK" && not trkSizeIsCorrect
                 when badTRKSize . void $
-                    throwError "Bad file size: .TRK files must have between 1802 and 13802 bytes."
+                    throwError "Bad file size: TRK files must have between 1802 and 13802 bytes."
+                let rplSizeIsCorrect = fileSize >= 1826 && fileSize <= 13828
+                    badRPLSize = fileExt == ".RPL" && not rplSizeIsCorrect
+                when badRPLSize . void $
+                    throwError "Bad file size: RPL files must have between 1826 and 13828 bytes."
 
                 -- Decide on input format.
                 let imgWriter :: FilePath -> CartoT (ExceptT String UI) Pm.PostRenderInfo
