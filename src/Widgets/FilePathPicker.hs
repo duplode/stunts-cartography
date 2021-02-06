@@ -119,39 +119,48 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = do
     let initialDir = baseDir initial
         initialRelPath = relativePath initial
 
+        -- Note these are only triggered on blur.
+        eBaseDir = autocompleteBaseDirChange widget
+        eRelPath = autocompleteRelativePathChange widget
+
+        eBaseDirMoveUp = takeDirectory <$ userMoveUp widget
+        eRelPathMoveUp = const "" <$ userMoveUp widget
+
+    -- Using accumE here so we can have "single point of truth" events
+    -- for model updates. Keeping two separate events so we can avoid
+    -- updating the autocompletion lists when only the relative path
+    -- field changes.
+    eBaseDirModel <- accumE initialDir $ concatE
+        [ eProgBaseDir
+        , eBaseDirMoveUp
+        , const <$> eBaseDir
+        ]
+
+    eRelPathModel <- accumE initialRelPath $ concatE
+        [ eProgRelPath
+        , eRelPathMoveUp
+        , const <$> eRelPath
+        ]
+
+    bBaseDirModel <- initialDir `stepper` eBaseDirModel
+    bRelPathModel <- initialRelPath `stepper` eRelPathModel
+    let bModel = PickedPath <$> bBaseDirModel <*> bRelPathModel
+
+    let eKbBaseDir = userBaseDirChange widget
+        eUpdateCompletion = eBaseDirModel `union` eKbBaseDir
+        -- eExistingBaseDir exists because we only want to update the
+        -- completion list if the directory exists. In particular, if
+        -- the user is halfway through typing a directory name, the
+        -- list should remain unchanged.
+        eExistingBaseDir = filterJust (unsafeMapIO completionDir eUpdateCompletion)
+        eDirListing = unsafeMapIO getDirListing eExistingBaseDir
+        eFileListing = unsafeMapIO getFileListing eUpdateCompletion
+
     initialDirExists <- liftIO $ doesDirectoryExist initialDir
     initialDirListing <- liftIO $ if initialDirExists
         then getDirListing initialDir
         else return []
     initialFileListing <- liftIO $ getFileListing initialDir
-
-    let
-        -- Note these are only triggered on blur.
-        eBaseDir = autocompleteBaseDirChange widget
-        eRelPath = autocompleteRelativePathChange widget
-
-        eMoveUp = moveUp <$ userMoveUp widget
-
-        eModel = concatE
-            [ (\f pick -> pick { baseDir = f (baseDir pick)}) <$> eProgBaseDir
-            , (\f pick -> pick { relativePath = f (baseDir pick)}) <$> eProgRelPath
-            , eMoveUp
-            , (\dir pick -> pick { baseDir = dir }) <$> eBaseDir
-            , (\rel pick -> pick { relativePath = rel }) <$> eRelPath
-            ]
-
-    bModel <- initial `accumB` eModel
-
-    let eKbBaseDir = userBaseDirChange widget
-        -- TODO: Relying on the (<@>) picking the old bModel. It might
-        -- be good to write this in a more obvious way.
-        eUpdateCompletion = (flip ($) . baseDir <$> bModel <@> eProgBaseDir)
-            `union` (baseDir <$> (flip ($) <$> bModel <@> eMoveUp))
-            `union` eBaseDir
-            `union` eKbBaseDir
-        eExistingBaseDir = filterJust (unsafeMapIO completionDir eUpdateCompletion)
-        eDirListing = unsafeMapIO getDirListing eExistingBaseDir
-        eFileListing = unsafeMapIO getFileListing eUpdateCompletion
 
     bDirListing <- initialDirListing `stepper` eDirListing
     bFileListing <- initialFileListing `stepper` eFileListing
@@ -173,12 +182,6 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = do
 userModel :: PickedPath -> FilePathPicker -> UI (Behavior PickedPath)
 userModel initial = arrangeModel initial never never
 
-
-moveUp :: PickedPath -> PickedPath
-moveUp PickedPath {..} = PickedPath
-    { baseDir = takeDirectory baseDir
-    , relativePath = ""
-    }
 
 -- Auxiliary definitions for the autocompletion setup in arrangeModel.
 
