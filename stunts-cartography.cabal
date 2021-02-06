@@ -55,6 +55,7 @@ Executable sc-trk-viewer
                     ,Util.Threepenny.JQueryAutocomplete
                     ,Util.SVGFonts
                     ,Widgets.BoundedInput
+                    ,Widgets.FilePathPicker
                     ,Replay
                     ,Types.Diagrams
                     ,Types.CartoM

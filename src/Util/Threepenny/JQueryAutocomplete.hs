@@ -8,6 +8,7 @@ module Util.Threepenny.JQueryAutocomplete
     , autocompleteMinLength
     , autocompletechange
     , autocompleteselect
+    , autocompleteValueChange
     ) where
 
 -- TODO: The module name is obviously provisional.
@@ -15,7 +16,7 @@ import Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny as UI
 import Data.Aeson
 import Data.Maybe (fromJust)
-import Control.Monad (join)
+import Control.Monad (join, void)
 
 -- Synchronously loading the library code and CSS.
 -- If you find this hack off-putting, an alternative is to specify them
@@ -101,7 +102,14 @@ autocompleteMinLength = mkWriteAttr $ \minLength x ->
 -- them to have.
 -- autocompletechange :: Element -> Event (Maybe (String, String))
 autocompletechange :: Element -> Event ()
-autocompletechange = silence . domEvent "autocompletechange"
+autocompletechange = void . domEvent "autocompletechange"
+
+-- Adapted from Graphics.UI.Threepenny.Events
+autocompleteValueChange :: Element -> Event String
+autocompleteValueChange el = unsafeMapUI el
+    (const $ get value el) (domEvent "autocompletechange" el)
+
+unsafeMapUI el f = unsafeMapIO (\a -> getWindow el >>= \w -> runUI w (f a))
 
 -- autocompletecreate :: Element -> Event ()
 -- autocompletefocus :: Element -> Event (String, String)
@@ -111,10 +119,7 @@ autocompletechange = silence . domEvent "autocompletechange"
 
 -- autocompleteselect :: Element -> Event (String, String)
 autocompleteselect :: Element -> Event ()
-autocompleteselect = silence . domEvent "autocompleteselect"
-
-silence :: (Functor f) => f a -> f ()
-silence = fmap (const ())
+autocompleteselect = void . domEvent "autocompleteselect"
 
 {-
 readJSObjectOptimistically :: String -> [(String, JSValue)]

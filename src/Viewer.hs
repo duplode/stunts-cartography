@@ -37,6 +37,7 @@ import Annotation.Parser (parseAnnotations, parseFlipbook)
 import Types.CartoM
 import Paths
 import qualified Widgets.BoundedInput as BI
+import qualified Widgets.FilePathPicker as FPP
 import Util.Threepenny.Alertify
 import Util.Threepenny.JQueryAutocomplete
 
@@ -113,83 +114,6 @@ setup initDir tmpDir w = void $ do
     --autocompleteSetup w "static/lib/"
     --alertifySetup w "static/lib/"
 
-    -- Base directory and file selection, with autocompletion.
-    let initialDir = initDir
-
-        getDirListing :: FilePath -> IO [FilePath]
-        getDirListing dir = fmap sort $ do
-        -- Assuming we already checked that dir exists.
-            getDirectoryContents dir
-                >>= (filterM doesDirectoryExist
-                    . map ((dotToBlankDir dir) </>))
-
-        filterTrkRpl = filter $ (\x -> x == ".TRK" || x == ".RPL")
-            . takeExtension . map toUpper
-
-        blankDirToDot dir = if null dir then "." else dir
-        dotToBlankDir dir = case dir of
-            "." -> ""
-            _ -> dir
-
-        toFileListing :: Event FilePath -> Event [FilePath]
-        toFileListing = unsafeMapIO getFileListing
-
-        getFileListing :: FilePath -> IO [FilePath]
-        getFileListing dir = fmap (sort . filterTrkRpl) $ do
-            let dir' = blankDirToDot dir
-            exists <- doesDirectoryExist dir'
-            if exists
-                then getDirectoryContents dir'
-                        >>= (filterM $ doesFileExist . (dir' </>))
-                else return []
-
-    initialDirExists <- liftIO $ doesDirectoryExist initialDir
-    initialDirListing <- liftIO $ if initialDirExists
-        then getDirListing initialDir
-        else return []
-    initialFileListing <- liftIO $ getFileListing initialDir
-
-    itxBasePath <-
-        UI.input # set UI.type_ "text" # set UI.name "base-path-input"
-            # set UI.id_ "base-path-input"
-            # set value initialDir
-
-    let eBaseDir = UI.valueChange itxBasePath
-    bBaseDir <- initialDir `stepper` eBaseDir
-
-    let completionDir :: FilePath -> IO (Maybe FilePath)
-        completionDir dir = do
-            let dir' = blankDirToDot dir
-            exists <- doesDirectoryExist dir'
-            if exists
-                then return $ Just dir'
-                else do
-                    -- A trick so that completion does the right thing when
-                    -- using Shift + arrow key and then pressing a character.
-                    let dir'' = blankDirToDot $
-                            (\xs -> guard (not $ null xs) >> init xs) dir'
-                    exists' <- doesDirectoryExist dir''
-                    return $ guard exists' >> Just dir''
-
-        eExistingBaseDir = filterJust . unsafeMapIO completionDir $ eBaseDir
-        eDirListing = unsafeMapIO getDirListing $ eExistingBaseDir
-        eFileListing = unsafeMapIO getFileListing $ eBaseDir
-
-    bDirListing <- initialDirListing `stepper` eDirListing
-    bFileListing <- initialFileListing `stepper` eFileListing
-
-    itxTrkPath <-
-        UI.input # set UI.type_ "text" # set UI.name "trk-input"
-            # set UI.id_ "trk-input"
-
-    element itxBasePath
-        # autocompleteInit
-        # sink autocompleteArraySource bDirListing
-
-    element itxTrkPath
-        # autocompleteInit
-        # sink autocompleteArraySource bFileListing
-
     -- Output type and tile resolution caption.
     selOutput <-
         UI.select # set UI.name "output-format-select"
@@ -201,6 +125,18 @@ setup initDir tmpDir w = void $ do
     let eSelOutput = UI.selectionChange selOutput
     bOutType <- (intToOutputType . fromMaybe (-1) <$>)
         <$> (Just 0 `stepper` eSelOutput)
+
+    -- Base directory and file selection, with autocompletion.
+    fppPicker <- FPP.new
+    bPickedPath <- FPP.userModel
+        FPP.PickedPath
+            { baseDir = initDir
+            , relativePath = ""
+            }
+        fppPicker
+
+    let bBaseDir = FPP.baseDir <$> bPickedPath
+        bRelPath = FPP.relativePath <$> bPickedPath
 
     let bPxPtText =
             let toPxPtText x =
@@ -291,6 +227,8 @@ setup initDir tmpDir w = void $ do
     -- Rendering ratios
     let ratioModel fParam bi = do
             let (defRatio, eRatio) = presetDefAndSetterD fParam ePreset
+            -- TODO: Is this really necessary? Doesn't BI.simpleModel
+            -- already sink the event anyway?
             eRatio' <- BI.withRefresh bi eRatio
             BI.simpleModel defRatio eRatio' bi
 
@@ -386,12 +324,7 @@ setup initDir tmpDir w = void $ do
         [ UI.div # set UI.id_ "left-bar" #+
             [ UI.p #+
                 [ element btnGo, string " as ", element selOutput ]
-            , UI.p #+
-                [ string "Base path:", UI.br
-                , element itxBasePath, UI.br
-                , string "TRK / RPL relative path:", UI.br
-                , element itxTrkPath
-                ]
+            , element fppPicker
             , UI.p #+
                 [ string "Save: "
                 , element lnkTrk, string " - "
@@ -464,7 +397,7 @@ setup initDir tmpDir w = void $ do
 
             element btnGo # set UI.enabled False
 
-            trkRelPath <- itxTrkPath # get value
+            trkRelPath <- currentValue bRelPath
             let basePath = Pm.baseDirectory params
                 trkPath = basePath </> trkRelPath
 

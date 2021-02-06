@@ -2,7 +2,7 @@ body {
   font-family: Arial,Helvetica,sans-serif;
 }
 
-p, li {
+p, li, .file-path-picker-caption {
   font-size: 87.5%;
 }
 
