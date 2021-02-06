@@ -26,6 +26,14 @@ p, li, .file-path-picker-caption {
   padding: 0em 0.25em 0em 0em;
 }
 
+.file-path-picker-base-path {
+  width: 60%
+}
+
+.file-path-picker-relative-path {
+  width: 90%
+}
+
 .blank-horizon {
   background-color: White;
 }

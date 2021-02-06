@@ -13,6 +13,8 @@ module Widgets.FilePathPicker
     -- Blurring events
     , autocompleteBaseDirChange
     , autocompleteRelativePathChange
+    -- Other events
+    , userMoveUp
     -- Result type
     , PickedPath(..)
     ) where
@@ -38,12 +40,14 @@ data PickedPath = PickedPath
 data FilePathPicker = FilePathPicker
     { _itxBaseDir :: Element
     , _itxRelativePath :: Element
+    , _btnUp :: Element
     , _divWrapper :: Element
 
     , _userBaseDirChange :: Event FilePath
     , _userRelativePathChange :: Event FilePath
     , _autocompleteBaseDirChange :: Event FilePath
     , _autocompleteRelativePathChange :: Event FilePath
+    , _userMoveUp :: Event ()
     }
 
 -- TODO: As things stand, there might not be much point in exposing these.
@@ -59,6 +63,9 @@ autocompleteBaseDirChange = _autocompleteBaseDirChange
 autocompleteRelativePathChange :: FilePathPicker -> Event FilePath
 autocompleteRelativePathChange = _autocompleteRelativePathChange
 
+userMoveUp :: FilePathPicker -> Event ()
+userMoveUp = _userMoveUp
+
 instance Widget FilePathPicker where
     getElement = _divWrapper
 
@@ -73,10 +80,16 @@ new = do
         UI.input # set UI.type_ "text"
             #. "file-path-picker-relative-path"
 
+    _btnUp <-
+        UI.button
+            #. "file-path-picker-button-up"
+            #+ [ string "Up" ]
+
     let _userBaseDirChange = UI.valueChange _itxBaseDir
         _userRelativePathChange = UI.valueChange _itxRelativePath
         _autocompleteBaseDirChange = autocompleteValueChange _itxBaseDir
         _autocompleteRelativePathChange = autocompleteValueChange _itxRelativePath
+        _userMoveUp = UI.click _btnUp
 
     _strBasePathCaption <- string "Base path:"
         #. "file-path-picker-caption"
@@ -87,7 +100,7 @@ new = do
     -- TODO: Make the captions customiseable.
     _divWrapper <- UI.div #. "file-path-picker" #+
         [ element _strBasePathCaption, UI.br
-        , element _itxBaseDir, UI.br
+        , element _itxBaseDir, element _btnUp, UI.br
         , element _strRelativePathCaption, UI.br
         , element _itxRelativePath
         ]
@@ -117,9 +130,12 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = do
         eBaseDir = autocompleteBaseDirChange widget
         eRelPath = autocompleteRelativePathChange widget
 
+        eMoveUp = moveUp <$ userMoveUp widget
+
         eModel = concatE
             [ (\f pick -> pick { baseDir = f (baseDir pick)}) <$> eProgBaseDir
             , (\f pick -> pick { relativePath = f (baseDir pick)}) <$> eProgRelPath
+            , eMoveUp
             , (\dir pick -> pick { baseDir = dir }) <$> eBaseDir
             , (\rel pick -> pick { relativePath = rel }) <$> eRelPath
             ]
@@ -127,8 +143,12 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = do
     bModel <- initial `accumB` eModel
 
     let eKbBaseDir = userBaseDirChange widget
-        eUpdateCompletion = union (baseDir <$> bModel <@ eProgBaseDir) eKbBaseDir
+        -- TODO: Relying on the (<@>) picking the old bModel. It might
+        -- be good to write this in a more obvious way.
+        eUpdateCompletion = (flip ($) . baseDir <$> bModel <@> eProgBaseDir)
+            `union` (baseDir <$> (flip ($) <$> bModel <@> eMoveUp))
             `union` eBaseDir
+            `union` eKbBaseDir
         eExistingBaseDir = filterJust (unsafeMapIO completionDir eUpdateCompletion)
         eDirListing = unsafeMapIO getDirListing eExistingBaseDir
         eFileListing = unsafeMapIO getFileListing eUpdateCompletion
@@ -153,6 +173,12 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = do
 userModel :: PickedPath -> FilePathPicker -> UI (Behavior PickedPath)
 userModel initial = arrangeModel initial never never
 
+
+moveUp :: PickedPath -> PickedPath
+moveUp PickedPath {..} = PickedPath
+    { baseDir = takeDirectory baseDir
+    , relativePath = ""
+    }
 
 -- Auxiliary definitions for the autocompletion setup in arrangeModel.
 
