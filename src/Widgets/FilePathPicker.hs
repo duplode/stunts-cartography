@@ -147,15 +147,23 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = do
     bRelPathModel <- initialRelPath `stepper` eRelPathModel
     let bModel = PickedPath <$> bBaseDirModel <*> bRelPathModel
 
-    let eKbBaseDir = userBaseDirChange widget
-        eUpdateCompletion = eBaseDirModel `union` eKbBaseDir
+    let eUpdateDirCompletion = userBaseDirChange widget
+            `union` (bBaseDirModel <@ UI.focus (_itxBaseDir widget))
         -- eExistingBaseDir exists because we only want to update the
         -- completion list if the directory exists. In particular, if
         -- the user is halfway through typing a directory name, the
         -- list should remain unchanged.
-        eExistingBaseDir = filterJust (unsafeMapIO completionDir eUpdateCompletion)
+        eExistingBaseDir = filterJust (unsafeMapIO completionDir eUpdateDirCompletion)
         eDirListing = unsafeMapIO getDirListing eExistingBaseDir
-        eFileListing = unsafeMapIO getFileListing eUpdateCompletion
+
+        -- Updating the file completion list on focus is fine for our
+        -- current purposes. If it ever becomes a possibility that the
+        -- base directory changes while the relative path field is
+        -- focused, we might also include userRelativePathChange, or
+        -- introduce withRefresh mechanics like the one in the
+        -- BoundedInput widget.
+        eUpdateFileCompletion = bBaseDirModel <@ UI.focus (_itxRelativePath widget)
+        eFileListing = unsafeMapIO getFileListing eUpdateFileCompletion
 
     initialDirExists <- liftIO $ doesDirectoryExist initialDir
     initialDirListing <- liftIO $ if initialDirExists
@@ -209,7 +217,6 @@ getFileListing dir = fmap (fmap takeFileName . filterTrkRpl) $ do
     filterTrkRpl :: [FilePath] -> [FilePath]
     filterTrkRpl = filter $ (\x -> x == ".TRK" || x == ".RPL")
         . takeExtension . map toUpper
-
 
 completionDir :: FilePath -> IO (Maybe FilePath)
 completionDir dir = do
