@@ -15,8 +15,8 @@ import Data.List (sort)
 import Text.Read (readMaybe)
 import Text.Printf (printf)
 import System.Directory
-    (doesFileExist, doesDirectoryExist, getDirectoryContents, getFileSize)
-import System.FilePath ((</>), takeExtension, addExtension, takeFileName)
+    (doesFileExist, doesDirectoryExist, getFileSize ,getCurrentDirectory)
+import System.FilePath ((</>), takeExtension, addExtension,takeDirectory)
 import System.IO.Temp (withSystemTempDirectory)
 import System.Console.GetOpt
 import System.Environment (getArgs)
@@ -83,12 +83,17 @@ consoleHelp = usageInfo helpHeader optionSpec
 processOpts :: IO (Int, FilePath)
 processOpts = do
     (opts, _) <- viewerOpts =<< getArgs
-    foldM (#) (10000, "..") $ map mkOptSetter opts
+    (port, md) <- foldM (#) (10000, Nothing) $ map mkOptSetter opts
+    case md of
+        Just d -> return (port, d)
+        Nothing -> do
+            parentDir <- takeDirectory <$> getCurrentDirectory
+            return (port, parentDir)
     where
-    mkOptSetter :: Flag -> ((Int, FilePath) -> IO (Int, FilePath))
+    mkOptSetter :: Flag -> ((Int, Maybe FilePath) -> IO (Int, Maybe FilePath))
     mkOptSetter flag = case flag of
-        Port p    -> return . (\(_, d) -> (p, d))
-        InitDir d -> return . (\(p, _) -> (p, d))
+        Port p    -> return . (\(_, md) -> (p, md))
+        InitDir d -> return . (\(p, _) -> (p, Just d))
         Help      -> const $ putStrLn consoleHelp >> exitSuccess
 
 consoleGreeting :: Int -> IO ()

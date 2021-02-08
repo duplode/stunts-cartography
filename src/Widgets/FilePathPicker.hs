@@ -21,6 +21,7 @@ module Widgets.FilePathPicker
 
 import Data.List (sort)
 import System.Directory
+import System.Directory.Extra (listDirectories, listFiles)
 import System.FilePath
 import Control.Monad
 import Data.Char
@@ -186,30 +187,22 @@ userModel initial = arrangeModel initial never never
 -- Auxiliary definitions for the autocompletion setup in arrangeModel.
 
 getDirListing :: FilePath -> IO [FilePath]
-getDirListing dir = fmap sort $ do
-    -- Assuming we already checked that dir exists.
-    getDirectoryContents dir
-        >>= (filterM doesDirectoryExist
-            . map ((dotToBlankDir dir) </>))
+getDirListing = listDirectories
+-- This implementation assumes we already checked that the directory
+-- exists.
 
 blankDirToDot :: FilePath -> FilePath
 blankDirToDot dir = if null dir then "." else dir
-
-dotToBlankDir :: FilePath -> FilePath
-dotToBlankDir dir = case dir of
-    "." -> ""
-    _ -> dir
 
 toFileListing :: Event FilePath -> Event [FilePath]
 toFileListing = unsafeMapIO getFileListing
 
 getFileListing :: FilePath -> IO [FilePath]
-getFileListing dir = fmap (sort . filterTrkRpl) $ do
+getFileListing dir = fmap (fmap takeFileName . filterTrkRpl) $ do
     let dir' = blankDirToDot dir
     exists <- doesDirectoryExist dir'
     if exists
-        then getDirectoryContents dir'
-                >>= (filterM $ doesFileExist . (dir' </>))
+        then listFiles dir'
         else return []
     where
     -- TODO: This should be customisable, presumably through new.
