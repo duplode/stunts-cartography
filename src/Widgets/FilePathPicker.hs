@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE RecursiveDo #-}
 module Widgets.FilePathPicker
     ( FilePathPicker
     -- Construction
@@ -110,12 +111,12 @@ new = do
 
 arrangeModel
     :: PickedPath                    -- ^ Initial path.
-    -> Event (FilePath -> FilePath)  -- ^ Programatic base directory changes.
-    -> Event (FilePath -> FilePath)  -- ^ Programatic relative path changes.
+    -> Event FilePath                -- ^ Programatic base directory changes.
+    -> Event FilePath                -- ^ Programatic relative path changes.
     -> FilePathPicker                -- ^ Widget.
     -> UI (Behavior PickedPath)      -- ^ Behavior, capturing user
                                      -- and progranatic changes.
-arrangeModel initial eProgBaseDir eProgRelPath widget = do
+arrangeModel initial eProgBaseDir eProgRelPath widget = mdo
 
     let initialDir = baseDir initial
         initialRelPath = relativePath initial
@@ -124,24 +125,20 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = do
         eBaseDir = autocompleteBaseDirChange widget
         eRelPath = autocompleteRelativePathChange widget
 
-        eBaseDirMoveUp = takeDirectory <$ userMoveUp widget
-        eRelPathMoveUp = const "" <$ userMoveUp widget
+        eBaseDirMoveUp = unsafeMapIO moveUpBasePath (bBaseDirModel <@ userMoveUp widget)
+        eRelPathMoveUp = "" <$ userMoveUp widget
 
-    -- Using accumE here so we can have "single point of truth" events
-    -- for model updates. Keeping two separate events so we can avoid
-    -- updating the autocompletion lists when only the relative path
-    -- field changes.
-    eBaseDirModel <- accumE initialDir $ concatE
-        [ eProgBaseDir
-        , eBaseDirMoveUp
-        , const <$> eBaseDir
-        ]
+    let eBaseDirModel = foldr union never
+            [ eProgBaseDir
+            , eBaseDirMoveUp
+            , eBaseDir
+            ]
 
-    eRelPathModel <- accumE initialRelPath $ concatE
-        [ eProgRelPath
-        , eRelPathMoveUp
-        , const <$> eRelPath
-        ]
+        eRelPathModel = foldr union never
+            [ eProgRelPath
+            , eRelPathMoveUp
+            , eRelPath
+            ]
 
     bBaseDirModel <- initialDir `stepper` eBaseDirModel
     bRelPathModel <- initialRelPath `stepper` eRelPathModel
@@ -194,7 +191,15 @@ userModel :: PickedPath -> FilePathPicker -> UI (Behavior PickedPath)
 userModel initial = arrangeModel initial never never
 
 
--- Auxiliary definitions for the autocompletion setup in arrangeModel.
+moveUpBasePath :: FilePath -> IO FilePath
+moveUpBasePath = fmap takeDirectory . expandSpecial
+    where
+    expandSpecial dir
+        | null dir || all (== '.') dir = makeAbsolute dir
+        | otherwise = return dir
+
+blankDirToDot :: FilePath -> FilePath
+blankDirToDot dir = if null dir then "." else dir
 
 -- This implementation assumes we already checked that the directory
 -- exists.
@@ -204,12 +209,6 @@ getDirListing dir = map removeLeadingDot <$> listDirectories dir
     removeLeadingDot
         | dir == "." = makeRelative "."
         | otherwise = id
-
-blankDirToDot :: FilePath -> FilePath
-blankDirToDot dir = if null dir then "." else dir
-
-toFileListing :: Event FilePath -> Event [FilePath]
-toFileListing = unsafeMapIO getFileListing
 
 getFileListing :: FilePath -> IO [FilePath]
 getFileListing dir = fmap (fmap takeFileName . filterTrkRpl) $ do
