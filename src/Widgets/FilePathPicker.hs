@@ -121,6 +121,9 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = mdo
     let initialDir = baseDir initial
         initialRelPath = relativePath initial
 
+        itxBaseDir = _itxBaseDir widget
+        itxRelPath = _itxRelativePath widget
+
         -- Note these are only triggered on blur.
         eBaseDir = autocompleteBaseDirChange widget
         eRelPath = autocompleteRelativePathChange widget
@@ -145,7 +148,7 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = mdo
     let bModel = PickedPath <$> bBaseDirModel <*> bRelPathModel
 
     let eUpdateDirCompletion = userBaseDirChange widget
-            `union` (bBaseDirModel <@ UI.focus (_itxBaseDir widget))
+            `union` (bBaseDirModel <@ UI.focus itxBaseDir)
         -- eExistingBaseDir exists because we only want to update the
         -- completion list if the directory exists. In particular, if
         -- the user is halfway through typing a directory name, the
@@ -159,7 +162,7 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = mdo
         -- focused, we might also include userRelativePathChange, or
         -- introduce withRefresh mechanics like the one in the
         -- BoundedInput widget.
-        eUpdateFileCompletion = bBaseDirModel <@ UI.focus (_itxRelativePath widget)
+        eUpdateFileCompletion = bBaseDirModel <@ UI.focus itxRelPath
         eFileListing = unsafeMapIO getFileListing eUpdateFileCompletion
 
     initialDirExists <- liftIO $ doesDirectoryExist initialDir
@@ -173,13 +176,18 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = mdo
 
     -- Note the sinkWhen trick from the BoundedInput widget would foul
     -- up things here.
-    element (_itxBaseDir widget)
+    element itxBaseDir
         # autocompleteInit
         # set autocompleteMinLength 0
         # sink autocompleteArraySource bDirListing
         # sink value (baseDir <$> bModel)
 
-    element (_itxRelativePath widget)
+    onEvent (void eBaseDirMoveUp `union` autocompleteselect itxBaseDir) $
+        const (scrollToEnd itxBaseDir)
+
+    askWindow >>= \w -> liftIOLater (runUI w (scrollToEnd itxBaseDir))
+
+    element itxRelPath
         # autocompleteInit
         # set autocompleteMinLength 0
         # sink autocompleteArraySource bFileListing
@@ -236,3 +244,9 @@ completionDir dir = do
                     (\xs -> guard (not $ null xs) >> init xs) dir'
             exists' <- doesDirectoryExist dir''
             return $ guard exists' >> Just dir''
+
+scrollToEnd :: Element -> UI ()
+scrollToEnd el = runFunction $ fun el
+    where
+    fun :: Element -> JSFunction ()
+    fun = ffi "%1.scrollLeft = %1.scrollWidth"
