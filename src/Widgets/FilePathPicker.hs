@@ -178,11 +178,13 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = do
     -- up things here.
     element (_itxBaseDir widget)
         # autocompleteInit
+        # set autocompleteMinLength 0
         # sink autocompleteArraySource bDirListing
         # sink value (baseDir <$> bModel)
 
     element (_itxRelativePath widget)
         # autocompleteInit
+        # set autocompleteMinLength 0
         # sink autocompleteArraySource bFileListing
         # sink value (relativePath <$> bModel)
 
@@ -194,10 +196,14 @@ userModel initial = arrangeModel initial never never
 
 -- Auxiliary definitions for the autocompletion setup in arrangeModel.
 
-getDirListing :: FilePath -> IO [FilePath]
-getDirListing = listDirectories
 -- This implementation assumes we already checked that the directory
 -- exists.
+getDirListing :: FilePath -> IO [FilePath]
+getDirListing dir = map removeLeadingDot <$> listDirectories dir
+    where
+    removeLeadingDot
+        | dir == "." = makeRelative "."
+        | otherwise = id
 
 blankDirToDot :: FilePath -> FilePath
 blankDirToDot dir = if null dir then "." else dir
