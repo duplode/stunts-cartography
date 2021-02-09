@@ -101,8 +101,8 @@ new = do
 
     -- TODO: Make the captions customiseable.
     _divWrapper <- UI.div #. "file-path-picker" #+
-        [ element _strBasePathCaption, UI.br
-        , element _itxBaseDir, element _btnUp, UI.br
+        [ element _strBasePathCaption, element _btnUp, UI.br
+        , element _itxBaseDir, UI.br
         , element _strRelativePathCaption, UI.br
         , element _itxRelativePath
         ]
