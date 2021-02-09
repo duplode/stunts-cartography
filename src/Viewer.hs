@@ -214,7 +214,8 @@ setup initDir tmpDir w = void $ do
 
     selPreset <-
         UI.select # set UI.name "style-preset-select"
-            # set UI.id_ "style-preset-select" #+
+            # set UI.id_ "style-preset-select"
+            # set UI.title__ "Use the \"Set\" button to conifrm the choice" #+
                 [ UI.option # set UI.selected True #+ [string "Default"]
                 , UI.option #+ [string "Wider track"]
                 , UI.option #+ [string "Sloping ramps"]
@@ -331,7 +332,8 @@ setup initDir tmpDir w = void $ do
                 [ element btnGo, string " as ", element selOutput ]
             , element fppPicker
             , UI.p #+
-                [ string "Save: "
+                [ UI.span #. "ui-icon ui-icon-save"
+                , string " Save: "
                 , element lnkTrk, string " - "
                 , element lnkTerrTrk, string " - "
                 , element lnkFlipbook

@@ -90,12 +90,14 @@ new = do
     _btnUp <-
         UI.button
             #. "file-path-picker-button-up"
-            #+ [ string "Up" ]
+            # set UI.title__ "Switch to parent directory"
+            #+ [ UI.span #. "ui-icon ui-icon-arrow-1-n" ]
 
     _btnHome <-
         UI.button
             #. "file-path-picker-button-home"
-            #+ [ string "Home" ]
+            # set UI.title__ "Switch to home directory"
+            #+ [ UI.span #. "ui-icon ui-icon-home" ]
 
     let _userBaseDirChange = UI.valueChange _itxBaseDir
         _userRelativePathChange = UI.valueChange _itxRelativePath
@@ -104,13 +106,13 @@ new = do
         _userMoveUp = UI.click _btnUp
         _userHome = UI.click _btnHome
 
-    _strBasePathCaption <- string "Base path:"
+    _strBasePathCaption <- string "Base path: "
         #. "file-path-picker-caption"
 
     _strRelativePathCaption <- string "TRK / RPL relative path:"
         #. "file-path-picker-caption"
 
-    -- TODO: Make the captions customiseable.
+    -- TODO: Make the captions customisable.
     _divWrapper <- UI.div #. "file-path-picker" #+
         [ element _strBasePathCaption, element _btnUp, element _btnHome, UI.br
         , element _itxBaseDir, UI.br
