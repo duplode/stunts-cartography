@@ -164,7 +164,7 @@ setup initDir tmpDir w = void $ do
     let (defMinX, defMaxX) = Pm.xTileBounds Pm.def
         (defMinY, defMaxY) = Pm.yTileBounds Pm.def
 
-        styleBoundsInput = BI.setTextInputSize 2
+        styleBoundsInput = BI.setTextInputWidth 2
             . BI.formatBoundsCaption (const "")
 
     biiMinX <- BI.new (0, 29) # styleBoundsInput

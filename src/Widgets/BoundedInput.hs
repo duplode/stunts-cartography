@@ -10,7 +10,7 @@ module Widgets.BoundedInput
     , userModel
     -- Appearance modifiers
     , formatBoundsCaption
-    , setTextInputSize
+    , setTextInputWidth
     -- Raw events
     , userValueChange
     -- Widget state manipulation
@@ -54,8 +54,8 @@ new :: (Ord a, Show a, Read a)
     => (a, a) -> UI (BoundedInput a)
 new (_minimumValue, _maximumValue) = do
 
-    _itxValue <- UI.input # set UI.type_ "text" # set UI.size "4"
-        #. "bounded-input-value"
+    _itxValue <- UI.input # set UI.type_ "text" #. "bounded-input-value"
+        # set style [("width", "4em")]
     _strRange <- string
         ("(" ++ show _minimumValue ++ " - " ++ show _maximumValue ++ ") ")
         #. "bounded-input-caption"
@@ -104,10 +104,10 @@ formatBoundsCaption fFormat biM = do
         # set text (' ' : fFormat (_minimumValue bi, _maximumValue bi))
     return bi { _strRange }
 
-setTextInputSize :: Int -> UI (BoundedInput a) -> UI (BoundedInput a)
-setTextInputSize sz biM = do
+setTextInputWidth :: Int -> UI (BoundedInput a) -> UI (BoundedInput a)
+setTextInputWidth sz biM = do
     bi <- biM
-    _itxValue <- element (_itxValue bi) # set UI.size (show sz)
+    _itxValue <- element (_itxValue bi) # set style [("width", show sz ++ "em")]
     return bi { _itxValue }
 
 instance Widget (BoundedInput a) where
