@@ -15,6 +15,7 @@ Data-Files:          wwwroot/css/*.css
                      wwwroot/css/alertify.core.css
                      wwwroot/css/alertify.default.css
                      wwwroot/*.html
+                     wwwroot/favicon*
                      wwwroot/images/*.png
                      wwwroot/lib/alertify.min.js
                      wwwroot/lib/README-alertify.md
