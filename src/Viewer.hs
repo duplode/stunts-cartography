@@ -366,23 +366,34 @@ setup initDir tmpDir w = void $ do
                 , rowFlex #+ [string "Indices?", element chkDrawIndices]
                 ]
             , divVertFlex #+
-                [ rowFlex #+ [string "Map bounds (0 - 29):"]
-                , rowFlex #+
-                    [ string "x from ", element biiMinX
-                    , string " to ", element biiMaxX
+                [ rowFlex # overrideFlex [PAlignItems Clay.center] [] #+
+                    [ divVertFlex # overrideFlex [PAlignItems Clay.center] [] #+
+                        [string "Map bounds:", string "(0 - 29)"]
+                    , subRowFlex # overrideFlex [PAlignItems Clay.center] [] #+
+                        [ divVertFlex # overrideFlex [PAlignItems Clay.flexEnd] [] #+
+                            [ UI.span #. "ui-icon ui-icon-caret-1-nw"
+                            , element biiMinX
+                            , UI.span #. "ui-icon ui-icon-caret-1-sw"
+                            ]
+                        , divVertFlex # overrideFlex [PAlignItems Clay.center] [] #+
+                            [ element biiMaxY
+                            , element biiMinY
+                            ]
+                        , divVertFlex # overrideFlex [PAlignItems Clay.flexStart] [] #+
+                            [ UI.span #. "ui-icon ui-icon-caret-1-ne"
+                            , element biiMaxX
+                            , UI.span #. "ui-icon ui-icon-caret-1-se"
+                            ]
+                        ]
                     ]
-                , rowFlex #+
-                    [ string "y from ", element biiMinY
-                    , string " to ", element biiMaxY
-                    ]
-                , rowFlex #+
-                    [ element strPxPtPerTile
-                    , element bidPxPtPerTile
-                    ]
+                ]
+            , rowFlex #+
+                [ element strPxPtPerTile
+                , element bidPxPtPerTile
                 ]
             , divVertFlex #+
                 [ rowFlex #+
-                    [ string "Annotations"
+                    [ string "Annotations:"
                     , UI.a # set UI.text "Help"
                         # set UI.href ("static/annotations-help.html")
                         # set UI.target "_blank"
@@ -391,7 +402,7 @@ setup initDir tmpDir w = void $ do
                 ]
             , divVertFlex #+
                 [ rowFlex #+
-                    [ string "Flipbook"
+                    [ string "Flipbook:"
                     , UI.a # set UI.text "Help"
                         # set UI.href ("static/annotations-help.html#creating-flipbooks")
                         # set UI.target "_blank"
