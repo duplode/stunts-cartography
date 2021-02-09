@@ -29,9 +29,12 @@ import Data.Char
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
+import Graphics.UI.Threepenny.Ext.Flexbox
+import qualified Clay.Flexbox as Flex
 
 import Util.Reactive.Threepenny
 import Util.Threepenny.JQueryAutocomplete
+import Util.Threepenny.Flexbox
 
 data PickedPath = PickedPath
     { baseDir :: FilePath
@@ -82,10 +85,12 @@ new = do
     _itxBaseDir <-
         UI.input # set UI.type_ "text"
             #. "file-path-picker-base-path"
+            # setFlex childProps { cFlexGrow = 1 }
 
     _itxRelativePath <-
         UI.input # set UI.type_ "text"
             #. "file-path-picker-relative-path"
+            # setFlex childProps { cFlexGrow = 1 }
 
     _btnUp <-
         UI.button
@@ -113,11 +118,14 @@ new = do
         #. "file-path-picker-caption"
 
     -- TODO: Make the captions customisable.
-    _divWrapper <- UI.div #. "file-path-picker" #+
-        [ element _strBasePathCaption, element _btnUp, element _btnHome, UI.br
-        , element _itxBaseDir, UI.br
-        , element _strRelativePathCaption, UI.br
-        , element _itxRelativePath
+    _divWrapper <- divVertFlex #. "file-path-picker" #+
+        [ rowFlex #+
+            [ rowFlex #+ [element _strBasePathCaption]
+            , subRowFlex #+ [element _btnUp, element _btnHome]
+            ]
+        , rowFlex #+ [element _itxBaseDir]
+        , rowFlex #+ [element _strRelativePathCaption]
+        , rowFlex #+ [element _itxRelativePath]
         ]
 
     return FilePathPicker {..}

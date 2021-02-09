@@ -25,9 +25,13 @@ import Data.Char (toUpper)
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
-import Util.Reactive.Threepenny (concatE, union, setter)
+import Graphics.UI.Threepenny.Ext.Flexbox
+import qualified Clay as Clay hiding (Clay.Flexbox)
+import qualified Clay.Flexbox as Flex
 import Diagrams.Backend.Cairo (OutputType(..))
 
+import Util.Reactive.Threepenny (concatE, union, setter)
+import Util.Threepenny.Flexbox
 import Output
 import qualified Util.ByteString as LB
 import Track (Horizon(..), terrainTrkSimple)
@@ -326,71 +330,81 @@ setup initDir tmpDir w = void $ do
 
     -- Assembling the interface HTML.
 
-    theBody <- getBody w # set UI.id_ "the-body" #. "blank-horizon" #+
-        [ UI.div # set UI.id_ "left-bar" #+
-            [ UI.p #+
-                [ element btnGo, string " as ", element selOutput ]
+    theBody <- getBody w # set UI.id_ "the-body" #. "blank-horizon"
+        # setFlex parentProps #+
+        [ UI.div # set UI.id_ "left-bar"
+            # setFlex parentProps { pFlexDirection = Clay.column }
+            # setFlex childProps { cFlexGrow = 1 }
+            #+
+            [ divVertFlex #+
+                [ rowFlex #+
+                    [ subRowFlex #+ [element btnGo]
+                    , subRowFlex #+ [string "as ", element selOutput]
+                    ]
+                , rowFlex #+
+                    [ subRowFlex #+ [UI.span #. "ui-icon ui-icon-save", string " Save:"]
+                    , subRowFlex #+
+                        [ element lnkTrk, string " - "
+                        , element lnkTerrTrk, string " - "
+                        , element lnkFlipbook
+                        ]
+                    ]
+                ]
             , element fppPicker
-            , UI.p #+
-                [ UI.span #. "ui-icon ui-icon-save"
-                , string " Save: "
-                , element lnkTrk, string " - "
-                , element lnkTerrTrk, string " - "
-                , element lnkFlipbook
+            , divVertFlex #+
+                [ rowFlex #+ [string "Style presets:"]
+                , rowFlex #+ [element selPreset, element btnPreset]
+                , rowFlex #+ [string "Road width:", element bidRoadW]
+                , rowFlex #+ [string "Bridge height:", element bidBridgeH]
+                , rowFlex #+ [string "Bridge % width:", element bidBridgeRelW]
+                , rowFlex #+ [string "Bank. % height:", element bidBankingRelH]
                 ]
-            , UI.p #+
-                [ string "Style presets:", UI.br
-                , element selPreset, element btnPreset, UI.br
-                , string "Road width:", UI.br
-                , element bidRoadW, UI.br
-                , string "Bridge height:", UI.br
-                , element bidBridgeH, UI.br
-                , string "Bridge relative width:", UI.br
-                , element bidBridgeRelW, UI.br
-                , string "Banking relative height:", UI.br
-                , element bidBankingRelH
+            , divVertFlex #+
+                [ rowFlex #+ [string "Two-tone terrain?", element chkTwoToneTerrain]
+                , rowFlex #+ [string "Transparent low ground?", element chkTransparentBg]
+                , rowFlex #+ [string "Grid?", element chkDrawGrid]
+                , rowFlex #+ [string "Indices?", element chkDrawIndices]
                 ]
-            , UI.p #+
-                [ string "Two-tone terrain?", element chkTwoToneTerrain, UI.br
-                , string "Transparent low ground?", element chkTransparentBg
-                ]
-            , UI.p #+
-                [ string "Grid?", element chkDrawGrid
-                , string " Indices?", element chkDrawIndices, UI.br
-                , string "Map bounds (0 - 29):", UI.br
-                , row
+            , divVertFlex #+
+                [ rowFlex #+ [string "Map bounds (0 - 29):"]
+                , rowFlex #+
                     [ string "x from ", element biiMinX
                     , string " to ", element biiMaxX
                     ]
-                , row
+                , rowFlex #+
                     [ string "y from ", element biiMinY
                     , string " to ", element biiMaxY
                     ]
-                , UI.br
-                , element strPxPtPerTile, UI.br
-                , element bidPxPtPerTile, UI.br
+                , rowFlex #+
+                    [ element strPxPtPerTile
+                    , element bidPxPtPerTile
+                    ]
                 ]
-            , UI.p #+
-                [ string "Annotations ("
-                , UI.a # set UI.text "help"
-                    # set UI.href ("static/annotations-help.html")
-                    # set UI.target "_blank"
-                , string ")", UI.br
+            , divVertFlex #+
+                [ rowFlex #+
+                    [ string "Annotations"
+                    , UI.a # set UI.text "Help"
+                        # set UI.href ("static/annotations-help.html")
+                        # set UI.target "_blank"
+                    ]
                 , element txaAnns
                 ]
-            , UI.p #+
-                [ string "Flipbook ("
-                , UI.a # set UI.text "help"
-                    # set UI.href ("static/annotations-help.html#creating-flipbooks")
-                    # set UI.target "_blank"
-                , string ")", UI.br
+            , divVertFlex #+
+                [ rowFlex #+
+                    [ string "Flipbook"
+                    , UI.a # set UI.text "Help"
+                        # set UI.href ("static/annotations-help.html#creating-flipbooks")
+                        # set UI.target "_blank"
+                    ]
                 , element txaFlipbook
                 ]
             ]
-        , UI.div # set UI.id_ "main-wrap" #+
+        , UI.div # set UI.id_ "main-wrap"
+            # setFlex parentProps { pFlexDirection = Clay.column } # setFlex childProps
+            #+
             [ element imgMap
-            , UI.p #+
-                [ string "Log:", UI.br
+            , divVertFlex #+
+                [ string "Log:"
                 , element txaLog
                 ]
             ]

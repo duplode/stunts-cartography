@@ -22,7 +22,9 @@ import Control.Monad (void)
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
+
 import Util.Reactive.Threepenny (sinkWhen)
+import Util.Threepenny.Flexbox
 
 data BoundedInput a = BoundedInput
     { _itxValue :: Element
@@ -52,18 +54,18 @@ new :: (Ord a, Show a, Read a)
     => (a, a) -> UI (BoundedInput a)
 new (_minimumValue, _maximumValue) = do
 
-    _itxValue <- UI.input # set UI.type_ "text" # set UI.size "5"
+    _itxValue <- UI.input # set UI.type_ "text" # set UI.size "4"
         #. "bounded-input-value"
     _strRange <- string
-        (" (" ++ show _minimumValue ++ " - " ++ show _maximumValue ++ ")")
+        ("(" ++ show _minimumValue ++ " - " ++ show _maximumValue ++ ") ")
         #. "bounded-input-caption"
 
     let _userValueChange = filterJust $ readMaybe <$> UI.valueChange _itxValue
 
     (_eRefresh, _refresh) <- liftIO newEvent
 
-    _spnWrapper <- UI.span #. "bounded-input" #+
-        map element [ _itxValue, _strRange]
+    _spnWrapper <- rowFlex #. "bounded-input" #+
+        map element [ _strRange, _itxValue ]
 
     return BoundedInput {..}
 

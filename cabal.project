@@ -2,3 +2,8 @@ packages: ./*.cabal
 
 package *
     split-sections: True
+
+source-repository-package
+    type: git
+    location: https://github.com/jerbaroo/threepenny-gui-flexbox.git
+    tag: befc7b0d9d4df3b51857cf16c4ff7a54cbeaf8c7

@@ -1,14 +1,14 @@
+Cabal-Version:       2.4
 Name:                stunts-cartography
 Version:             0.4.0.3
 Synopsis:            Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
 Description:         Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
 Category:            Game, Graphics
-License:             BSD3
+License:             BSD-3-Clause
 License-file:        LICENSE
 Author:              Daniel Mlot
 Maintainer:          Daniel Mlot
 Build-Type:          Simple
-Cabal-Version:       >=1.8
 Extra-Source-Files:  README.md
 Data-Dir:            .
 Data-Files:          wwwroot/css/*.css
@@ -43,6 +43,7 @@ Source-Repository head
 
 
 Executable sc-trk-viewer
+  Default-Language:  Haskell2010
   Main-is:           Viewer.hs
   Other-Modules:     Composition
                     ,Util.ByteString
@@ -57,6 +58,7 @@ Executable sc-trk-viewer
                     ,Util.Reactive.Threepenny
                     ,Util.Threepenny.Alertify
                     ,Util.Threepenny.JQueryAutocomplete
+                    ,Util.Threepenny.Flexbox
                     ,Util.SVGFonts
                     ,Widgets.BoundedInput
                     ,Widgets.FilePathPicker
@@ -83,6 +85,7 @@ Executable sc-trk-viewer
 
   Build-Depends:     base >= 4.9 && < 5
                     ,threepenny-gui >= 0.8
+                    ,threepenny-gui-flexbox >= 0.4
                     ,diagrams-core == 1.4.*
                     ,diagrams-lib == 1.4.*
                     ,SVGFonts >= 1.7
@@ -90,7 +93,6 @@ Executable sc-trk-viewer
                     ,parsec >= 3.1.3 && < 3.2
                     ,parsec-permutation == 0.1.*
                     ,zip >= 1.0
-                    ,path
                     ,lens
                     ,aeson
                     ,colour
@@ -107,8 +109,10 @@ Executable sc-trk-viewer
                     ,th-lift-instances
                     ,zlib
                     ,extra >= 1.7.9
+                    ,clay >= 0.13
 
 Executable repldump2carto
+  Default-Language:  Haskell2010
   Hs-Source-Dirs:    repldump/src
   Main-is:           WriteCoords.hs
   Other-Modules:     GameState
