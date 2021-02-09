@@ -43,6 +43,7 @@ data FilePathPicker = FilePathPicker
     { _itxBaseDir :: Element
     , _itxRelativePath :: Element
     , _btnUp :: Element
+    , _btnHome :: Element
     , _divWrapper :: Element
 
     , _userBaseDirChange :: Event FilePath
@@ -50,6 +51,7 @@ data FilePathPicker = FilePathPicker
     , _autocompleteBaseDirChange :: Event FilePath
     , _autocompleteRelativePathChange :: Event FilePath
     , _userMoveUp :: Event ()
+    , _userHome :: Event ()
     }
 
 -- TODO: As things stand, there might not be much point in exposing these.
@@ -67,6 +69,9 @@ autocompleteRelativePathChange = _autocompleteRelativePathChange
 
 userMoveUp :: FilePathPicker -> Event ()
 userMoveUp = _userMoveUp
+
+userHome :: FilePathPicker -> Event ()
+userHome = _userHome
 
 instance Widget FilePathPicker where
     getElement = _divWrapper
@@ -87,11 +92,17 @@ new = do
             #. "file-path-picker-button-up"
             #+ [ string "Up" ]
 
+    _btnHome <-
+        UI.button
+            #. "file-path-picker-button-home"
+            #+ [ string "Home" ]
+
     let _userBaseDirChange = UI.valueChange _itxBaseDir
         _userRelativePathChange = UI.valueChange _itxRelativePath
         _autocompleteBaseDirChange = autocompleteValueChange _itxBaseDir
         _autocompleteRelativePathChange = autocompleteValueChange _itxRelativePath
         _userMoveUp = UI.click _btnUp
+        _userHome = UI.click _btnHome
 
     _strBasePathCaption <- string "Base path:"
         #. "file-path-picker-caption"
@@ -101,7 +112,7 @@ new = do
 
     -- TODO: Make the captions customiseable.
     _divWrapper <- UI.div #. "file-path-picker" #+
-        [ element _strBasePathCaption, element _btnUp, UI.br
+        [ element _strBasePathCaption, element _btnUp, element _btnHome, UI.br
         , element _itxBaseDir, UI.br
         , element _strRelativePathCaption, UI.br
         , element _itxRelativePath
@@ -129,17 +140,20 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = mdo
         eRelPath = autocompleteRelativePathChange widget
 
         eBaseDirMoveUp = unsafeMapIO moveUpBasePath (bBaseDirModel <@ userMoveUp widget)
-        eRelPathMoveUp = "" <$ userMoveUp widget
+        eHome = unsafeMapIO (const getHomeDirectory) (userHome widget)
+
+        eClearRelPath = "" <$ (userMoveUp widget `union` userHome widget)
 
     let eBaseDirModel = foldr union never
             [ eProgBaseDir
+            , eHome
             , eBaseDirMoveUp
             , eBaseDir
             ]
 
         eRelPathModel = foldr union never
             [ eProgRelPath
-            , eRelPathMoveUp
+            , eClearRelPath
             , eRelPath
             ]
 
@@ -182,7 +196,9 @@ arrangeModel initial eProgBaseDir eProgRelPath widget = mdo
         # sink autocompleteArraySource bDirListing
         # sink value (baseDir <$> bModel)
 
-    onEvent (void eBaseDirMoveUp `union` autocompleteselect itxBaseDir) $
+    onEvent (void eBaseDirMoveUp
+            `union` void eHome
+            `union` autocompleteselect itxBaseDir) $
         const (scrollToEnd itxBaseDir)
 
     askWindow >>= \w -> liftIOLater (runUI w (scrollToEnd itxBaseDir))
