@@ -434,7 +434,7 @@ baseElementPic' env c q sf et = do
                 # centerXY
             Joe's ->
                 let neonSign = text "Joe's" # scale (1/6) # fc neonCl
-                        <> rect (1/2) (1/4)
+                        <> rect (3/5) (3/10)
                         # lwG 0 # fc miscDarkCl
                 in (
                         (
