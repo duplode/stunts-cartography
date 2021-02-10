@@ -141,6 +141,11 @@ baseElementPic' env c q sf et = do
             # alignBL # scale (l - 1/2) # moveOriginBy (r2 (l/2, l/2))
             # lwG w # lc cl
 
+        -- Note this way of assembling a transition leads to minor but
+        -- noticeable artefacts if the surrounding triangles have the
+        -- same colour as the road between them. That is the reason why
+        -- isoscelesTransition is no longer used for the highway
+        -- transition.
         isoscelesTransition cl ratio =
             let sidePad = polygon (with
                     & polyType .~ PolySides [1/4 @@ turn]
@@ -221,10 +226,16 @@ baseElementPic' env c q sf et = do
                 baseElementPicNoO env sf Road # scaleY highwayRelW
                 # atop (genericSquare highwayCl # scaleY (hwDivideRelW * roadW))
             HighwayTransition ->
-                isoscelesTransition tarmacCl highwayRelW
-                # atop (baseElementPicNoO env sf Road)
-                # atop (eqTriangle (2 * sqrt 3 / 3) # alignT
-                    # scaleY (1/2) # scaleX (roadW * hwDivideRelW)
+                map p2
+                    [ (1/2, roadW * (1 + hwDivideRelW / 2))
+                    , (-1/2, roadW / 2)
+                    , (-1/2, -roadW / 2)
+                    , (1/2, -roadW * (1 + hwDivideRelW / 2))
+                    ]
+                # fromVertices # closeTrail # strokeTrail
+                # centerXY # lwG 0 # fc tarmacCl
+                # atop (eqTriangle 1 # alignT
+                    # scaleY (sqrt 3 / 3) # scaleX (roadW * hwDivideRelW)
                     # rotateBy (1/4) # lwG 0 # fc highwayCl)
             ElevatedSpan ->
                 spanSegment bridgeMeshCl # opacity 0.75
