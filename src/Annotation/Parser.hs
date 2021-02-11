@@ -15,7 +15,7 @@ import Text.Parsec.Prim (runP)
 import qualified Text.Parsec.Token as P
 import Text.Parsec.Permutation
 
-import Control.Monad (replicateM)
+import Control.Monad (replicateM, void)
 import Control.Applicative ((<$>), (<*), (<*>))
 import Data.Maybe (fromMaybe)
 import Control.Monad.Trans
@@ -35,7 +35,7 @@ import Types.CartoM
 import Control.Monad.RWS (tell, asks)
 import qualified Parameters as Pm
 
-parseAnnotations :: (MonadIO m) => String -> CartoT m [Annotation]
+parseAnnotations :: MonadIO m => String -> CartoT m [Annotation]
 parseAnnotations input = do
     result <- runPT annotations () "" input
     case result of
@@ -48,8 +48,10 @@ parseAnnotations input = do
         Right anns -> return anns
 
 -- TODO: Add better error messages.
+annotations :: MonadIO m => ParsecT String u (CartoT m) [Annotation]
 annotations = whiteSpace >> pAnnotation `manyTill` eof
 
+pAnnotation :: MonadIO m => ParsecT String u (CartoT m) Annotation
 pAnnotation = (try (annotation <$> car)
     <|> try (annotation <$> seg)
     <|> try (annotation <$> splitSeg)
@@ -57,11 +59,14 @@ pAnnotation = (try (annotation <$> car)
     <|> try (annotation <$> traceSpec SingleFrameTrace)
     ) <* annDelimiter
 
-annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
+annDelimiter :: Stream s m Char => ParsecT s u m ()
+annDelimiter = void (detectAnnStart <|> try semi) <|> eof
 
+detectAnnStart :: Stream s m Char => ParsecT s u m String
 detectAnnStart = choice . map (lookAhead . try . symbol) $
     ["Car", "X", "Circle", "Diamond", "Dot", "Arrow", "Text", "Seg", "Split", "Trace"]
 
+car :: Monad m => ParsecT String u m CarAnnotation
 car = do
     spr <- sprite
     opt <- runPermParser $
@@ -82,6 +87,7 @@ car = do
         & carAnnOpacity .~ bg
         & carAnnSprite .~ spr
 
+sprite :: Stream s m Char => ParsecT s u m CarSprite
 sprite = try (Acura <$ symbol "Car")
     <|> try (XMarker <$ symbol "X")
     <|> try (CircleMarker <$ symbol "Circle")
@@ -89,6 +95,7 @@ sprite = try (Acura <$ symbol "Car")
     <|> try (DotMarker <$ symbol "Dot")
     <|> try (ArrowMarker <$ symbol "Arrow")
 
+seg :: Monad m => ParsecT String u m SegAnnotation
 seg = do
     symbol "Seg"
     opt <- runPermParser $
@@ -104,6 +111,7 @@ seg = do
         & segAnnLength .~ len
         & segAnnCaption .~ capt
 
+splitSeg :: Monad m => ParsecT String u m SplitAnnotation
 splitSeg = do
     symbol "Split"
     ix <- fromIntegral <$> integer
@@ -127,48 +135,58 @@ splitSeg = do
         & splAnnCaptAlignment .~ fromMaybe splD mCaptAl
         & splAnnCaptInvert .~ fromMaybe False mCaptInv
 
+xy :: Stream s m Char => ParsecT s u m (Double, Double)
 xy = do
     symbol "@"
     x <- floatOrInteger
     -- Separation with spaces is implied.
     y <- floatOrInteger
-    return (x, y) -- TODO: bounds?
+    -- No bounds checking, as using space beyond the map might be useful.
+    return (x, y)
 
+xyInt :: (Stream s m Char, Num a) => ParsecT s u m (a, a)
 xyInt = do
     symbol "@"
     x <- fromIntegral <$> integer
     y <- fromIntegral <$> integer
     return (x, y)
 
+angle :: Stream s m Char => ParsecT s u m Double
 angle = do
     symbol "^"
     floatOrInteger
 
 -- TODO: add triplet support (see Data.Colour.SRGB)
 -- It is convenient that readColourName fails with fail.
+colour :: (Stream s m Char, Floating b, Ord b) => ParsecT s u m (Colour b)
 colour = do
     symbol "#"
     try (replicateM 6 hexDigit >>= ((skipMany space >>) . return . sRGB24read))
         <|> (many1 alphaNum >>= ((skipMany space >>) . readColourName))
 
 -- For the moment, this only parses the background opacity.
+bg :: Stream s m Char => ParsecT s u m Double
 bg = do
     symbol "$"
     (/100) <$> floatOrInteger
 
+size :: Stream s m Char => ParsecT s u m Double
 size = do
     symbol "*"
     floatOrInteger
 
+sizeInt :: (Stream s m Char, Num b) => ParsecT s u m b
 sizeInt = do
     symbol "*"
     fromIntegral <$> integer
 
+invert :: Stream s m Char => ParsecT s u m Bool
 invert = do
     symbol "%"
     return True
 
 -- Captions associated to another annotation.
+caption :: Monad m => ParsecT String u m CaptAnnotation
 caption = do
     txt <- stringLiteral
     mOpt <- optionMaybe . try . braces $
@@ -188,6 +206,7 @@ caption = do
     return $ setCapt mOpt $ defAnn & captAnnText .~ txt
 
 -- Standalone captions.
+standaloneCaption :: Stream s m Char => ParsecT s u m CaptAnnotation
 standaloneCaption = do
     symbol "Text"
     txt <- stringLiteral
@@ -207,7 +226,7 @@ standaloneCaption = do
             . (captAnnPosition .~ pos)
     return $ setCapt opt $ defAnn & captAnnText .~ txt
 
-cardinalDir :: (Monad m) => String -> ParsecT String u m CardinalDirection
+cardinalDir :: Monad m => String -> ParsecT String u m CardinalDirection
 cardinalDir leading = do
     symbol leading
     read <$> (
@@ -216,12 +235,14 @@ cardinalDir leading = do
         <|> try (symbol "W")
         <|> symbol "S")
 
+alignment :: Monad m => ParsecT String u m CardinalDirection
 alignment = cardinalDir "'"
 
+splitDir :: Monad m => ParsecT String u m CardinalDirection
 splitDir = cardinalDir "^"
 
 
-traceSpec :: (MonadIO m) => TraceMode -> ParsecT String u (CartoT m) TraceAnnotation
+traceSpec :: MonadIO m => TraceMode -> ParsecT String u (CartoT m) TraceAnnotation
 traceSpec traceMode = do
     symbol "Trace"
     opt <- runPermParser $
@@ -250,14 +271,17 @@ traceSpec traceMode = do
                         & traceAnnOverlays .~ (defAnn & carsOverTrace .~ cars)
 
 -- As the name indicates, the "path" could be anything.
+rawPath :: Stream s m Char => ParsecT s u m FilePath
 rawPath = do
     symbol ":"
     stringLiteral
 
+visibility :: Stream s m Char => ParsecT s u m Bool
 visibility = do
     symbol "!"
     return False
 
+lapMoment :: Stream s m Char => ParsecT s u m Double
 lapMoment = do
     symbol "@"
     floatOrInteger
@@ -265,12 +289,16 @@ lapMoment = do
 momentToFrame :: Double -> Int
 momentToFrame = truncate . (20 *)
 
--- Trace overlays. Only cars are supported for the time being.
+-- Trace overlays.
+onTrace :: Stream s m Char => ParsecT s u m b -> ParsecT s u m b
 onTrace ovr = do
     symbol "+"
     braces ovr
 
 -- Specification for overlays spread periodically over a trace.
+periodic
+  :: Stream s m Char =>
+     ParsecT s u m (x, CarAnnotation) -> ParsecT s u m PeriodicCarsSpec
 periodic ovr = do
     symbol "~"
     ifr <- momentToFrame <$> floatOrInteger
@@ -284,6 +312,9 @@ periodic ovr = do
         & periodicFlipbookCaption .~ fbkCapt
 
 -- TODO: Minimize duplication in the car parsers.
+carOnTrace
+  :: Monad m =>
+     Maybe Double -> ParsecT String u m (Int, CarAnnotation)
 carOnTrace mMoment = do
     spr <- sprite
     opt <- runPermParser $
@@ -303,6 +334,7 @@ carOnTrace mMoment = do
             & carAnnSprite .~ spr
         )
 
+flipbookCaption :: Stream s m Char => ParsecT s u m CaptAnnotation
 flipbookCaption = do
     symbol "&"
     braces standaloneCaption
@@ -320,14 +352,17 @@ parseFlipbook input = do
             return def
         Right fbks -> return fbks
 
+flipbookSpec :: MonadIO m => ParsecT String u (CartoT m) [SomeFlipbook]
 flipbookSpec = whiteSpace >> many (SomeFlipbook <$> traceSpec FlipbookTrace)
 
-
+floatOrInteger :: Stream s m Char => ParsecT s u m Double
 floatOrInteger = try float <|> fromIntegral <$> integer
 
+lexer :: Stream s m Char => P.GenTokenParser s u m
 lexer = P.makeTokenParser annLang
 
 -- Mostly copied from the doc; doesn't really matter for now.
+annLang :: Stream s m Char => P.GenLanguageDef s u m
 annLang = P.LanguageDef
     { P.commentStart = "" -- TODO: Might be useful.
     , P.commentEnd = ""
@@ -342,13 +377,28 @@ annLang = P.LanguageDef
     , P.caseSensitive = True
     }
 
+float :: Stream s m Char => ParsecT s u m Double
 float = P.float lexer
+
+integer :: Stream s m Char => ParsecT s u m Integer
 integer = P.integer lexer
+
+stringLiteral :: Stream s m Char => ParsecT s u m String
 stringLiteral = P.stringLiteral lexer
+
+symbol :: Stream s m Char => String -> ParsecT s u m String
 symbol = P.symbol lexer
+
+braces :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
 braces = P.braces lexer
+
+parens :: Stream s m Char => ParsecT s u m a -> ParsecT s u m a
 parens = P.parens lexer
+
+semi :: Stream s m Char => ParsecT s u m String
 semi = P.semi lexer
+
+whiteSpace :: Stream s m Char => ParsecT s u m ()
 whiteSpace = P.whiteSpace lexer
 
 test1 = "Car @13 17.2 ^ 45 *1#red \"Friker\" { *1 ^ 90 '  S }"
@@ -368,4 +418,3 @@ test7 = "Split 1 @22 11 ^N *5 #magenta 'N;"
 
 runTests = mapM parseAnnotations $
     [test1, test2, test3, test4, test5, test6, test7]
-
