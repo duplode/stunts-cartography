@@ -227,10 +227,10 @@ baseElementPic' env c q sf et = do
                 # atop (genericSquare highwayCl # scaleY (hwDivideRelW * roadW))
             HighwayTransition ->
                 map p2
-                    [ (1/2, roadW * (1 + hwDivideRelW / 2))
+                    [ (1/2, roadW * highwayRelW / 2)
                     , (-1/2, roadW / 2)
                     , (-1/2, -roadW / 2)
-                    , (1/2, -roadW * (1 + hwDivideRelW / 2))
+                    , (1/2, -roadW * highwayRelW / 2)
                     ]
                 # fromVertices # closeTrail # strokeTrail
                 # centerXY # lwG 0 # fc tarmacCl
