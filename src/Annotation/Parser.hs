@@ -173,7 +173,10 @@ bg = do
 size :: Stream s m Char => ParsecT s u m Double
 size = do
     symbol "*"
-    floatOrInteger
+    sz <- floatOrInteger
+    case sz of
+        0 -> fail "Annotation size must not be zero"
+        _ -> return sz
 
 sizeInt :: (Stream s m Char, Num b) => ParsecT s u m b
 sizeInt = do
