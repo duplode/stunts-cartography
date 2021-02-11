@@ -33,13 +33,13 @@ acura' cl sz = acura cl # scale (2 * sz)
 
 xMarker cl sz = (p2 (0, 0) ~~ p2 (1, 1) <> p2 (1, 0) ~~ p2 (0, 1))
     # strokePath
-    # lwG (1/8) # lc cl
+    # lwG (min (1/8) (5 * sz / 16)) # lc cl
     # centerXY
     # scale sz
 
 circleMarker cl sz = circle (1/2)
     # strokePath
-    # lwG (1/8) # lc cl
+    # lwG (min (1/8) (sz / 4)) # lc cl
     # centerXY
     # scale sz
 
