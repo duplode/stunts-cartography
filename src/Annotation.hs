@@ -231,10 +231,30 @@ instance IsAnnotation CaptAnnotation where
                         } (_captAnnText ann)
                     # stroke # fillRule EvenOdd
                     # fc (_captAnnColour ann) # lwG 0
+                initialBounding = boundingRect captText
+                preframeFactor d z =
+                    let z' = z + 2*d
+                        q = z' / z
+                    in if (z < 1e-4 || abs q < 1e-4)
+                        -- Failing silently is acceptable for our current
+                        -- purposes. A general-purpose implementation probably
+                        -- should use Maybe.
+                        then 1
+                        else q
+                preframeDelta = (max 0.04 . min 0.15) (0.3 * _captAnnSize ann)
+                preframeFactor' =
+                    preframeFactor preframeDelta . uncurry subtract
+                (pfx, pfy) = maybe (1, 1)
+                        -- The conditions for nothingess are the same for
+                        -- extentX and extentY.
+                        (\(x, y) -> (preframeFactor' x, preframeFactor' y))
+                        ((,)
+                            <$> extentX initialBounding
+                            <*> extentY initialBounding)
             in (
                 captText
-                <> ( boundingRect captText
-                    # frame 0.2
+                <> ( initialBounding
+                    # scaleX pfx # scaleY pfy # frame (0.25 - preframeDelta)
                     # lwG 0
                     # fcA (computeBgColour (_captAnnColour ann)
                         `withOpacity` (_captAnnBgOpacity ann))
