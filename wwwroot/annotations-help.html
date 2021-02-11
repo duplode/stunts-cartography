@@ -281,27 +281,28 @@ companion tool repldump-to-carto.</p>
       decorations, invisible.</td>
   </tr>
   <tr>
-    <td>+ { }</td><td>Individual car decoration</td>
-    <td>A car overlaid on some point of the path. Must be followed by the
-      specification of a car annotation within curly brackets. The options for
-      the overlaid car follow the syntax described above for regular car
-      annotations, <strong>except for the position and angle
+    <td>+ { }</td><td>Individual car/marker decoration</td>
+    <td>An annotation overlaid on some point of the path. Must be followed by
+      the specification of a car or marker annotation within curly brackets.
+      The options for the overlaid annotation follow the syntax described above
+      for regular annotations, <strong>except for the position and angle
       annotations</strong>. The <code>@</code> position symbol should be
       followed by a single number, which sets at which moment of the lap should
-      the car be positioned (for instance, <code>@7.5</code> will place the
-      annotation on the position at 7.5s or, equivalently, the 150th frame).
-      The angle annotation should be omitted, as the car will be placed
+      the annotation be positioned (for instance, <code>@7.5</code> will place
+      the annotation on the position at 7.5s or, equivalently, the 150th frame).
+      The angle annotation should be omitted, as the annotation will be placed
       according to the replay path orientation. Additionally,
       <code>{{FRAMENUMBER}}</code> and <code>{{GAMETIME}}</code> in the
       caption text will be replaced by the frame number and the time in seconds
       of the frame respectively.</td>
   </tr>
   <tr>
-    <td>~ { }</td><td>Periodic car decoration</td>
-    <td>Cars overlaid on the path at regular intervals. The symbol should be
-      followed by two numbers, which set the initial moment and the spacing in
-      seconds, and by a car annotation within curly brackets, using the syntax
-      described above for individual car decorations (<code>+</code>).</td>
+    <td>~ { }</td><td>Periodic car/marker decoration</td>
+    <td>Annotations overlaid on the path at regular intervals. The symbol should
+      be followed by two numbers, which set the initial moment and the spacing
+      in seconds, and by a car or marker annotation within curly brackets, using
+      the syntax described above for individual decorations
+      (<code>+</code>).</td>
   </tr>
 </table>
 
@@ -309,7 +310,7 @@ companion tool repldump-to-carto.</p>
 
 <p>A flipbook is a set of images, which, taken together, form an animation of
 laps by one or several cars performing replays. To create a flipbook, specify
-one or several trace annotations with periodic car overlays in the
+one or several trace annotations with periodic overlays in the
 <em>Flipbook</em> text area of the Cartography interface and render the map as
 usual. After a while (rendering all frames will likely take a few minutes),
 the link to save a flipbook will become active. The flipbook consists of a zip
@@ -336,12 +337,12 @@ track map as well as any static annotations.</p>
   remain frozen for the final frames, after the trace ends.
   added to a flipbook through the annotations text area.</p></li>
 
-  <li><p>While the time interval parameter of the periodic car annotations can be
+  <li><p>While the time interval parameter of the periodic annotations can be
   used when generating a flipbook, one image will be generated for each point
   in the path; for intervals larger than 0.05, frames will be duplicated
   rather than skipped.</p></li>
 
-  <li><p>Car overlays in a flipbook are scaled from the specified base size
+  <li><p>Overlays in a flipbook are scaled from the specified base size
   according to the height at each point taken from the replay data, so as to
   give some visual cues when jumps occur.</p></li>
 

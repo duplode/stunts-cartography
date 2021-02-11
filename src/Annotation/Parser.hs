@@ -50,12 +50,7 @@ parseAnnotations input = do
 -- TODO: Add better error messages.
 annotations = whiteSpace >> pAnnotation `manyTill` eof
 
-pAnnotation = (try (annotation <$> car "Car" Acura)
-    <|> try (annotation <$> car "X" XMarker)
-    <|> try (annotation <$> car "Circle" CircleMarker)
-    <|> try (annotation <$> car "Diamond" DiamondMarker)
-    <|> try (annotation <$> car "Dot" DotMarker)
-    <|> try (annotation <$> car "Arrow" ArrowMarker)
+pAnnotation = (try (annotation <$> car)
     <|> try (annotation <$> seg)
     <|> try (annotation <$> splitSeg)
     <|> try (annotation <$> standaloneCaption)
@@ -67,8 +62,8 @@ annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
 detectAnnStart = choice . map (lookAhead . try . symbol) $
     ["Car", "X", "Circle", "Diamond", "Dot", "Arrow", "Text", "Seg", "Split", "Trace"]
 
-car leadSym spr = do
-    symbol leadSym
+car = do
+    spr <- sprite
     opt <- runPermParser $
         (,,,,,,) <$> oncePerm xy
                  <*> optionMaybePerm colour
@@ -86,6 +81,13 @@ car leadSym spr = do
         & carAnnCaption .~ capt
         & carAnnOpacity .~ bg
         & carAnnSprite .~ spr
+
+sprite = try (Acura <$ symbol "Car")
+    <|> try (XMarker <$ symbol "X")
+    <|> try (CircleMarker <$ symbol "Circle")
+    <|> try (DiamondMarker <$ symbol "Diamond")
+    <|> try (DotMarker <$ symbol "Dot")
+    <|> try (ArrowMarker <$ symbol "Arrow")
 
 seg = do
     symbol "Seg"
@@ -283,19 +285,22 @@ periodic ovr = do
 
 -- TODO: Minimize duplication in the car parsers.
 carOnTrace mMoment = do
-    symbol "Car"
+    spr <- sprite
     opt <- runPermParser $
-        (,,,,) <$> maybe (oncePerm lapMoment) (oncePerm . return) mMoment
-               <*> optionMaybePerm colour
-               <*> optionPerm 1 bg
-               <*> optionPerm 0.5 size
-               <*> optionPerm defAnn caption
-    let (moment, mCl, bg, sz, capt) = opt
+        (,,,,,) <$> maybe (oncePerm lapMoment) (oncePerm . return) mMoment
+                <*> optionMaybePerm colour
+                <*> optionPerm 1 bg
+                <*> optionPerm 0.5 size
+                <*> optionPerm False invert
+                <*> optionPerm defAnn caption
+    let (moment, mCl, bg, sz, inv, capt) = opt
     return $ (momentToFrame moment
         , maybeDeepOverrideAnnColour mCl $ defAnn
             & carAnnSize .~ sz
+            & carAnnInvert .~ inv
             & carAnnCaption .~ capt
             & carAnnOpacity .~ bg
+            & carAnnSprite .~ spr
         )
 
 flipbookCaption = do
