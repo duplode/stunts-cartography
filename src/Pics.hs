@@ -399,14 +399,15 @@ baseElementPic' env c q sf et = do
                     <> rect (11/16) (1/2) # alignR # lwG 0 # fc officeCl)
                 # centerXY
             Windmill ->
-                let blades = hrule (1/2) # lwG 0.05 # rotateBy (1/8)
-                        # lwG 0 # lc windmillDetailsCl
-                in (
-                    reflectY blades <> blades
-                    <> eqTriangle (2/5) # rotateBy (1/4) # centerXY
-                    # lwG 0 # fc windmillCl)
-                ||| rect (3/20) (2/5) # fc windmillCl
-                # alignL # lwG 0
+                let blades = hrule (1/2) # rotateBy (1/8)
+                        # lwG 0.05 # lc windmillDetailsCl
+                    bldg = polygon (with
+                        & polyType .~ PolySides
+                            [1/4 @@ turn, 1/12 @@ turn, 1/3 @@ turn]
+                            [2/5, 3/20, 2/5, 2/5]
+                        ) # moveOriginBy (r2 (-(3 * (1 + sqrt 3) / 50),0))
+                        # lwG 0 # fc windmillCl
+                in reflectY blades <> blades <> bldg
             GasStation ->
                 (
                     vrule (3/10) # alignT
