@@ -40,6 +40,7 @@ module Annotation
     , carAnnPosition
     , carAnnAngle
     , carAnnSize
+    , carAnnInvert
     , carAnnCaption
     , carAnnSprite
 
@@ -310,6 +311,7 @@ data CarAnnotation
      , _carAnnPosition :: (Double, Double)
      , _carAnnAngle :: Double
      , _carAnnSize :: Double
+     , _carAnnInvert :: Bool
      , _carAnnCaption :: CaptAnnotation
      , _carAnnSprite :: CarSprite
      } deriving (Show)
@@ -323,6 +325,7 @@ instance Default CarAnnotation where
         , _carAnnPosition = (0, 0)
         , _carAnnAngle = 0
         , _carAnnSize = 0.5
+        , _carAnnInvert = False
         , _carAnnCaption = defAnn
         , _carAnnSprite = Acura
         }
@@ -332,6 +335,11 @@ instance IsAnnotation CarAnnotation where
         { annotationDiagram =
             spriteDiagram (_carAnnSprite ann) (_carAnnColour ann) (_carAnnSize ann)
             # opacity (_carAnnOpacity ann)
+            # (case _carAnnSprite ann of
+                ArrowMarker -> if _carAnnInvert ann
+                    then alignL . reflectX . reflectY . center
+                    else id
+                _ -> id)
             # (flip $ beside
                 (cardinalDirToR2 . _captAnnAlignment . _carAnnCaption $ ann))
                 (renderAnnotation . rotateAnnotation (- _carAnnAngle ann) $

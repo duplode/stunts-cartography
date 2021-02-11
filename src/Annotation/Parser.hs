@@ -70,17 +70,19 @@ detectAnnStart = choice . map (lookAhead . try . symbol) $
 car leadSym spr = do
     symbol leadSym
     opt <- runPermParser $
-        (,,,,,) <$> oncePerm xy
-                <*> optionMaybePerm colour
-                <*> optionPerm 1 bg
-                <*> optionPerm 0 angle
-                <*> optionPerm 0.5 size
-                <*> optionPerm defAnn caption -- The default caption is empty.
-    let (pos, mCl, bg, ang, sz, capt) = opt
+        (,,,,,,) <$> oncePerm xy
+                 <*> optionMaybePerm colour
+                 <*> optionPerm 1 bg
+                 <*> optionPerm 0 angle
+                 <*> optionPerm 0.5 size
+                 <*> optionPerm False invert
+                 <*> optionPerm defAnn caption -- The default caption is empty.
+    let (pos, mCl, bg, ang, sz, inv, capt) = opt
     return $ maybeDeepOverrideAnnColour mCl $ defAnn
         & carAnnPosition .~ pos
         & carAnnAngle .~ ang
         & carAnnSize .~ sz
+        & carAnnInvert .~ inv
         & carAnnCaption .~ capt
         & carAnnOpacity .~ bg
         & carAnnSprite .~ spr

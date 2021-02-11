@@ -1,3 +1,10 @@
+body {
+  margin: 1.5em;
+  max-width: 960px;
+  line-height: 150%;
+  text-align: justify;
+}
+
 .anns-fixed {
   font-weight: bold;
   text-decoration: underline;
@@ -17,7 +24,7 @@ th, td {
 
 caption {
   font-style: italic;
-  text-align: left
+  text-align: left;
 }
 
 code {
