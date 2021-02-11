@@ -54,6 +54,8 @@ pAnnotation = (try (annotation <$> car "Car" Acura)
     <|> try (annotation <$> car "X" XMarker)
     <|> try (annotation <$> car "Circle" CircleMarker)
     <|> try (annotation <$> car "Diamond" DiamondMarker)
+    <|> try (annotation <$> car "Dot" DotMarker)
+    <|> try (annotation <$> car "Arrow" ArrowMarker)
     <|> try (annotation <$> seg)
     <|> try (annotation <$> splitSeg)
     <|> try (annotation <$> standaloneCaption)
@@ -63,7 +65,7 @@ pAnnotation = (try (annotation <$> car "Car" Acura)
 annDelimiter = ((detectAnnStart <|> try semi) >> return ()) <|> eof
 
 detectAnnStart = choice . map (lookAhead . try . symbol) $
-    ["Car", "X", "Circle", "Diamond", "Text", "Seg", "Split", "Trace"]
+    ["Car", "X", "Circle", "Diamond", "Dot", "Arrow", "Text", "Seg", "Split", "Trace"]
 
 car leadSym spr = do
     symbol leadSym

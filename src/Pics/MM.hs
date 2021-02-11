@@ -8,6 +8,8 @@ module Pics.MM
     , xMarker
     , circleMarker
     , diamondMarker
+    , dotMarker
+    , arrowMarker
     ) where
 
 import Diagrams.Prelude
@@ -47,9 +49,7 @@ diamondMarker cl sz = baseSquare # deform' 0.001 concav
     # lwG 0 # fc cl
     # scaleX (3/4)
     # scale sz
-
     where
-
     baseSquare :: Path V2 Double
     baseSquare = square 1 # centerXY
 
@@ -59,3 +59,16 @@ diamondMarker cl sz = baseSquare # deform' 0.001 concav
     concav :: Deformation V2 V2 Double
     concav = Deformation $ \p ->
         perturb (p ^. _y) (p ^. _x) ^& perturb (p ^. _x) (p ^. _y)
+
+dotMarker cl sz = circle (1/2)
+    # strokePath
+    # lwG 0 # fc cl
+    # centerXY
+    # scale sz
+
+arrowMarker cl sz = arrow' (with
+        & arrowHead .~ arrowheadTriangle (7/20 @@ turn)
+        & headLength .~ global (min (1/4) (sz / 2))
+    ) sz
+    # fc cl # lc cl
+    # lwG (min (1/20) (sz / 10))

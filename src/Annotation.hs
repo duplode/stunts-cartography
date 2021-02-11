@@ -286,7 +286,9 @@ data CarSprite
     | XMarker
     | CircleMarker
     | DiamondMarker
-    deriving (Eq, Ord, Show, Enum)
+    | DotMarker
+    | ArrowMarker
+    deriving (Eq, Show, Enum)
 
 spriteDiagram :: CarSprite -> Colour Double -> Double -> Diagram BEDia
 spriteDiagram spr = case spr of
@@ -294,6 +296,8 @@ spriteDiagram spr = case spr of
     XMarker -> xMarker
     CircleMarker -> circleMarker
     DiamondMarker -> diamondMarker
+    DotMarker -> dotMarker
+    ArrowMarker -> arrowMarker
 
 -- CarAnnotation isn't just for cars, as the base sprite can be changed
 -- while keeping the same functionality. It might be a good idea to
@@ -326,9 +330,8 @@ instance Default CarAnnotation where
 instance IsAnnotation CarAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
-            spriteDiagram (_carAnnSprite ann) (_carAnnColour ann) 1
+            spriteDiagram (_carAnnSprite ann) (_carAnnColour ann) (_carAnnSize ann)
             # opacity (_carAnnOpacity ann)
-            # scale (_carAnnSize ann)
             # (flip $ beside
                 (cardinalDirToR2 . _captAnnAlignment . _carAnnCaption $ ann))
                 (renderAnnotation . rotateAnnotation (- _carAnnAngle ann) $
