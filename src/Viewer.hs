@@ -28,8 +28,8 @@ import Graphics.UI.Threepenny.Core
 import Graphics.UI.Threepenny.Ext.Flexbox
 import qualified Clay as Clay hiding (Clay.Flexbox)
 import qualified Clay.Flexbox as Flex
-import Diagrams.Backend.Cairo (OutputType(..))
 
+import Util.Diagrams.Backend (OutputType(..))
 import Util.Reactive.Threepenny (concatE, union, setter)
 import Util.Threepenny.Flexbox
 import Output
@@ -585,14 +585,10 @@ horizonClass horizon = case horizon of
     Tropical -> "tropical-horizon"
     _        -> "unknown-horizon"
 
--- A function with this signature used to be necessary to set up the
--- correct MIME type before calling loadFile from Threepenny 0.5.
--- loadTrackImage :: OutputType -> FilePath -> UI String
 loadTrackImage :: OutputType -> FilePath -> UI String
 loadTrackImage outType outPath = case outType of
     PNG -> loadFile "image/png" outPath
     SVG -> loadFile "image/svg+xml" outPath
-    _   -> error "Unsupported output format."
 
 intToOutputType :: Int -> OutputType
 intToOutputType n = case n of

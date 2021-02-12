@@ -20,7 +20,6 @@ import System.IO.Error (isAlreadyExistsError)
 import System.CPUTime
 import Text.Printf (printf)
 import Diagrams.Prelude
-import Diagrams.Backend.Cairo
 import Diagrams.Core
 import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
 import qualified Util.ByteString as LB
@@ -32,7 +31,7 @@ import qualified Parameters as Pm
 import Annotation (annotationDiagram)
 import Annotation.Flipbook
 import Types.CartoM
-import Types.Diagrams
+import Util.Diagrams.Backend (OutputType(..), BEDia, renderBE)
 
 writeImageFromTrk :: (MonadIO m, Functor m)
                   => FilePath -> CartoT (ExceptT String m) Pm.PostRenderInfo
@@ -71,12 +70,11 @@ writeImageOutput trackName trkBS = do
             let outRelPath = case outType of
                     PNG -> "stunts-cartography-map.png"
                     SVG -> "stunts-cartography-map.svg"
-                    _   -> error "Unsupported output format."
                 outFile = tmpDir </> outRelPath
 
             startTime <- liftIO getCPUTime
             wholeMap <- wholeMapDiagram tiles
-            liftIO $ renderCairo outFile (mkWidth renWidth) wholeMap
+            liftIO $ renderBE outFile (mkWidth renWidth) wholeMap
             endTime <- liftIO getCPUTime
 
             let fullDeltaTime :: Double
@@ -104,7 +102,7 @@ writeImageOutput trackName trkBS = do
             let fbkDir = tmpDir </> fbkRelDir
 
             -- Five digits are enough for Stunts replays of any length.
-            let renderPage (ix, pg) = renderCairo
+            let renderPage (ix, pg) = renderBE
                     (fbkDir </> (printf "%05d.png" ix)) (mkWidth renWidth) pg
 
             -- fbks is, in effect, mconcat'ed twice (first through
@@ -120,7 +118,7 @@ writeImageOutput trackName trkBS = do
             let backdropRelFile = fbkRelDir </> "backdrop.png"
                 backdropFile = tmpDir </> backdropRelFile
                 fullBackdrop = concatFlipbookBackdrops fbks <> wholeMap
-            liftIO $ renderCairo backdropFile (mkWidth renWidth) fullBackdrop
+            liftIO $ renderBE backdropFile (mkWidth renWidth) fullBackdrop
 
             nRuns <- gets Pm.numberOfRuns
             let zipRelFile = "flipbook-" ++ show nRuns ++ ".zip"

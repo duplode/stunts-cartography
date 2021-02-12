@@ -21,13 +21,12 @@ import qualified Data.Sequence as Seq
 import qualified Data.Foldable as Fold
 import Data.Default
 import Diagrams.Prelude
-import Diagrams.Backend.Cairo (OutputType(..))
 import Track (Horizon(..), Element, Terrain)
 import qualified Util.ByteString as LB
 import Annotation (Annotation)
 import Annotation.LapTrace (TraceAnnotation)
 import Annotation.Flipbook
-import Types.Diagrams (BEDia)
+import Util.Diagrams.Backend
 
 -- Data types which shift information across the various layers of the
 -- rendering programs. It is probably a good idea to import it qualified, for

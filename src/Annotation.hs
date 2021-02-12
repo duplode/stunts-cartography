@@ -79,7 +79,7 @@ import Data.Colour.SRGB
 import Data.Colour.RGBSpace.HSV
 import Graphics.SVGFonts (textSVG', TextOpts(..))
 import qualified Util.SVGFonts as Util (bit)
-import Types.Diagrams (BEDia)
+import Util.Diagrams.Backend (BEDia)
 import Pics.MM
 -- import qualified Annotation.CairoText as CairoText
 

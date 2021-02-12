@@ -20,7 +20,7 @@ import Pics.Palette
 import qualified Parameters as Pm
 import Pics.MM (acura)
 import Types.CartoM
-import Types.Diagrams (BEDia)
+import Util.Diagrams.Backend (BEDia)
 
 -- Applies the specified orientation to a base picuture, which should have
 -- Q1 orientation and the desired chirality already applied.

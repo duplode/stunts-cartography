@@ -14,7 +14,7 @@ module Pics.MM
 
 import Diagrams.Prelude
 import Pics.Palette (sunroofCl, windshieldCl)
-import Types.Diagrams (BEDia)
+import Util.Diagrams.Backend (BEDia)
 
 -- The Acura sprite, used for ghost car tiles and as a default for
 -- sprite annotations.

@@ -9,7 +9,7 @@ module Annotation.Flipbook
 import Data.List (groupBy)
 import Diagrams.Prelude
 
-import Types.Diagrams
+import Util.Diagrams.Backend (BEDia)
 import Annotation
 import Annotation.LapTrace
 

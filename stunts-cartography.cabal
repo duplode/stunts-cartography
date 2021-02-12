@@ -34,8 +34,23 @@ flag resourcesWithExecutables
     default:     False
 
 flag repldump2carto
-    description: Builds the repldump2carto utility.
+    description: Build the repldump2carto utility.
     default:     True
+
+flag cairo
+    description: Use the diagrams-cairo backend.
+    default:     True
+    manual:      True
+
+flag svg
+    description: Use the diagrams-svg backend.
+    default:     False
+    manual:      True
+
+flag rasterific
+    description: Use the diagrams-rasterific backend.
+    default:     False
+    manual:      True
 
 Source-Repository head
   type: git
@@ -46,12 +61,22 @@ Executable sc-trk-viewer
   Default-Language:  Haskell2010
   Main-is:           Viewer.hs
   Other-Modules:     Composition
-                    ,Util.ByteString
                     ,Output
-                    ,Pics.Palette
                     ,Parameters
+                    ,Types.CartoM
+                    ,Pics.Palette
                     ,Pics
+                    ,Pics.MM
+                    ,Annotation
+                    ,Annotation.Parser
+                    ,Annotation.Flipbook
+                    ,Annotation.LapTrace
+                    ,Annotation.LapTrace.Vec
+                    ,Annotation.LapTrace.Parser.Simple
                     ,Track
+                    ,Replay
+                    ,Widgets.BoundedInput
+                    ,Widgets.FilePathPicker
                     ,Util.Misc
                     ,Util.ByteString
                     ,Util.Zip
@@ -60,27 +85,10 @@ Executable sc-trk-viewer
                     ,Util.Threepenny.JQueryAutocomplete
                     ,Util.Threepenny.Flexbox
                     ,Util.SVGFonts
-                    ,Widgets.BoundedInput
-                    ,Widgets.FilePathPicker
-                    ,Replay
-                    ,Types.Diagrams
-                    ,Types.CartoM
-                    ,Annotation
-                    ,Annotation.Parser
-                    ,Annotation.Flipbook
-                    ,Annotation.LapTrace
-                    ,Annotation.LapTrace.Vec
-                    ,Annotation.LapTrace.Parser.Simple
-                    --,Annotation.CairoText
-                    ,Pics.MM
+                    ,Util.Diagrams.Backend
                     ,Paths
                     ,Paths_stunts_cartography
 
-
-  if flag (resourcesWithExecutables)
-    CPP-Options:      -DCABAL -DRESOURCES_WITH_EXECUTABLES
-  else
-    CPP-Options:      -DCABAL
   Hs-Source-Dirs:   src
 
   Build-Depends:     base >= 4.9 && < 5
@@ -89,7 +97,7 @@ Executable sc-trk-viewer
                     ,diagrams-core == 1.4.*
                     ,diagrams-lib == 1.4.*
                     ,SVGFonts >= 1.7
-                    ,diagrams-cairo == 1.4.*
+                    --,diagrams-cairo == 1.4.*
                     ,parsec >= 3.1.3 && < 3.2
                     ,parsec-permutation == 0.1.*
                     ,zip >= 1.0
@@ -110,6 +118,24 @@ Executable sc-trk-viewer
                     ,zlib
                     ,extra >= 1.7.9
                     ,clay >= 0.13
+
+  CPP-OPTIONS:        -DCABAL
+  if flag (resourcesWithExecutables)
+    CPP-Options:      -DRESOURCES_WITH_EXECUTABLES
+  if flag (cairo) && !flag(svg) && !flag(rasterific)
+    Other-Modules:    Util.Diagrams.Backend.Cairo
+    Build-Depends:    diagrams-cairo == 1.4.*
+    CPP-Options:      -DCAIRO_BACKEND
+  elif flag (svg) && !flag(rasterific)
+    Other-Modules:    Util.Diagrams.Backend.SVG
+    Build-Depends:    diagrams-svg == 1.4.*
+    CPP-Options:      -DSVG_BACKEND
+  elif flag (rasterific) && !flag(svg)
+    Other-Modules:    Util.Diagrams.Backend.Rasterific
+    Build-Depends:    diagrams-rasterific == 1.4.*
+    CPP-Options:      -DRASTERIFIC_BACKEND
+  else
+    Build-Depends:    invalid-cabal-flag-settings < 0
 
 Executable repldump2carto
   Default-Language:  Haskell2010

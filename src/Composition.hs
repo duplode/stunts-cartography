@@ -18,7 +18,7 @@ import Util.Misc
 import Pics.Palette (plainCl)
 import qualified Parameters as Pm
 import Types.CartoM
-import Types.Diagrams (BEDia)
+import Util.Diagrams.Backend (BEDia)
 
 renderTerrain :: [Tile] -> CartoM (Diagram BEDia)
 renderTerrain tiles = do
