@@ -50,8 +50,8 @@ data CarState = CarState
     , lastRpm :: Int
     , idleRpm :: Int
     , speedDiff :: Int
-    , speed :: Int
-    , speed2 :: Int
+    , coupledSpeed :: Int  -- Formerly speed
+    , curSpeed :: Int  -- Formerly speed2
     , lastSpeed :: Int
     , rawGearRatio :: Int
     , gearRatio :: Int
@@ -66,7 +66,9 @@ data CarState = CarState
     , demandedGrip :: Int
     , surfaceGripSum :: Int
     , field48 :: Int
-    , csData :: BS.ByteString
+    , csData1 :: BS.ByteString
+    , curGear :: Int
+    , csData2 :: BS.ByteString
     } deriving (Show)
 
 -- We are not going to serialize this data back, so this lazy solution for
@@ -106,6 +108,9 @@ getSVec32 = get3DVec getSint32
 
 getBool16 :: B.Get Bool
 getBool16 = liftM ((/= 0) . fi) $ B.getWord16le
+
+getUint8 :: B.Get Int
+getUint8 = liftM fi $ B.getWord8
 
 getUnstructured :: Int -> B.Get BS.ByteString
 getUnstructured len = liftM BS.pack . sequence $ replicate len B.getWord8
@@ -148,8 +153,8 @@ getCarState = do
     lastRpm <- getUint16
     idleRpm <- getUint16
     speedDiff <- getSint16
-    speed <- getUint16
-    speed2 <- getUint16
+    coupledSpeed <- getUint16
+    curSpeed <- getUint16
     lastSpeed <- getUint16
     rawGearRatio <- getUint16
     gearRatio <- getUint16
@@ -164,7 +169,13 @@ getCarState = do
     demandedGrip <- getUint16
     surfaceGripSum <- getUint16
     field48 <- getSint16
-    csData <- getUnstructured 0x88
+    -- csData <- getUnstructured 0x88
+    csData1 <- getUnstructured 0x74
+    curGear <- getUint8
+    csData2 <- getUnstructured 0x13
+    -- TODO: The restunts notes suggest this byte count might be two
+    -- bytes ahead. To confirm that, we'd have to extract opponent data
+    -- and see whether it comes out correct.
 
     return $ CarState {..}
 
