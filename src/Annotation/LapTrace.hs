@@ -34,6 +34,7 @@ import Data.List.Extra (replace)
 import Data.Ord (comparing)
 import Data.Maybe (fromMaybe)
 import Text.Printf (printf)
+import Data.Tuple.Extra (fst3, snd3, thd3)
 
 import Annotation
 import Annotation.LapTrace.Vec
@@ -48,6 +49,8 @@ data TracePoint = TracePoint
     , traceRotXZ :: Double
     , traceRotYZ :: Double
     , traceRotXY :: Double
+    , traceSpeed :: Maybe Double
+    , traceGear :: Maybe Int
     }
 
 data TraceMode = SingleFrameTrace | FlipbookTrace
@@ -174,25 +177,26 @@ putCarOnTracePoint p =
     . (annAngle .~ traceRotXZ p)
     . (annPosition .~ tracePosXZ p)
 
-tracePointsFromData :: [(VecDouble, VecDouble)] -> [TracePoint]
+tracePointsFromData :: [PreTracePoint] -> [TracePoint]
 tracePointsFromData dat = map mkPoint $ zip [0..] dat
     where
-    mkPoint (ix, ((px, py, pz), (rxz, ryz, rxy))) = TracePoint
+    mkPoint (ix, ptp) = TracePoint
         { traceFrame = ix
-        , tracePosXZ = (px, pz)
-        , tracePosY = py
-        , traceRotXZ = rxz
-        , traceRotYZ = ryz
-        , traceRotXY = rxy
+        , tracePosXZ = (fst3 (preTracePos ptp), thd3 (preTracePos ptp))
+        , tracePosY = snd3 (preTracePos ptp)
+        , traceRotXZ = fst3 (preTraceRot ptp)
+        , traceRotYZ = snd3 (preTraceRot ptp)
+        , traceRotXY = thd3 (preTraceRot ptp)
+        , traceSpeed = preTraceSpeed ptp
+        , traceGear = preTraceGear ptp
         }
 
-initializeTrace :: TraceMode -> [(VecDouble, VecDouble)]
+initializeTrace :: TraceMode -> [PreTracePoint]
                 -> TraceAnnotation -> TraceAnnotation
 initializeTrace traceMode dat =
     setupTrace traceMode . setTraceData dat
 
-setTraceData :: [(VecDouble, VecDouble)]
-             -> TraceAnnotation -> TraceAnnotation
+setTraceData :: [PreTracePoint] -> TraceAnnotation -> TraceAnnotation
 setTraceData dat = (traceAnnPoints .~ tracePointsFromData dat)
 
 clearOverlays :: TraceAnnotation -> TraceAnnotation

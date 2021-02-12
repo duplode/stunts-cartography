@@ -16,7 +16,6 @@ import qualified Text.Parsec.Token as P
 import Text.Parsec.Permutation
 
 import Control.Monad (replicateM, void)
-import Control.Applicative ((<$>), (<*), (<*>))
 import Data.Maybe (fromMaybe)
 import Control.Monad.Trans
 import System.Directory (doesFileExist)
@@ -25,7 +24,6 @@ import Data.Default
 
 import Annotation
 import Annotation.LapTrace
-import Annotation.LapTrace.Vec (VecDouble)
 import Annotation.LapTrace.Parser.Simple
 import Annotation.Flipbook
 import Data.Colour (Colour)
