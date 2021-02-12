@@ -23,7 +23,7 @@ import Util.Diagrams.Backend (BEDia)
 renderTerrain :: [Tile] -> CartoM (Diagram BEDia)
 renderTerrain tiles = do
     omitBg <- asks Pm.transparentBg
-    let bg = if omitBg then mempty else plainStripe
+    let bg = (if omitBg then phantom else id) plainStripe
         terrRows = map (beneath bg . catTiles)
             `liftM` mapM (mapM getCachedTerrPic) (chunksOf 30 tiles)
     catRows <$> terrRows
