@@ -35,9 +35,10 @@ import Data.Ord (comparing)
 import Data.Maybe (fromMaybe)
 import Text.Printf (printf)
 import Data.Tuple.Extra (fst3, snd3, thd3)
+import Numeric.Extra (showDP)
 
 import Annotation
-import Annotation.LapTrace.Vec
+import Annotation.LapTrace.Vec (PreTracePoint(..))
 import Diagrams.Prelude
 
 type FrameIndex = Int
@@ -163,12 +164,17 @@ formatFrameAsGameTime x = (if mm > 0 then show mm ++ ":" else "")
     (sm, cc) = (5 * x) `quotRem` 100
     (mm, ss) = sm `quotRem` 60
 
+formatSpeed :: Double -> String
+formatSpeed = showDP 1
+
 replaceMagicStrings :: TextAnnotation a => TracePoint -> a -> a
 replaceMagicStrings p c =
     let txt = c ^. annText
         ix = traceFrame p
     in c & annText %~ replace "{{FRAMENUMBER}}" (show ix)
         . replace "{{GAMETIME}}" (formatFrameAsGameTime ix)
+        . maybe id (replace "{{SPEED}}" . formatSpeed) (traceSpeed p)
+        . maybe id (replace "{{GEAR}}" . show) (traceGear p)
 
 putCarOnTracePoint :: TracePoint -> CarAnnotation -> CarAnnotation
 putCarOnTracePoint p =
