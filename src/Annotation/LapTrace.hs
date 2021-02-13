@@ -167,12 +167,17 @@ formatFrameAsGameTime x = (if mm > 0 then show mm ++ ":" else "")
 formatSpeed :: Double -> String
 formatSpeed = showDP 1
 
+-- Exact tile to metre conversion.
+formatLengthInMetres :: Double -> String
+formatLengthInMetres = showDP 3 . (62.42304 *)
+
 replaceMagicStrings :: TextAnnotation a => TracePoint -> a -> a
 replaceMagicStrings p c =
     let txt = c ^. annText
         ix = traceFrame p
     in c & annText %~ replace "{{FRAMENUMBER}}" (show ix)
         . replace "{{GAMETIME}}" (formatFrameAsGameTime ix)
+        . replace "{{HEIGHT}}" (formatLengthInMetres (tracePosY p))
         . maybe id (replace "{{SPEED}}" . formatSpeed) (traceSpeed p)
         . maybe id (replace "{{GEAR}}" . show) (traceGear p)
 

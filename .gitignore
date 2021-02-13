@@ -17,6 +17,7 @@ laptrace/hackparser
 src/Misc/Scratchpad.hs
 build-scratchpad.sh
 
+playground/*
 sandbox/**
 movie/*
 demos/*
