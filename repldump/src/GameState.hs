@@ -1,5 +1,13 @@
 {-# LANGUAGE RecordWildCards #-}
-module GameState where
+module GameState
+    ( Vec
+    , VecWide
+    , GameState(..)
+    , CarState(..)
+    , parseStates
+    , parseFile
+    , rot
+    ) where
 
 import Control.Monad
 import Control.Applicative
@@ -39,8 +47,8 @@ data GameState = GameState
     } deriving (Show)
 
 data CarState = CarState
-    { pos1 :: VecWide
-    , pos2 :: VecWide
+    { curPos :: VecWide  -- Formerly pos1
+    , lastPos :: VecWide  -- Formerly pos2
     , rotXZ :: Int
     , rotYZ :: Int
     , rotXY :: Int
@@ -142,8 +150,8 @@ getGameState = do
 
 getCarState :: B.Get CarState
 getCarState = do
-    pos1 <- getVec32
-    pos2 <- getVec32
+    curPos <- getVec32
+    lastPos <- getVec32
     rotXZ <- getSint16
     rotYZ <- getSint16
     rotXY <- getSint16
