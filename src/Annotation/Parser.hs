@@ -310,8 +310,9 @@ onTrace ovr = do
 
 -- Specification for overlays spread periodically over a trace.
 periodic
-  :: Stream s m Char =>
-     ParsecT s u m (x, CarAnnotation) -> ParsecT s u m PeriodicCarsSpec
+  :: Stream s m Char
+  => ParsecT s u m (x, CarAnnotation, [CaptAnnotation])
+  -> ParsecT s u m PeriodicCarsSpec
 periodic ovr = do
     symbol "~"
     ifr <- momentToFrame <$> floatOrInteger
@@ -321,23 +322,33 @@ periodic ovr = do
     return $ def
         & periodicInitialFrame .~ ifr
         & periodicPeriod .~ freq
-        & periodicBaseCar .~ snd baseCar
+        & periodicBaseCar .~ L.view L._2 baseCar
+        -- TODO: Parsed standalone frame-bound captions associated to a
+        -- periodic annotation are ignored, because there is no useful
+        -- way to render them in a single picture (for a flipbook, we
+        -- use the result of flipbookCaption instead, which is sent to
+        -- a different pipeline). It would be reasonable to rearrange
+        -- the parsers so that these specifications aren't silently
+        -- ignored.
+        -- & periodicStandaloneCaptions .~ L.view L._3 baseCar
         & periodicFlipbookCaptions .~ fbkCapts
 
 -- TODO: Minimize duplication in the car parsers.
 carOnTrace
-  :: Monad m =>
-     Maybe Double -> ParsecT String u m (Int, CarAnnotation)
+    :: Monad m
+    => Maybe Double
+    -> ParsecT String u m (FrameIndex, CarAnnotation, [CaptAnnotation])
 carOnTrace mMoment = do
     spr <- sprite
     opt <- runPermParser $
-        (,,,,,) <$> maybe (oncePerm lapMoment) (oncePerm . return) mMoment
-                <*> optionMaybePerm colour
-                <*> optionMaybePerm bg
-                <*> optionMaybePerm size
-                <*> optionMaybePerm invert
-                <*> optionMaybePerm caption
-    let (moment, mCl, bg, sz, inv, capt) = opt
+        (,,,,,,) <$> maybe (oncePerm lapMoment) (oncePerm . return) mMoment
+                 <*> optionMaybePerm colour
+                 <*> optionMaybePerm bg
+                 <*> optionMaybePerm size
+                 <*> optionMaybePerm invert
+                 <*> optionMaybePerm caption
+                 <*> manyPerm flipbookCaption
+    let (moment, mCl, bg, sz, inv, capt, saCapts) = opt
     return $ (momentToFrame moment
         , maybe id deepOverrideAnnColour mCl $ defAnn
             & maybe id (carAnnSize .~) sz
@@ -345,8 +356,10 @@ carOnTrace mMoment = do
             & maybe id (carAnnCaption .~) capt
             & maybe id (carAnnOpacity .~) bg
             & carAnnSprite .~ spr
-        )
+        , saCapts)
 
+-- Frame-bound standalone captions, both for individual and periodic
+-- flipbook overlays.
 flipbookCaption :: Stream s m Char => ParsecT s u m CaptAnnotation
 flipbookCaption = do
     symbol "&"

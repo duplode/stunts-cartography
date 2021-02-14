@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Annotation.LapTrace
-    ( TraceOverlays
+    ( FrameIndex
+    , TraceOverlays
     , carsOverTrace
     , periodicCarsSpec
 
@@ -8,6 +9,7 @@ module Annotation.LapTrace
     , periodicInitialFrame
     , periodicPeriod
     , periodicBaseCar
+    --, periodicStandaloneCaptions
     , periodicFlipbookCaptions
 
     , TracePoint(..)
@@ -35,7 +37,6 @@ import Data.List.Extra (replace)
 import Data.Ord (comparing)
 import Data.Maybe (fromMaybe)
 import Text.Printf (printf)
-import Data.Tuple.Extra (fst3, snd3, thd3)
 import Numeric.Extra (showDP)
 
 import Annotation
@@ -62,8 +63,14 @@ data PeriodicCarsSpec = PeriodicCarsSpec
    { _periodicInitialFrame :: FrameIndex
    , _periodicPeriod :: Int
    , _periodicBaseCar :: CarAnnotation
+   -- Standlone frame-bound captions associated to periodic annotations
+   -- are ignored, because rendering them on a single picture would put
+   -- captions for different frames on the top of each other. For that
+   -- reason, flipbook standalone frame-bound captions are parsed,
+   -- processed and rendered separately
+   --, _periodicStandaloneCaptions :: [CaptAnnotation]
    -- These captions are only shown when the trace is rendered as a
-   -- flipbook. They are subject to magic string replacement.
+   -- flipbook.
    , _periodicFlipbookCaptions :: [CaptAnnotation]
    }
 L.makeLenses ''PeriodicCarsSpec
@@ -73,13 +80,16 @@ instance Default PeriodicCarsSpec where
        { _periodicInitialFrame = 0
        , _periodicPeriod = 0
        , _periodicBaseCar = defAnn
+       --, _periodicStandaloneCaptions = []
        , _periodicFlipbookCaptions = []
        }
 
 -- TODO: Add support for different overlays.
--- TODO: Add support for multiple periodic series.
 data TraceOverlays = TraceOverlays
-    { _carsOverTrace :: [(FrameIndex, CarAnnotation)]
+    -- Triple components: frame index, base sprite annotation, and
+    -- frame-bound standalone captions. The triple should be
+    -- replaced by a less anonymous type eventually.
+    { _carsOverTrace :: [(FrameIndex, CarAnnotation, [CaptAnnotation])]
     , _periodicCarsSpec :: PeriodicCarsSpec
     }
 L.makeLenses ''TraceOverlays
@@ -95,7 +105,9 @@ instance Default TraceOverlays where
 instance IsAnnotation TraceOverlays where
     annotation ann = Annotation
         { annotationDiagram =
-            mconcat $ map (renderAnnotation . snd) (_carsOverTrace ann)
+            let renderFrame (_, baseCar, saCapts) =
+                    renderAnnotation baseCar <> foldMap renderAnnotation saCapts
+            in foldMap renderFrame (_carsOverTrace ann)
         }
 
 -- TODO: Implement an option to drop the final frames.
@@ -130,30 +142,47 @@ setupTrace traceMode ann = ann & traceAnnOverlays .~ arrangeOverlays tovs
         . eliminateFrameless $ ann ^. traceAnnOverlays
     lookupPoint = flip M.lookup pointMap
 
-    arrangeCar (ix, c) =
+    -- A few notes:
+    --
+    -- * This doesn't blow up at runtime only because there is a
+    -- previous eliminateFrameless pass beforehand.
+    --
+    -- * Frameless decorations are, as it stands, dropped silently.
+    --
+    -- * Periodic overlays don't need an eliminateFrameless pass, as
+    -- appendPeriodic does not generate frame indices past the end of
+    -- the trace.
+    arrangeCar (ix, c, saCapts) =
         let mp = lookupPoint ix
-        in (\p -> (ix, putCarOnTracePoint p c)) $
+        in (\p -> (ix
+                , putCarOnTracePoint p c
+                , map (replaceMagicStrings p) saCapts)) $
             fromMaybe (error "Frameless overlay.") mp
 
     arrangeOverlays = L.over carsOverTrace (map arrangeCar)
 
     eliminateFrameless = L.over carsOverTrace framelessFilter
 
-    framelessFilter = takeWhile (flip M.member pointMap . fst)
-        . dropWhile (not . flip M.member pointMap . fst)
-        . sortBy (comparing fst)
+    framelessFilter = takeWhile (flip M.member pointMap . view _1)
+        . dropWhile (not . flip M.member pointMap . view _1)
+        . sortBy (comparing (view _1))
 
     lastFrame = M.size pointMap - 1
-    -- The flipbook captions are not used here.
+    -- The flipbook captions are not used here. They are only rendered
+    -- by toFlipbook @TraceAnnotation.
     appendPeriodic tovs =
         let pcSpec = tovs ^. periodicCarsSpec
             ifr = pcSpec ^. periodicInitialFrame
             freq = pcSpec ^. periodicPeriod
             baseCar = pcSpec ^. periodicBaseCar
+            --saCapts = pcSpec ^. periodicStandaloneCaptions
             ifr' = max 0 ifr
+            -- Standalone frame-bound captions are not used here.
+            --mkTriple ix = (ix, baseCar, saCapts)
+            mkTriple ix = (ix, baseCar, [])
         in L.over carsOverTrace (++
             if freq > 0 then
-                zip [ifr', ifr' + freq .. lastFrame] $ repeat baseCar
+                map mkTriple [ifr', ifr' + freq .. lastFrame]
             else
                 []
             ) tovs
@@ -196,11 +225,11 @@ tracePointsFromData dat = map mkPoint $ zip [0..] dat
     where
     mkPoint (ix, ptp) = TracePoint
         { traceFrame = ix
-        , tracePosXZ = (fst3 (preTracePos ptp), thd3 (preTracePos ptp))
-        , tracePosY = snd3 (preTracePos ptp)
-        , traceRotXZ = fst3 (preTraceRot ptp)
-        , traceRotYZ = snd3 (preTraceRot ptp)
-        , traceRotXY = thd3 (preTraceRot ptp)
+        , tracePosXZ = (preTracePos ptp ^. _1, preTracePos ptp ^. _3)
+        , tracePosY = preTracePos ptp ^. _2
+        , traceRotXZ = preTraceRot ptp ^. _1
+        , traceRotYZ = preTraceRot ptp ^. _2
+        , traceRotXY = preTraceRot ptp ^. _3
         , traceSpeed = preTraceSpeed ptp
         , traceGear = preTraceGear ptp
         }
@@ -235,10 +264,14 @@ instance IsAnnotation TraceAnnotation where
 instance ColourAnnotation TraceAnnotation where
     annColour = traceAnnColour
     annColourIsProtected = const False -- TODO: Not implemented yet.
+                                       -- For now, a trace is always a
+                                       -- top-level annotation, so we
+                                       -- don't need protection.
     protectAnnColour ann = ann
     deepOverrideAnnColour cl ann = overrideAnnColour cl ann
         & L.over traceAnnOverlays
-                ( L.over carsOverTrace (map (fmap $ deepOverrideAnnColour cl))
+                ( L.over (carsOverTrace . mapped . _2) (deepOverrideAnnColour cl)
+                . L.over (carsOverTrace . mapped . _3 . mapped) (deepOverrideAnnColour cl)
                 . L.over (periodicCarsSpec . periodicBaseCar) (deepOverrideAnnColour cl)
                 . L.over (periodicCarsSpec . periodicFlipbookCaptions . mapped)
                     (deepOverrideAnnColour cl)

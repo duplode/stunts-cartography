@@ -11,6 +11,26 @@
 <body>
 <h1>Annotations</h1>
 
+<ul>
+  <li><a href="#car"><code>Car</code></a></li>
+  <li><a href="#markers">Markers</a></li>
+  <li><a href="#text"><code>Text</code></a></li>
+  <li><a href="#split"><code>Split</code></a></li>
+  <li><a href="#seg"><code>Seg</code></a></li>
+  <li><a href="#trace"><code>Trace</code></a>
+    <ul>
+      <li><a href="#trace-caption-substitutions">Adding car and frame
+        information to captions</a></li>
+      <li><a href="#trace-caption-types">Types of frame decoration captions</a></li>
+    </ul>
+  </li>
+  <li><a href="#creating-flipbooks">Creating flipbooks</a>
+    <ul>
+      <li><a href="#flipbook-tips">Caveats and tips</a></li>
+    </ul>
+  </li>
+</ul>
+
 <p>Annotations to a track map are specified by text commands inserted into the
 annotations text area of the viewer. A particular set of commands might look
 like this:</p>
@@ -34,7 +54,7 @@ sort of annotation is described below. Mandatory fields are
 position can not be changed are
 <code><span class="anns-fixed">underlined</span></code>.</p>
 
-<h2><code>Car</code></h2>
+<h2 id="car"><code>Car</code></h2>
 
 <code><span class="anns-fixed anns-mandatory">Car</span>
  <span class="anns-mandatory">@15.5 10</span>
@@ -75,9 +95,9 @@ position can not be changed are
       equivalent).</td>
   </tr>
   <tr>
-    <td>"..." { }</td><td>Caption</td>
-    <td>Text to be used as a caption, drawn beside the car. Within the (optional)
-      curly braces styling options for the caption can be set.</td>
+    <td>"..."&nbsp;{&nbsp;}</td><td>Caption</td>
+    <td>Text to be used as a caption, drawn beside the car. Within the curly
+      braces styling options for the caption can be set.</td>
   </tr>
 </table>
 <br>
@@ -114,13 +134,13 @@ position can not be changed are
       of the car, <code>N</code> to its left, and so forth.</td>
   </tr>
   <tr>
-    <td>%</td><td>Caption text inversion</td>
+    <td>%</td><td>Text inversion</td>
     <td>Inverts the direction of the caption text. Useful if a choice of
       positioning leads to upside down text.</td>
   </tr>
 </table>
 
-<h2>Markers</h2>
+<h2 id="markers">Markers</h2>
 
 <p><code><span class="anns-fixed anns-mandatory">X</span>
  <span class="anns-mandatory">@10 10</span>
@@ -165,7 +185,7 @@ at what would, without the <code>%</code>, have been its end point.</p>
   </tr>
 </table>
 
-<h2><code>Text</code></h2>
+<h2 id="text"><code>Text</code></h2>
 
 <code><span class="anns-fixed anns-mandatory">Text "Hello!"</span>
  <span class="anns-mandatory">@9 10</span>
@@ -176,7 +196,7 @@ those described for car captions, except for there being no alignment
 setting, and for there being a <code>@</code> position setting which
 specifies where the left edge of the caption will be.</p>
 
-<h2><code>Seg</code></h2>
+<h2 id="seg"><code>Seg</code></h2>
 
 <code><span class="anns-fixed anns-mandatory">Seg</span>
  <span class="anns-mandatory">@17.5 10.25</span>
@@ -211,7 +231,7 @@ specifies where the left edge of the caption will be.</p>
 
 <p>Other options work as described for <code>Car</code> above.</p>
 
-<h2><code>Split</code></h2>
+<h2 id="split"><code>Split</code></h2>
 
 <code><span class="anns-fixed anns-mandatory">Split</span>
  <span class="anns-fixed anns-mandatory">1</span>
@@ -271,14 +291,14 @@ specialised properties.</p>
   </tr>
 </table>
 
-<h2><code>Trace</code></h2>
+<h2 id="trace"><code>Trace</code></h2>
 
 <code><span class="anns-fixed anns-mandatory">Trace</span>
   <span class="anns-mandatory">:"070ZGUT.dat"</span>
   #plum !
   <!-- TODO: Add notation to indicate "conditionally mandatory" parameters -->
-  + {Car @0 "GUT"}
-  ~1 1 {Car}
+  + {Car @30 "GUT {{SPEED}}"}
+  ~0 20 {Car}
   </code>
 
 <p><code>Trace</code> adds the path of a replay, optionally decorated with car
@@ -311,7 +331,7 @@ companion tool repldump-to-carto.</p>
     <td>Line width of the split line, in tiles.</td>
   </tr>
   <tr>
-    <td>+ { }</td><td>Individual car/marker decoration</td>
+    <td>+&nbsp;{&nbsp;}</td><td>Individual car/marker decoration</td>
     <td>An annotation overlaid on some point of the path. Must be followed by
       the specification of a car or marker annotation within curly brackets.
       The options for the overlaid annotation follow the syntax described above
@@ -321,13 +341,10 @@ companion tool repldump-to-carto.</p>
       the annotation be positioned (for instance, <code>@7.5</code> will place
       the annotation on the position at 7.5s or, equivalently, the 150th frame).
       The angle annotation should be omitted, as the annotation will be placed
-      according to the replay path orientation. Additionally,
-      <code>{{FRAMENUMBER}}</code> and <code>{{GAMETIME}}</code> in the
-      caption text will be replaced by the frame number and the time in seconds
-      of the frame respectively.</td>
+      according to the replay path orientation.</td>
   </tr>
   <tr>
-    <td>~ { }</td><td>Periodic car/marker decoration</td>
+    <td>~&nbsp;{&nbsp;}</td><td>Periodic car/marker decoration</td>
     <td>Annotations overlaid on the path at regular intervals. The symbol should
       be followed by two numbers, which set the initial moment and the spacing
       in seconds, and by a car or marker annotation within curly brackets, using
@@ -335,6 +352,79 @@ companion tool repldump-to-carto.</p>
       (<code>+</code>).</td>
   </tr>
 </table>
+
+<h3 id="trace-caption-substitutions">Adding car and frame information to captions</h3>
+
+Captions of trace decorations can be made to display information about the game
+frame through special placeholder words surrounded by <code>{{ }}</code>.
+Below is a list of available substitutions:
+
+<table>
+  <tr>
+    <th>Placeholder</th><th>Displayed data</th>
+  </tr>
+  <tr>
+    <td>{{FRAMENUMBER}}</td>
+    <td>Frame number, starting from <code>0</code> for the initial frame.
+  </tr>
+  <tr>
+    <td>{{GAMETIME}}</td>
+    <td>Elapsed game time, assuming 20 frames per second.
+  </tr>
+  <tr>
+    <td>{{SPEED}}</td>
+    <td>Car speed, in miles per hour. Note that the reported speed at frame
+      number <code>n</code> corresponds to the speed in the interval between
+      frames <code>n-1</code> and <code>n</code>.</td>
+  </tr>
+  <tr>
+    <td>{{GEAR}}</td>
+    <td>Current gear.
+  </tr>
+  <tr>
+    <td>{{HEIGHT}}</td>
+    <td>Height of the car relative to low ground, in metres.
+  </tr>
+</table>
+
+<h3 id="trace-caption-types">Types of frame decoration captions</h3>
+
+<p>Both individual and periodic trace decorations support captions through the
+syntax described in the section about car annotations. A couple of examples:</p>
+
+<p><code>Trace :"070ZGUT.dat" #plum +{Car @20 "{{SPEED}}" {$50}}</code></p>
+
+<p>An individual car anotation at the 0:20.00 frame with an associated
+caption, positioned next to the car.</p>
+
+<p><code>Trace :"070ZGUT.dat" #plum ~0 5 {Car "{{SPEED}}" {$50}} </code></p>
+
+<p>A periodic car annotation, added every five seconds starting from the
+0:00.00 frame, with an associated caption, positioned next to each car.</p>
+
+<p>Individual decorations support an alternative form of caption, introduced
+using the full syntax for standalone <code>Text</code> annotations within
+<code>&amp;&nbsp;{&nbsp;}</code>:
+
+<p><code>Trace :"070ZGUT.dat" #plum +{Car @20 &amp;{Text "{{SPEED}}" @2 29 $50}}</code></p>
+
+<p>The specification above will result in a periodic car annotation in which
+each annotation is accompanied by a caption. The caption, however, is not
+placed next to the car, but rather at the position specified by
+<code>@</code> (in this case, at coordinates <code>(2, 29)</code>). Such an
+arrangement, which will be referred from now on as <em>frame-bound standalone
+captions</em>, makes it possible to display car and frame information at fixed
+positions on the map.</p>
+
+<p>Unlike in the case of regular captions, there can be multiple frame-bound
+standalone captions per decoration:</p>
+
+<p><code>Trace :"070ZGUT.dat" #plum +{Car @20 &nbsp;{Text "{{SPEED}}mph" @2 29 $50}
+  &nbsp;{Text "Gear: {{GEAR}}" @2 27 $50}}</p></code>
+
+<p>Frame-bound standalone captions for periodic decorations are only allowed
+in flipbook rendering, as described in the next section, with a slightly
+different syntax.</p>
 
 <h2 id="creating-flipbooks">Creating flipbooks</h2>
 
@@ -347,25 +437,26 @@ the link to save a flipbook will become active. The flipbook consists of a zip
 file containing one PNG per replay frame, plus a background image with the
 track map as well as any static annotations.</p>
 
-<h3>Caveats and tips</h3>
+<h3 id="flipbook-tips">Caveats and tips</h3>
 <ul>
   <li><p>Regular annotations, such as split markers, stationary cars and
   unchanging standalone captions, can be added to a flipbook through the
   annotations text area.</p></li>
 
-  <li><p>Periodic overlays in trace flipbooks can have an associated caption
-  which is redrawn each frame so that frame information can be displayed
-  through them. Such a caption is specified as a text annotation within
-  <code>&amp; { }</code> after the periodic overlay specification. For
-  instance, here is an example with a timer:</p>
+  <li><p>Periodic overlays in trace flipbooks can frame-bound standalone
+    captions, so that frame information can be displayed at fixed positions.
+    As described in the subsection about frame decoration captions, they are
+    introduced through <code>&amp;&nbsp;{&nbsp;}</code>, with the difference
+    that the caption specification should be next outside of, but next to, the
+    braces of the periodic decoration. For instance, here is an example with a
+    timer:</p>
 
   <p><code>Trace :"070ZGUT.dat" #plum ! ~0 0.05 {Car} &amp; {Text "{{GAMETIME}}" @2 29 $50}
    </code></p>
 
   <p>If this feature is used to add a timer to a flipbook with multiple traces,
   the timer should be added to the longest trace, as otherwise the timer will
-  remain frozen for the final frames, after the trace ends.
-  added to a flipbook through the annotations text area.</p></li>
+  remain frozen for the final frames, after the trace ends.</p></li>
 
   <li><p>While the time interval parameter of the periodic annotations can be
   used when generating a flipbook, one image will be generated for each point
