@@ -10,6 +10,7 @@ module Track
     , Terrain(..)
     , TerrainType(..)
     , Horizon(..)
+    , printHorizon
     , Tile(..)
     , getTileOrientation
     , getTileChirality
@@ -939,6 +940,12 @@ data Horizon = Desert
              | Country
              | UnknownHorizon
              deriving (Eq, Enum, Show)
+
+-- |Pretty-prints the horizon value as a 'String'.
+printHorizon :: Horizon -> String
+printHorizon h = case h of
+    UnknownHorizon -> "Chaos"  -- How Track Blaster calls it.
+    _ -> show h
 
 -- |Obtains the horizon which corresponds to a byte value
 byteToHorizon :: Word8 -> Horizon

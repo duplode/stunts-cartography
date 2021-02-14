@@ -21,7 +21,8 @@ import System.CPUTime
 import Text.Printf (printf)
 import Diagrams.Prelude
 import Diagrams.Core
-import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack)
+import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack
+    , printHorizon)
 import qualified Util.ByteString as LB
 import Util.Misc
 import Util.Zip
@@ -35,9 +36,9 @@ import Util.Diagrams.Backend (OutputType(..), BEDia, renderBE)
 
 writeImageFromTrk :: (MonadIO m, Functor m)
                   => FilePath -> CartoT (ExceptT String m) Pm.PostRenderInfo
-writeImageFromTrk trkPath =
-    liftIO (LB.readFile trkPath)
-        >>= writeImageOutput (takeBaseName trkPath)
+writeImageFromTrk trkPath = do
+    trkData <- liftIO $ LB.readFile trkPath
+    writeImageOutput (takeBaseName trkPath) trkData
 
 writeImageFromRpl :: (MonadIO m, Functor m)
                   => FilePath -> CartoT (ExceptT String m) Pm.PostRenderInfo
@@ -62,9 +63,9 @@ writeImageOutput trackName trkBS = do
     renWidth <- pure (renWidthInTiles *) <*> asks Pm.pixelsPerTile
     tmpDir <- asks Pm.temporaryDirectory
 
-    -- Whether to render a regular map or an animation flipbook.
     fbks <- asks Pm.flipbookSpec
-    case fbks of
+    -- Whether to render a regular map or an animation flipbook.
+    postInfo <- case fbks of
         [] -> do
             outType <- asks Pm.outputType
             let outRelPath = case outType of
@@ -80,7 +81,7 @@ writeImageOutput trackName trkBS = do
             let fullDeltaTime :: Double
                 fullDeltaTime = fromIntegral (endTime - startTime) / 10^9
             tell . Pm.logFromList $
-                printf "Rendering time (core + output writing): %0.0fms.\r\n"
+                printf "Rendering time (core + output writing): %0.0fms\r\n"
                     fullDeltaTime
 
             modify Pm.incrementNumberOfRuns
@@ -130,7 +131,7 @@ writeImageOutput trackName trkBS = do
             let fullDeltaTime :: Double
                 fullDeltaTime = fromIntegral (endTime - startTime) / 10^12
             tell . Pm.logFromList $
-                printf "Rendering time (core + output writing): %0.3fs.\r\n"
+                printf "Rendering time (core + output writing): %0.3fs\r\n"
                     fullDeltaTime
 
             return Pm.PostRenderInfo
@@ -140,6 +141,13 @@ writeImageOutput trackName trkBS = do
                 , Pm.outputRelPath = backdropRelFile
                 , Pm.flipbookRelPath = Just zipRelFile
                 }
+
+    tell . Pm.logFromList $ "\r\n"
+    tell . Pm.logFromList $ printf "Track name: %s\r\n" (Pm.trackName postInfo)
+    tell . Pm.logFromList $ printf "Scenery: %s\r\n"
+        (printHorizon (Pm.renderedTrackHorizon postInfo))
+
+    return postInfo
 
 -- Note that the returned path does not include the boilerplate prefix.
 createFlipbookDir :: (MonadIO m) => FilePath -> String -> CartoT m FilePath

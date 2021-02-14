@@ -283,7 +283,7 @@ setup initDir tmpDir w = void $ do
     (eAppendToLog, appendToLog) <- liftIO newEvent
     (eStringToLog, stringToLog) <- liftIO newEvent
 
-    let appendLnTo = flip mappend . flip mappend (Pm.logFromList "\r\n")
+    let appendLnTo line log = log <> line <> Pm.logFromList "\r\n"
         ePutLnLog = concatE . map (appendLnTo <$>) $
             [ eAppendToLog, Pm.logFromList <$> eStringToLog ]
 
