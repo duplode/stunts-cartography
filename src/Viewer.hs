@@ -211,6 +211,9 @@ setup initDir tmpDir w = void $ do
         presetDefAndSetter fParam eParams =
             (fParam Pm.def, setter $ fParam <$> eParams)
 
+        -- Note the result of applying trimFracPart here is used to
+        -- initialise parameters, and not just to format text for the
+        -- interface.
         trimFracPart n = (/ 10^n) . realToFrac . truncate . (* 10^n)
         presetDefAndSetterD fParam =
             (\(x, e) -> (trimFracPart 3 x, (trimFracPart 3 .) <$> e))

@@ -172,7 +172,7 @@ formatSpeed = showDP 1
 
 -- Exact tile to metre conversion.
 formatLengthInMetres :: Double -> String
-formatLengthInMetres = showDP 3 . (62.42304 *)
+formatLengthInMetres = showDP 2 . (62.42304 *)
 
 replaceMagicStrings :: TextAnnotation a => TracePoint -> a -> a
 replaceMagicStrings p c =
