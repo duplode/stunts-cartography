@@ -54,7 +54,7 @@ flag rasterific
 
 Source-Repository head
   type: git
-  location: https://bitbucket.org/duplode/stunts-cartography
+  location: https://github.com/duplode/stunts-cartography
 
 
 Executable sc-trk-viewer
@@ -97,7 +97,6 @@ Executable sc-trk-viewer
                     ,diagrams-core == 1.4.*
                     ,diagrams-lib == 1.4.*
                     ,SVGFonts >= 1.7
-                    --,diagrams-cairo == 1.4.*
                     ,parsec >= 3.1.3 && < 3.2
                     ,parsec-permutation == 0.1.*
                     ,zip >= 1.0
@@ -122,18 +121,18 @@ Executable sc-trk-viewer
   CPP-OPTIONS:        -DCABAL
   if flag (resourcesWithExecutables)
     CPP-Options:      -DRESOURCES_WITH_EXECUTABLES
-  if flag (cairo) && !flag(svg) && !flag(rasterific)
-    Other-Modules:    Util.Diagrams.Backend.Cairo
-    Build-Depends:    diagrams-cairo == 1.4.*
-    CPP-Options:      -DCAIRO_BACKEND
-  elif flag (svg) && !flag(rasterific)
+  if flag (svg)
     Other-Modules:    Util.Diagrams.Backend.SVG
     Build-Depends:    diagrams-svg == 1.4.*
     CPP-Options:      -DSVG_BACKEND
-  elif flag (rasterific) && !flag(svg)
+  elif flag (rasterific)
     Other-Modules:    Util.Diagrams.Backend.Rasterific
     Build-Depends:    diagrams-rasterific == 1.4.*
     CPP-Options:      -DRASTERIFIC_BACKEND
+  elif flag (cairo)
+    Other-Modules:    Util.Diagrams.Backend.Cairo
+    Build-Depends:    diagrams-cairo == 1.4.*
+    CPP-Options:      -DCAIRO_BACKEND
   else
     Build-Depends:    invalid-cabal-flag-settings < 0
 
