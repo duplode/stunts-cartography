@@ -18,6 +18,7 @@ module Annotation.LapTrace
     , traceAnnOverlays
     , traceAnnColour
     , traceAnnVisible
+    , traceAnnWidth
 
     , putCarOnTracePoint
     , initializeTrace
@@ -102,6 +103,7 @@ data TraceAnnotation = TraceAnnotation
     { _traceAnnPoints :: [TracePoint]
     , _traceAnnOverlays :: TraceOverlays
     , _traceAnnColour :: Colour Double
+    , _traceAnnWidth :: Double
     , _traceAnnVisible :: Bool
     }
 L.makeLenses ''TraceAnnotation
@@ -111,6 +113,7 @@ instance Default TraceAnnotation where
         { _traceAnnPoints = []
         , _traceAnnOverlays = defAnn
         , _traceAnnColour = yellow
+        , _traceAnnWidth = 0.05
         , _traceAnnVisible = True
         }
 
@@ -223,7 +226,7 @@ instance IsAnnotation TraceAnnotation where
             <>
             if ann ^. traceAnnVisible then
                 fromVertices (map (p2 . tracePosXZ) $ ann ^. traceAnnPoints)
-                # lc (ann ^. traceAnnColour) # lwG 0.05
+                # lc (ann ^. traceAnnColour) # lwG (ann ^. traceAnnWidth)
             else
                 mempty
         }

@@ -40,6 +40,7 @@ module Annotation
     , carAnnPosition
     , carAnnAngle
     , carAnnSize
+    , carAnnLineWidth
     , carAnnInvert
     , carAnnCaption
     , carAnnSprite
@@ -49,6 +50,7 @@ module Annotation
     , segAnnPosition
     , segAnnAngle
     , segAnnLength
+    , segAnnWidth
     , segAnnCaption
 
     , SplitAnnotation
@@ -56,6 +58,7 @@ module Annotation
     , splAnnPosition
     , splAnnDirection
     , splAnnLength
+    , splAnnWidth
     , splAnnIndex
     , splAnnCaptBgOpacity
     , splAnnCaptAlignment
@@ -72,16 +75,16 @@ module Annotation
     , captAnnText
     ) where
 
--- It might be sensible to import this qualified if you need the constructors.
+import Data.Maybe (fromMaybe)
 
 import Diagrams.Prelude hiding (E)
 import Data.Colour.SRGB
 import Data.Colour.RGBSpace.HSV
 import Graphics.SVGFonts (textSVG', TextOpts(..))
+
 import qualified Util.SVGFonts as Util (bit)
 import Util.Diagrams.Backend (BEDia)
 import Pics.MM
--- import qualified Annotation.CairoText as CairoText
 
 data CardinalDirection = E
                        | N
@@ -291,9 +294,15 @@ data CarSprite
     | ArrowMarker
     deriving (Eq, Show, Enum)
 
-spriteDiagram :: CarSprite -> Colour Double -> Double -> Diagram BEDia
+spriteDiagram
+    :: CarSprite      -- ^ Which sprite to use.
+    -> Colour Double  -- ^ Main colour.
+    -> Double         -- ^ Size.
+    -> Maybe Double   -- ^ Line width. If 'Nothing', the value is
+                      -- determined by the sprite implementation.
+    -> Diagram BEDia
 spriteDiagram spr = case spr of
-    Acura -> acura'
+    Acura -> acuraMarker
     XMarker -> xMarker
     CircleMarker -> circleMarker
     DiamondMarker -> diamondMarker
@@ -311,7 +320,8 @@ data CarAnnotation
      , _carAnnPosition :: (Double, Double)
      , _carAnnAngle :: Double
      , _carAnnSize :: Double
-     , _carAnnInvert :: Bool
+     , _carAnnLineWidth :: Maybe Double  -- For arrow, x and circle.
+     , _carAnnInvert :: Bool  -- For arrow markers.
      , _carAnnCaption :: CaptAnnotation
      , _carAnnSprite :: CarSprite
      } deriving (Show)
@@ -325,6 +335,7 @@ instance Default CarAnnotation where
         , _carAnnPosition = (0, 0)
         , _carAnnAngle = 0
         , _carAnnSize = 0.5
+        , _carAnnLineWidth = Nothing
         , _carAnnInvert = False
         , _carAnnCaption = defAnn
         , _carAnnSprite = Acura
@@ -333,7 +344,8 @@ instance Default CarAnnotation where
 instance IsAnnotation CarAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
-            spriteDiagram (_carAnnSprite ann) (_carAnnColour ann) (_carAnnSize ann)
+            spriteDiagram (_carAnnSprite ann)
+                (_carAnnColour ann) (_carAnnSize ann) (_carAnnLineWidth ann)
             # opacity (_carAnnOpacity ann)
             # (case _carAnnSprite ann of
                 ArrowMarker -> if _carAnnInvert ann
@@ -374,6 +386,7 @@ data SegAnnotation
      , _segAnnPosition :: (Double, Double)
      , _segAnnAngle :: Double
      , _segAnnLength :: Double
+     , _segAnnWidth :: Maybe Double
      , _segAnnCaption :: CaptAnnotation
      } deriving (Show)
 
@@ -384,6 +397,7 @@ instance Default SegAnnotation where
         , _segAnnPosition = (0, 0)
         , _segAnnAngle = 0
         , _segAnnLength = 1
+        , _segAnnWidth = Nothing
         , _segAnnCaption = defAnn
         }
 makeLenses ''SegAnnotation
@@ -398,7 +412,8 @@ instance IsAnnotation SegAnnotation where
                 ]
             # centerXY
             # strokePath
-            # lwG 0.25 # lc (_segAnnColour ann)
+            # lwG (fromMaybe (min (1/4) (_segAnnLength ann / 4)) (_segAnnWidth ann))
+            # lc (_segAnnColour ann)
             # (flip $ beside
                 (cardinalDirToR2 . _captAnnAlignment . _segAnnCaption $ ann))
                 (renderAnnotation . rotateAnnotation (- _segAnnAngle ann) $
@@ -429,6 +444,7 @@ data SplitAnnotation
      , _splAnnPosition :: (Int, Int)
      , _splAnnDirection :: CardinalDirection
      , _splAnnLength :: Int
+     , _splAnnWidth :: Double
      , _splAnnIndex :: Int
      , _splAnnCaptBgOpacity :: Double
      , _splAnnCaptAlignment :: CardinalDirection
@@ -442,6 +458,7 @@ instance Default SplitAnnotation where
         , _splAnnPosition = (1, 1)
         , _splAnnDirection = N
         , _splAnnLength = 1
+        , _splAnnWidth = 0.25
         , _splAnnIndex = 1
         , _splAnnCaptBgOpacity = 1
         , _splAnnCaptAlignment = N
@@ -460,7 +477,7 @@ instance IsAnnotation SplitAnnotation where
                 # rotate (cardinalDirToAngle (_splAnnDirection ann) @@ deg)) ]
             # centerXY
             # strokePath
-            # lwG 0.25 # lc (_splAnnColour ann)
+            # lwG (_splAnnWidth ann) # lc (_splAnnColour ann)
             # (flip $ beside
                 (cardinalDirToR2 . _splAnnCaptAlignment $ ann))
                 (renderAnnotation $ defAnn

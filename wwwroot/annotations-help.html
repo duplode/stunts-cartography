@@ -127,7 +127,7 @@ position can not be changed are
  *1 #orange</code></p>
 <p><code><span class="anns-fixed anns-mandatory">Circle</span>
  <span class="anns-mandatory">@5 5</span>
- *1 #fuchsia</code></p>
+ *1 &gt;0.05 #fuchsia</code></p>
 <p><code><span class="anns-fixed anns-mandatory">Diamond</span>
  <span class="anns-mandatory">@7 7</span>
  *1 #pink</code></p>
@@ -141,11 +141,29 @@ position can not be changed are
 <p><code>X</code>, <code>Circle</code>, <code>Diamond</code>, <code>Dot</code>
 and <code>Arrow</code> can be used to add general purpose markers to the map.
 The syntax and available settings are the same as those for
-<code>Car</code>, with one addition: <code>Arrow</code> accepts an optional
+<code>Car</code>, with a few additional options for some of the markers: <code>Arrow</code> accepts an optional
 <code>%</code> setting which inverts the direction of the arrow. Arrows by
 default start at their location, as specified through <code>@</code>. With
 <code>%</code>, the arrow will end at the <code>@</code>-location and start
 at what would, without the <code>%</code>, have been its end point.</p>
+
+<table>
+  <tr>
+    <th>Syntax</th><th>Option</th><th>Available for</th><th>Notes</th>
+  </tr>
+  <tr>
+    <td>%</td><td>Inversion</td><td><code>Arrow</code></code>
+    <td>Exchanges the start and end points of the arrow, so that it ends, and
+      points at, the location specified by <code>@</code>, rather than
+      beginning at it.</td>
+  </tr>
+  <tr>
+    <td>&gt;</td><td>Line width</td><td><code>Arrow</code>, <code>Circle</code> and
+    <code>X</code></td>
+    <td>Line width of the marker, in tiles. Note that, for arrows, the length
+      of the arrow head is five times its line width.</td>
+  </tr>
+</table>
 
 <h2><code>Text</code></h2>
 
@@ -184,6 +202,10 @@ specifies where the left edge of the caption will be.</p>
   <tr>
     <td>*</td><td>Length</td>
     <td>Length of the segment, in tiles.</td>
+  </tr>
+  <tr>
+    <td>&gt;</td><td>Line width</td>
+    <td>Line width of the segment, in tiles.</td>
   </tr>
 </table>
 
@@ -224,6 +246,10 @@ specialised properties.</p>
   <tr>
     <td>*</td><td>Length</td>
     <td>Length of the split line, in tiles. The value must be integer.</td>
+  </tr>
+  <tr>
+    <td>&gt;</td><td>Line width</td>
+    <td>Line width of the split line, in tiles.</td>
   </tr>
   <tr>
     <td>#</td><td>Colour</td>
@@ -279,6 +305,10 @@ companion tool repldump-to-carto.</p>
     <td>!</td><td>Visibility</td>
     <td>Add an exclamation mark to make the trace line, but not cars or other
       decorations, invisible.</td>
+  </tr>
+  <tr>
+    <td>&gt;</td><td>Line width</td>
+    <td>Line width of the split line, in tiles.</td>
   </tr>
   <tr>
     <td>+ { }</td><td>Individual car/marker decoration</td>

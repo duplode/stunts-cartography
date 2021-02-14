@@ -68,18 +68,20 @@ car :: Monad m => ParsecT String u m CarAnnotation
 car = do
     spr <- sprite
     opt <- runPermParser $
-        (,,,,,,) <$> oncePerm xy
-                 <*> optionMaybePerm colour
-                 <*> optionPerm 1 bg
-                 <*> optionPerm 0 angle
-                 <*> optionPerm 0.5 size
-                 <*> optionPerm False invert
-                 <*> optionPerm defAnn caption -- The default caption is empty.
-    let (pos, mCl, bg, ang, sz, inv, capt) = opt
+        (,,,,,,,) <$> oncePerm xy
+                  <*> optionMaybePerm colour
+                  <*> optionPerm 1 bg
+                  <*> optionPerm 0 angle
+                  <*> optionPerm 0.5 size
+                  <*> optionMaybePerm lineWidth
+                  <*> optionPerm False invert
+                  <*> optionPerm defAnn caption -- The default caption is empty.
+    let (pos, mCl, bg, ang, sz, mWid, inv, capt) = opt
     return $ maybeDeepOverrideAnnColour mCl $ defAnn
         & carAnnPosition .~ pos
         & carAnnAngle .~ ang
         & carAnnSize .~ sz
+        & carAnnLineWidth .~ mWid
         & carAnnInvert .~ inv
         & carAnnCaption .~ capt
         & carAnnOpacity .~ bg
@@ -97,16 +99,18 @@ seg :: Monad m => ParsecT String u m SegAnnotation
 seg = do
     symbol "Seg"
     opt <- runPermParser $
-        (,,,,) <$> oncePerm xy
-               <*> optionMaybePerm colour
-               <*> oncePerm angle
-               <*> oncePerm size
-               <*> optionPerm defAnn caption
-    let (pos, mCl, ang, len, capt) = opt
+        (,,,,,) <$> oncePerm xy
+                <*> optionMaybePerm colour
+                <*> oncePerm angle
+                <*> oncePerm size
+                <*> optionMaybePerm lineWidth
+                <*> optionPerm defAnn caption
+    let (pos, mCl, ang, len, mWid, capt) = opt
     return $ maybeDeepOverrideAnnColour mCl $ defAnn
         & segAnnPosition .~ pos
         & segAnnAngle .~ ang
         & segAnnLength .~ len
+        & segAnnWidth .~ mWid
         & segAnnCaption .~ capt
 
 splitSeg :: Monad m => ParsecT String u m SplitAnnotation
@@ -114,14 +118,15 @@ splitSeg = do
     symbol "Split"
     ix <- fromIntegral <$> integer
     opt <- runPermParser $
-        (,,,,,,) <$> oncePerm xyInt
-                 <*> optionPerm yellow colour
-                 <*> optionPerm 0 bg
-                 <*> oncePerm splitDir
-                 <*> oncePerm sizeInt
-                 <*> optionMaybePerm alignment
-                 <*> optionMaybePerm invert
-    let (pos, cl, captBg, splD, len, mCaptAl, mCaptInv) = opt
+        (,,,,,,,) <$> oncePerm xyInt
+                  <*> optionPerm yellow colour
+                  <*> optionPerm 0 bg
+                  <*> oncePerm splitDir
+                  <*> oncePerm sizeInt
+                  <*> optionPerm (defAnn ^. splAnnWidth) lineWidth
+                  <*> optionMaybePerm alignment
+                  <*> optionMaybePerm invert
+    let (pos, cl, captBg, splD, len, wid, mCaptAl, mCaptInv) = opt
     let captAl = fromMaybe splD mCaptAl
     return $ defAnn
         & splAnnColour .~ cl
@@ -129,6 +134,7 @@ splitSeg = do
         & splAnnPosition .~ pos
         & splAnnDirection .~ splD
         & splAnnLength .~ len
+        & splAnnWidth .~ wid
         & splAnnCaptBgOpacity .~ captBg
         & splAnnCaptAlignment .~ fromMaybe splD mCaptAl
         & splAnnCaptInvert .~ fromMaybe False mCaptInv
@@ -175,6 +181,11 @@ size = do
     case sz of
         0 -> fail "Annotation size must not be zero"
         _ -> return sz
+
+lineWidth :: Stream s m Char => ParsecT s u m Double
+lineWidth = do
+    symbol ">"
+    floatOrInteger
 
 sizeInt :: (Stream s m Char, Num b) => ParsecT s u m b
 sizeInt = do
@@ -247,12 +258,13 @@ traceSpec :: MonadIO m => TraceMode -> ParsecT String u (CartoT m) TraceAnnotati
 traceSpec traceMode = do
     symbol "Trace"
     opt <- runPermParser $
-        (,,,,) <$> oncePerm rawPath
-               <*> optionMaybePerm colour
-               <*> optionMaybePerm visibility
-               <*> manyPerm (onTrace $ carOnTrace Nothing)
-               <*> optionMaybePerm (periodic $ carOnTrace (Just 0))
-    let (path, mCl, mVis, cars, mPCars) = opt
+        (,,,,,) <$> oncePerm rawPath
+                <*> optionMaybePerm colour
+                <*> optionMaybePerm visibility
+                <*> optionMaybePerm lineWidth
+                <*> manyPerm (onTrace $ carOnTrace Nothing)
+                <*> optionMaybePerm (periodic $ carOnTrace (Just 0))
+    let (path, mCl, mVis, mWid, cars, mPCars) = opt
     basePath <- lift $ asks Pm.baseDirectory
     let fullPath = basePath </> path
     exists <- liftIO $ doesFileExist fullPath
@@ -266,6 +278,7 @@ traceSpec traceMode = do
                 Right dat -> return $ initializeTrace traceMode dat
                     . maybeDeepOverrideAnnColour mCl
                     . maybe id (traceAnnVisible .~) mVis
+                    . maybe id (traceAnnWidth .~) mWid
                     . maybe id (\pc -> L.over traceAnnOverlays
                         (periodicCarsSpec .~ pc)) mPCars
                     $ defAnn
