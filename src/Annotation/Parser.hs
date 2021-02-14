@@ -70,21 +70,21 @@ car = do
     opt <- runPermParser $
         (,,,,,,,) <$> oncePerm xy
                   <*> optionMaybePerm colour
-                  <*> optionPerm 1 bg
-                  <*> optionPerm 0 angle
-                  <*> optionPerm 0.5 size
+                  <*> optionMaybePerm bg
+                  <*> optionMaybePerm angle
+                  <*> optionMaybePerm size
                   <*> optionMaybePerm lineWidth
-                  <*> optionPerm False invert
-                  <*> optionPerm defAnn caption -- The default caption is empty.
-    let (pos, mCl, bg, ang, sz, mWid, inv, capt) = opt
-    return $ maybeDeepOverrideAnnColour mCl $ defAnn
+                  <*> optionMaybePerm invert
+                  <*> optionMaybePerm caption
+    let (pos, cl, bg, ang, sz, mWid, inv, capt) = opt
+    return $ maybe id deepOverrideAnnColour cl $ defAnn
         & carAnnPosition .~ pos
-        & carAnnAngle .~ ang
-        & carAnnSize .~ sz
+        & maybe id (carAnnAngle .~) ang
+        & maybe id (carAnnSize .~) sz
         & carAnnLineWidth .~ mWid
-        & carAnnInvert .~ inv
-        & carAnnCaption .~ capt
-        & carAnnOpacity .~ bg
+        & maybe id (carAnnInvert .~) inv
+        & maybe id (carAnnCaption .~) capt
+        & maybe id (carAnnOpacity .~) bg
         & carAnnSprite .~ spr
 
 sprite :: Stream s m Char => ParsecT s u m CarSprite
@@ -104,14 +104,14 @@ seg = do
                 <*> oncePerm angle
                 <*> oncePerm size
                 <*> optionMaybePerm lineWidth
-                <*> optionPerm defAnn caption
+                <*> optionMaybePerm caption
     let (pos, mCl, ang, len, mWid, capt) = opt
-    return $ maybeDeepOverrideAnnColour mCl $ defAnn
+    return $ maybe id deepOverrideAnnColour mCl $ defAnn
         & segAnnPosition .~ pos
         & segAnnAngle .~ ang
         & segAnnLength .~ len
         & segAnnWidth .~ mWid
-        & segAnnCaption .~ capt
+        & maybe id (segAnnCaption .~) capt
 
 splitSeg :: Monad m => ParsecT String u m SplitAnnotation
 splitSeg = do
@@ -119,25 +119,24 @@ splitSeg = do
     ix <- fromIntegral <$> integer
     opt <- runPermParser $
         (,,,,,,,) <$> oncePerm xyInt
-                  <*> optionPerm yellow colour
-                  <*> optionPerm 0 bg
+                  <*> optionMaybePerm colour
+                  <*> optionMaybePerm bg
                   <*> oncePerm splitDir
                   <*> oncePerm sizeInt
-                  <*> optionPerm (defAnn ^. splAnnWidth) lineWidth
+                  <*> optionMaybePerm lineWidth
                   <*> optionMaybePerm alignment
                   <*> optionMaybePerm invert
-    let (pos, cl, captBg, splD, len, wid, mCaptAl, mCaptInv) = opt
-    let captAl = fromMaybe splD mCaptAl
+    let (pos, cl, captBg, splD, len, mWid, captAl, captInv) = opt
     return $ defAnn
-        & splAnnColour .~ cl
+        & maybe id (splAnnColour .~) cl
         & splAnnIndex .~ ix
         & splAnnPosition .~ pos
         & splAnnDirection .~ splD
         & splAnnLength .~ len
-        & splAnnWidth .~ wid
-        & splAnnCaptBgOpacity .~ captBg
-        & splAnnCaptAlignment .~ fromMaybe splD mCaptAl
-        & splAnnCaptInvert .~ fromMaybe False mCaptInv
+        & maybe id (splAnnWidth .~) mWid
+        & maybe id (splAnnCaptBgOpacity .~) captBg
+        & splAnnCaptAlignment .~ fromMaybe splD captAl
+        & maybe id (splAnnCaptInvert .~) captInv
 
 xy :: Stream s m Char => ParsecT s u m (Double, Double)
 xy = do
@@ -209,7 +208,7 @@ caption = do
                                 <*> optionMaybePerm colour
                                 <*> optionMaybePerm bg
     let setCapt = maybe id $ \(mAl, mSz, mAng, mInv, mCl, mBg) ->
-            maybeCustomiseAnnColour mCl
+            maybe id customiseAnnColour mCl
             . maybe id (captAnnAlignment .~) mAl
             . maybe id (captAnnSize .~) mSz
             . maybe id (captAnnAngle .~) mAng
@@ -230,7 +229,7 @@ standaloneCaption = do
                 <*> optionMaybePerm colour
                 <*> optionMaybePerm bg
     let setCapt = \(pos, mSz, mAng, mInv, mCl, mBg) ->
-            maybeCustomiseAnnColour mCl
+            maybe id customiseAnnColour mCl
             . maybe id (captAnnSize .~) mSz
             . maybe id (captAnnAngle .~) mAng
             . maybe id (captAnnInvert .~) mInv
@@ -276,7 +275,7 @@ traceSpec traceMode = do
             case eDat of
                 Left e    -> fail $ show e
                 Right dat -> return $ initializeTrace traceMode dat
-                    . maybeDeepOverrideAnnColour mCl
+                    . maybe id deepOverrideAnnColour mCl
                     . maybe id (traceAnnVisible .~) mVis
                     . maybe id (traceAnnWidth .~) mWid
                     . maybe id (\pc -> L.over traceAnnOverlays
@@ -334,17 +333,17 @@ carOnTrace mMoment = do
     opt <- runPermParser $
         (,,,,,) <$> maybe (oncePerm lapMoment) (oncePerm . return) mMoment
                 <*> optionMaybePerm colour
-                <*> optionPerm 1 bg
-                <*> optionPerm 0.5 size
-                <*> optionPerm False invert
-                <*> optionPerm defAnn caption
+                <*> optionMaybePerm bg
+                <*> optionMaybePerm size
+                <*> optionMaybePerm invert
+                <*> optionMaybePerm caption
     let (moment, mCl, bg, sz, inv, capt) = opt
     return $ (momentToFrame moment
-        , maybeDeepOverrideAnnColour mCl $ defAnn
-            & carAnnSize .~ sz
-            & carAnnInvert .~ inv
-            & carAnnCaption .~ capt
-            & carAnnOpacity .~ bg
+        , maybe id deepOverrideAnnColour mCl $ defAnn
+            & maybe id (carAnnSize .~) sz
+            & maybe id (carAnnInvert .~) inv
+            & maybe id (carAnnCaption .~) capt
+            & maybe id (carAnnOpacity .~) bg
             & carAnnSprite .~ spr
         )
 

@@ -31,8 +31,6 @@ module Annotation
     , TextAnnotation
         ( annText
         )
-    , maybeCustomiseAnnColour
-    , maybeDeepOverrideAnnColour
 
     , CarAnnotation
     , carAnnColour
@@ -168,6 +166,7 @@ class (IsAnnotation a) => ResizableAnnotation a where
 
 -- Colour overriding for nested annotations.
 -- Note that opacity is not handled, as it is not subject to overriding.
+-- TODO: Reimplement protection in terms of Data.Monoid.Recommend
 class (IsAnnotation a) => ColourAnnotation a where
     annColour :: Lens' a (Colour Double)
     annColourIsProtected :: a -> Bool
@@ -187,14 +186,6 @@ class (IsAnnotation a) => ColourAnnotation a where
     -- The following default implementation is meant to be overriden if the
     -- annotation contains other ColourAnnotations.
     deepOverrideAnnColour = overrideAnnColour
-
-maybeCustomiseAnnColour :: (ColourAnnotation a)
-                        => Maybe (Colour Double) -> a -> a
-maybeCustomiseAnnColour = maybe id customiseAnnColour
-
-maybeDeepOverrideAnnColour :: (ColourAnnotation a)
-                           => Maybe (Colour Double) -> a -> a
-maybeDeepOverrideAnnColour = maybe id deepOverrideAnnColour
 
 class IsAnnotation a => TextAnnotation a where
     annText :: Lens' a String
