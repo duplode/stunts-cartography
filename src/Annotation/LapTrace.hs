@@ -8,7 +8,7 @@ module Annotation.LapTrace
     , periodicInitialFrame
     , periodicPeriod
     , periodicBaseCar
-    , periodicFlipbookCaption
+    , periodicFlipbookCaptions
 
     , TracePoint(..)
     , TraceMode(..)
@@ -62,9 +62,9 @@ data PeriodicCarsSpec = PeriodicCarsSpec
    { _periodicInitialFrame :: FrameIndex
    , _periodicPeriod :: Int
    , _periodicBaseCar :: CarAnnotation
-   -- This caption is only shown when the trace is rendered as a
-   -- flipbook. It is subject to magic string replacement.
-   , _periodicFlipbookCaption :: CaptAnnotation
+   -- These captions are only shown when the trace is rendered as a
+   -- flipbook. They are subject to magic string replacement.
+   , _periodicFlipbookCaptions :: [CaptAnnotation]
    }
 L.makeLenses ''PeriodicCarsSpec
 
@@ -73,7 +73,7 @@ instance Default PeriodicCarsSpec where
        { _periodicInitialFrame = 0
        , _periodicPeriod = 0
        , _periodicBaseCar = defAnn
-       , _periodicFlipbookCaption = defAnn
+       , _periodicFlipbookCaptions = []
        }
 
 -- TODO: Add support for different overlays.
@@ -144,7 +144,7 @@ setupTrace traceMode ann = ann & traceAnnOverlays .~ arrangeOverlays tovs
         . sortBy (comparing fst)
 
     lastFrame = M.size pointMap - 1
-    -- The flipbook caption is not used here.
+    -- The flipbook captions are not used here.
     appendPeriodic tovs =
         let pcSpec = tovs ^. periodicCarsSpec
             ifr = pcSpec ^. periodicInitialFrame
@@ -240,6 +240,6 @@ instance ColourAnnotation TraceAnnotation where
         & L.over traceAnnOverlays
                 ( L.over carsOverTrace (map (fmap $ deepOverrideAnnColour cl))
                 . L.over (periodicCarsSpec . periodicBaseCar) (deepOverrideAnnColour cl)
-                . L.over (periodicCarsSpec . periodicFlipbookCaption)
+                . L.over (periodicCarsSpec . periodicFlipbookCaptions . mapped)
                     (deepOverrideAnnColour cl)
                 )

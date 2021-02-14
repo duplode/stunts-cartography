@@ -25,17 +25,17 @@ instance ToFlipbook TraceAnnotation where
             ifr = pcSpec ^. periodicInitialFrame
             freq = pcSpec ^. periodicPeriod
             baseCar = pcSpec ^. periodicBaseCar
-            fbkCapt = pcSpec ^. periodicFlipbookCaption
+            fbkCapts = pcSpec ^. periodicFlipbookCaptions
             ifr' = max 0 ifr
             pointIsIncluded p =
                 let phaselessFrame = traceFrame p - ifr
                 in phaselessFrame >= 0 && phaselessFrame `rem` freq == 0
-            adjustedFbkCapt p c = fbkCapt
-                 & overrideAnnColour (c ^. annColour)
+            adjustFbkCapt p car capt = capt
+                 & overrideAnnColour (car ^. annColour)
                  & replaceMagicStrings p
             renderAt c p =
                 if pointIsIncluded p
-                    then (True, renderAnnotation (adjustedFbkCapt p c)
+                    then (True, foldMap (renderAnnotation . adjustFbkCapt p c) fbkCapts
                         <> renderAnnotation (putCarOnTracePoint p c))
                     else (False, mempty)
             pts = ann ^. traceAnnPoints

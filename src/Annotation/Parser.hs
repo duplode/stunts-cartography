@@ -317,12 +317,12 @@ periodic ovr = do
     ifr <- momentToFrame <$> floatOrInteger
     freq <- momentToFrame <$> floatOrInteger
     baseCar <- braces ovr
-    fbkCapt <- option defAnn flipbookCaption
+    fbkCapts <- many flipbookCaption
     return $ def
         & periodicInitialFrame .~ ifr
         & periodicPeriod .~ freq
         & periodicBaseCar .~ snd baseCar
-        & periodicFlipbookCaption .~ fbkCapt
+        & periodicFlipbookCaptions .~ fbkCapts
 
 -- TODO: Minimize duplication in the car parsers.
 carOnTrace
