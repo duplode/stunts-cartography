@@ -22,6 +22,7 @@ import System.Console.GetOpt
 import System.Environment (getArgs)
 import System.Exit (exitSuccess)
 import Data.Char (toUpper)
+import qualified Data.Text as Text
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
@@ -39,11 +40,12 @@ import qualified Parameters as Pm
 import Annotation (Annotation)
 import Annotation.Parser (parseAnnotations, parseFlipbook)
 import Types.CartoM
-import Paths
+import Paths (versionString, isPortableBuild, getDataDir)
 import qualified Widgets.BoundedInput as BI
 import qualified Widgets.FilePathPicker as FPP
 import Util.Threepenny.Alertify
 import Util.Threepenny.JQueryAutocomplete
+import Util.Threepenny (value_Text, removeAttr)
 
 main :: IO ()
 main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
@@ -283,29 +285,23 @@ setup initDir tmpDir w = void $ do
     (eAppendToLog, appendToLog) <- liftIO newEvent
     (eStringToLog, stringToLog) <- liftIO newEvent
 
-    let appendLnTo line log = log <> line <> Pm.logFromList "\r\n"
+    let appendLnTo line log = log <> line <> Pm.logFromString "\r\n"
         ePutLnLog = concatE . map (appendLnTo <$>) $
-            [ eAppendToLog, Pm.logFromList <$> eStringToLog ]
+            [ eAppendToLog, Pm.logFromString <$> eStringToLog ]
 
         -- The log is cleared at the beginning of the chain.
         eClearLog = const mempty <$ eGo
 
+        initialLogContents = Pm.logFromString $
+            maybe "" (printf "Program version: %s\r\n") versionString
     -- Note that if an eClearLog is simultaneous with an ePutLnLog the line
     -- will not be appended.
-    bLogContents <- mempty `accumB` (eClearLog `union` ePutLnLog)
+    bLogContents <- initialLogContents `accumB` (eClearLog `union` ePutLnLog)
 
-    -- Displaying the whole log at once, at the end.
-    -- We will have to reconsider should the log have to be used before
-    -- the start of the chain.
     txaLog <-
         UI.textarea # set UI.id_ "log-text"
             # set UI.cols "72" # set UI.rows "6"
-            # set value
-                (maybe "" (("Program version: " ++) . (++ "\r\n")) versionString)
-
-    (eRenderLog, renderLog) <- liftIO newEvent
-    onEvent (bLogContents <@ eRenderLog) $
-        (element txaLog #) . set value . Pm.logToList
+            # sink value_Text (Pm.logToText <$> bLogContents)
 
     -- Misc. interesting elements
 
@@ -471,7 +467,6 @@ setup initDir tmpDir w = void $ do
                             >>= parseAnnotations
                         fbks <- (lift . lift $ txaFlipbook # get value)
                             >>= parseFlipbook
-                        -- For some reason this is showing up at the end of the rendering.
                         lift . lift $ unless (null fbks) $ alertifyLog'
                             "Flipbook rendering usually takes a few minutes. Please stand by..."
                             StandardLog 10000
@@ -498,7 +493,7 @@ setup initDir tmpDir w = void $ do
                     element imgMap # set UI.src trackImage
                     element lnkTrk # set UI.href trkUri
                     element lnkTerrTrk # set UI.href terrainUri
-                    maybe (element lnkFlipbook # unsetHref)
+                    maybe (element lnkFlipbook # removeAttr "href")
                         ((element lnkFlipbook #) . set UI.href) mFlipbookUri
 
                     return (st', logW)
@@ -508,13 +503,14 @@ setup initDir tmpDir w = void $ do
                     lift $ do
                         element theBody #. "blank-horizon"
                         element imgMap # set UI.src "static/images/failure.png"
-                        mapM_ (unsetHref . element) [lnkTrk, lnkTerrTrk, lnkFlipbook]
+                        mapM_ (removeAttr "href" . element)
+                            [lnkTrk, lnkTerrTrk, lnkFlipbook]
 
                     throwError errorMsg
 
             element btnGo # set UI.enabled True
 
-            return $ either ((,) st . Pm.logFromList) id outcome
+            return $ either ((,) st . Pm.logFromString) id outcome
 
 
     -- Collecting the parameters and firing the main action.
@@ -548,21 +544,11 @@ setup initDir tmpDir w = void $ do
 
         -- Firing the main action.
 
-        -- TODO: Ensure it is okay to run appendToLog and then renderLog
-        -- like this.
-        onEvent eParamsAndStateAfterEStyleCheck $
-            (\(p, st) -> runRenderMap p st
-                >>= \(st', w) -> liftIO $ fireRenState st'
-                    >> appendToLog w >> renderLog ())
-
-removeAttr :: String -> UI Element -> UI Element
-removeAttr name el = do
-    x <- el
-    runFunction $ ffi "$(%1).removeAttr(%2)" x name
-    el
-
-unsetHref :: UI Element -> UI Element
-unsetHref = removeAttr "href"
+        -- TODO: This handler delays the DOM update that is triggered
+        -- by eClearLog.
+        onEvent eParamsAndStateAfterEStyleCheck $ \(p, st) -> do
+            (st', w) <- runRenderMap p st
+            liftIO $ fireRenState st' >> appendToLog w
 
 loadTmpTrkBase :: (String -> String) -> (LB.ByteString -> LB.ByteString)
                -> FilePath -> Pm.PostRenderInfo -> UI String
@@ -607,11 +593,3 @@ intToPresetRenderingParams n = case n of
     2 -> Pm.slopingRampsRenderingParameters
     3 -> Pm.classicRenderingParameters
     _ -> error "Unknown preset."
-
--- Other unused utility functions we do not want to throw away (yet).
-{-
-setTrackMapVisibility :: Bool -> JSFunction ()
-setTrackMapVisibility visible
-    | visible   = ffi "document.getElementById('track-map').style.display='block';"
-    | otherwise = ffi "document.getElementById('track-map').style.display='none';"
--}

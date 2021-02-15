@@ -38,10 +38,10 @@ parseAnnotations input = do
     result <- runPT annotations () "" input
     case result of
         Left err   -> do
-            tell . Pm.logFromList $
+            tell . Pm.logFromString $
                 "Error in defining the annotations "
-            tell . Pm.logFromList . show $ err
-            tell . Pm.logFromList $ "\r\n"
+            tell . Pm.logFromString . show $ err
+            tell . Pm.logFromString $ "\r\n\r\n"
             return []
         Right anns -> return anns
 
@@ -371,10 +371,10 @@ parseFlipbook input = do
     result <- runPT flipbookSpec () "" input
     case result of
         Left err   -> do
-            tell . Pm.logFromList $
+            tell . Pm.logFromString $
                 "Error in defining the animation "
-            tell . Pm.logFromList . show $ err
-            tell . Pm.logFromList $ "\r\n"
+            tell . Pm.logFromString . show $ err
+            tell . Pm.logFromString $ "\r\n\r\n"
             return def
         Right fbks -> return fbks
 

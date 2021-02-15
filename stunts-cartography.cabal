@@ -81,6 +81,7 @@ Executable sc-trk-viewer
                     ,Util.ByteString
                     ,Util.Zip
                     ,Util.Reactive.Threepenny
+                    ,Util.Threepenny
                     ,Util.Threepenny.Alertify
                     ,Util.Threepenny.JQueryAutocomplete
                     ,Util.Threepenny.Flexbox
@@ -105,6 +106,7 @@ Executable sc-trk-viewer
                     ,colour
                     ,data-default
                     ,containers
+                    ,text
                     ,bytestring
                     ,array
                     ,mtl >= 2.2.1

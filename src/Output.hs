@@ -80,7 +80,7 @@ writeImageOutput trackName trkBS = do
 
             let fullDeltaTime :: Double
                 fullDeltaTime = fromIntegral (endTime - startTime) / 10^9
-            tell . Pm.logFromList $
+            tell . Pm.logFromString $
                 printf "Rendering time (core + output writing): %0.0fms\r\n"
                     fullDeltaTime
 
@@ -127,10 +127,10 @@ writeImageOutput trackName trkBS = do
             liftIO $ writeDirContentsZip fbkDir zipFile
 
             endTime <- liftIO getCPUTime
-            tell . Pm.logFromList $ "Flipbook rendering complete.\r\n"
+            tell . Pm.logFromString $ "Flipbook rendering complete.\r\n"
             let fullDeltaTime :: Double
                 fullDeltaTime = fromIntegral (endTime - startTime) / 10^12
-            tell . Pm.logFromList $
+            tell . Pm.logFromString $
                 printf "Rendering time (core + output writing): %0.3fs\r\n"
                     fullDeltaTime
 
@@ -142,9 +142,8 @@ writeImageOutput trackName trkBS = do
                 , Pm.flipbookRelPath = Just zipRelFile
                 }
 
-    tell . Pm.logFromList $ "\r\n"
-    tell . Pm.logFromList $ printf "Track name: %s\r\n" (Pm.trackName postInfo)
-    tell . Pm.logFromList $ printf "Scenery: %s\r\n"
+    tell . Pm.logFromString $ printf "Track name: %s\r\n" (Pm.trackName postInfo)
+    tell . Pm.logFromString $ printf "Scenery: %s\r\n"
         (printHorizon (Pm.renderedTrackHorizon postInfo))
 
     return postInfo

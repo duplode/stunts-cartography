@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralisedNewtypeDeriving #-}
 module Parameters
     ( RenderingParameters(..)
     , defaultRenderingParameters, widerRoadsRenderingParameters
@@ -9,10 +10,13 @@ module Parameters
     , clearElementCache, clearTerrainCache
     , insertIntoElementCache, insertIntoTerrainCache
     , incrementNumberOfRuns
-    , RenderingLog(..), logToList, logFromList
+    , RenderingLog(..)
+    , logToString, logFromString, logToText, logFromText
     , module Data.Default
     ) where
 
+import qualified Data.Text as Text
+import Data.Text (Text)
 import Data.Function (on)
 import Data.Map (Map)
 import qualified Data.Map as M
@@ -21,6 +25,7 @@ import qualified Data.Sequence as Seq
 import qualified Data.Foldable as Fold
 import Data.Default
 import Diagrams.Prelude
+
 import Track (Horizon(..), Element, Terrain)
 import qualified Util.ByteString as LB
 import Annotation (Annotation)
@@ -169,18 +174,19 @@ insertIntoTerrainCache te dia st = st{ terrainCache = M.insert te dia $ terrainC
 incrementNumberOfRuns :: RenderingState -> RenderingState
 incrementNumberOfRuns st = st{ numberOfRuns = numberOfRuns st + 1 }
 
--- Opaque Writer type.
+-- Translucent writer type.
 
-newtype RenderingLog = RenderingLog { unRenderingLog :: Seq Char }
+newtype RenderingLog = RenderingLog { unRenderingLog :: Text }
+    deriving (Eq, Ord, Show, Semigroup, Monoid)
 
-instance Semigroup RenderingLog where
-    x <> y = RenderingLog $ (unRenderingLog x) >< (unRenderingLog y)
+logFromString :: String -> RenderingLog
+logFromString = RenderingLog . Text.pack
 
-instance Monoid RenderingLog where
-    mempty = RenderingLog Seq.empty
+logToString :: RenderingLog -> String
+logToString = Text.unpack . unRenderingLog
 
-logFromList :: String -> RenderingLog
-logFromList = RenderingLog . Seq.fromList
+logFromText :: Text -> RenderingLog
+logFromText = RenderingLog
 
-logToList :: RenderingLog -> String
-logToList = Fold.toList . unRenderingLog
+logToText :: RenderingLog -> Text
+logToText = unRenderingLog
