@@ -23,6 +23,7 @@ import System.Environment (getArgs)
 import System.Exit (exitSuccess)
 import Data.Char (toUpper)
 import qualified Data.Text as Text
+import qualified Data.ByteString.Lazy as LB
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
@@ -34,7 +35,6 @@ import Util.Diagrams.Backend (OutputType(..))
 import Util.Reactive.Threepenny (concatE, union, setter)
 import Util.Threepenny.Flexbox
 import Output
-import qualified Util.ByteString as LB
 import Track (Horizon(..), terrainTrkSimple)
 import qualified Parameters as Pm
 import Annotation (Annotation)

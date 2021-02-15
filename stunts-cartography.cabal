@@ -78,7 +78,6 @@ Executable sc-trk-viewer
                     ,Widgets.BoundedInput
                     ,Widgets.FilePathPicker
                     ,Util.Misc
-                    ,Util.ByteString
                     ,Util.Zip
                     ,Util.Reactive.Threepenny
                     ,Util.Threepenny

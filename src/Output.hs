@@ -19,11 +19,13 @@ import System.Directory (createDirectory)
 import System.IO.Error (isAlreadyExistsError)
 import System.CPUTime
 import Text.Printf (printf)
+import qualified Data.ByteString.Lazy as LB
+
 import Diagrams.Prelude
 import Diagrams.Core
+
 import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack
     , printHorizon)
-import qualified Util.ByteString as LB
 import Util.Misc
 import Util.Zip
 import Replay

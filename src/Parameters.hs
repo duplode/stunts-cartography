@@ -27,7 +27,7 @@ import Data.Default
 import Diagrams.Prelude
 
 import Track (Horizon(..), Element, Terrain)
-import qualified Util.ByteString as LB
+import qualified Data.ByteString.Lazy as LB
 import Annotation (Annotation)
 import Annotation.LapTrace (TraceAnnotation)
 import Annotation.Flipbook

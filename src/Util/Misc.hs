@@ -3,7 +3,7 @@ module Util.Misc
     ) where
 
 import Data.List (splitAt, unfoldr)
-import qualified Util.ByteString as LB
+import qualified Data.ByteString.Lazy as LB
 
 bsChunksOf :: Int -> LB.ByteString -> [LB.ByteString]
 bsChunksOf n = unfoldr $ \xs ->

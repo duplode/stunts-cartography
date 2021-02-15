@@ -32,8 +32,7 @@ module Track
     ) where
 
 import Data.Maybe (fromJust)
-import Control.Applicative ((<$>))
-import qualified Util.ByteString as LB
+import qualified Data.ByteString.Lazy as LB
 import Data.Word (Word8)
 import Data.Array
 import qualified Util.Misc as Util
