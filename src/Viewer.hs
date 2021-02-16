@@ -160,17 +160,8 @@ setup initDir tmpDir w = void $ do
     let bBaseDir = FPP.baseDir <$> bPickedPath
         bRelPath = FPP.relativePath <$> bPickedPath
 
-    let bPxPtText =
-            let toPxPtText x =
-                    case x of
-                        SVG -> "Points per tile:"
-                        PNG -> "Pixels per tile:"
-            in toPxPtText <$> bOutType
-
-    strPxPtPerTile <- string "" # sink text bPxPtText
-
-    bidPxPtPerTile <- BI.new (8, 128)
-    bPxPtPerTile   <- Pm.pixelsPerTile def `BI.userModel` bidPxPtPerTile
+    bidPxPerTile <- BI.new (8, 128)
+    bPxPerTile   <- Pm.pixelsPerTile def `BI.userModel` bidPxPerTile
 
     -- Map bounds, grid and indices.
 
@@ -279,7 +270,7 @@ setup initDir tmpDir w = void $ do
                 <$> bBankingRelH)
             <**> ((\x -> \p -> p {Pm.transparentBg = x}) <$> bTransparentBg)
             <**> ((\x -> \p -> p {Pm.twoToneTerrain = x}) <$> bTwoToneTerrain)
-            <**> ((\x -> \p -> p {Pm.pixelsPerTile = x}) <$> bPxPtPerTile)
+            <**> ((\x -> \p -> p {Pm.pixelsPerTile = x}) <$> bPxPerTile)
             <**> ((\x -> \p -> p {Pm.xTileBounds = x}) <$> bBoundsX)
             <**> ((\x -> \p -> p {Pm.yTileBounds = x}) <$> bBoundsY)
             <**> ((\x -> \p -> p {Pm.drawGridLines = x}) <$> bDrawGrid)
@@ -379,8 +370,8 @@ setup initDir tmpDir w = void $ do
                     ]
                 ]
             , rowFlex #+
-                [ element strPxPtPerTile
-                , element bidPxPtPerTile
+                [ string "Pixels per tile:"
+                , element bidPxPerTile
                 ]
             , divVertFlex #+
                 [ rowFlex #+

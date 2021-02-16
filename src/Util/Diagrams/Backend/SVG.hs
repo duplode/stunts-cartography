@@ -1,6 +1,7 @@
 module Util.Diagrams.Backend.SVG
     ( B
-    , outputTypes
+    , availableOutputTypes
+    , widthConversionFactor
     , renderBE
     , forkRender
     ) where
@@ -12,8 +13,11 @@ import Diagrams.Backend.SVG (B, renderSVG)
 
 import Util.Diagrams.Backend.Common (OutputType(..))
 
-outputTypes :: NonEmpty OutputType
-outputTypes = SVG :| []
+availableOutputTypes :: NonEmpty OutputType
+availableOutputTypes = SVG :| []
+
+widthConversionFactor :: OutputType -> Double
+widthConversionFactor = const 1
 
 renderBE :: FilePath -> SizeSpec V2 Double -> QDiagram B V2 Double Any -> IO ()
 renderBE = renderSVG

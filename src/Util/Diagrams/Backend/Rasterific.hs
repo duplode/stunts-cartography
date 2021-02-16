@@ -1,6 +1,7 @@
 module Util.Diagrams.Backend.Rasterific
     ( B
-    , outputTypes
+    , availableOutputTypes
+    , widthConversionFactor
     , renderBE
     , forkRender
     ) where
@@ -12,8 +13,11 @@ import Diagrams.Backend.Rasterific (B, renderRasterific)
 
 import Util.Diagrams.Backend.Common (OutputType(..))
 
-outputTypes :: NonEmpty OutputType
-outputTypes = PNG :| []
+availableOutputTypes :: NonEmpty OutputType
+availableOutputTypes = PNG :| []
+
+widthConversionFactor :: OutputType -> Double
+widthConversionFactor = const 1
 
 renderBE :: FilePath -> SizeSpec V2 Double -> QDiagram B V2 Double Any -> IO ()
 renderBE = renderRasterific

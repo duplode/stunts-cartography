@@ -1,5 +1,4 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 module Output
@@ -34,15 +33,16 @@ import qualified Parameters as Pm
 import Annotation (annotationDiagram)
 import Annotation.Flipbook
 import Types.CartoM
-import Util.Diagrams.Backend (OutputType(..), B, renderBE)
+import Util.Diagrams.Backend (OutputType(..), B, renderBE
+    , widthConversionFactor)
 
-writeImageFromTrk :: (MonadIO m, Functor m)
+writeImageFromTrk :: MonadIO m
                   => FilePath -> CartoT (ExceptT String m) Pm.PostRenderInfo
 writeImageFromTrk trkPath = do
     trkData <- liftIO $ LB.readFile trkPath
     writeImageOutput (takeBaseName trkPath) trkData
 
-writeImageFromRpl :: (MonadIO m, Functor m)
+writeImageFromRpl :: MonadIO m
                   => FilePath -> CartoT (ExceptT String m) Pm.PostRenderInfo
 writeImageFromRpl rplPath = do
     rplData <- liftIO $ LB.readFile rplPath
@@ -51,7 +51,7 @@ writeImageFromRpl rplPath = do
         else lift $ throwError "No track data in RPL file."
 
 -- Note that the returned paths do not include the boilerplate prefix.
-writeImageOutput :: (MonadIO m, Functor m)
+writeImageOutput :: MonadIO m
                  => String -> LB.ByteString
                  -> CartoT (ExceptT String m) Pm.PostRenderInfo
 writeImageOutput trackName trkBS = do
@@ -60,16 +60,17 @@ writeImageOutput trackName trkBS = do
         tilArr = rawTrackToTileArray rawTrk
         tiles = map snd $ assocs tilArr
 
-    renWidthInTiles <- pure (\drawIx -> if drawIx then (2+) else id)
-        <*> asks Pm.drawIndices <*> asks (fst . Pm.deltaTileBounds)
-    renWidth <- pure (renWidthInTiles *) <*> asks Pm.pixelsPerTile
+    outType <- asks Pm.outputType
+    renWidthInTiles <- (\drawIx -> if drawIx then (2+) else id)
+        <$> asks Pm.drawIndices <*> asks (fst . Pm.deltaTileBounds)
+    renWidth <- (renWidthInTiles * widthConversionFactor outType *)
+        <$> asks Pm.pixelsPerTile
     tmpDir <- asks Pm.temporaryDirectory
 
     fbks <- asks Pm.flipbookSpec
     -- Whether to render a regular map or an animation flipbook.
     postInfo <- case fbks of
         [] -> do
-            outType <- asks Pm.outputType
             let outRelPath = case outType of
                     PNG -> "stunts-cartography-map.png"
                     SVG -> "stunts-cartography-map.svg"
@@ -166,7 +167,7 @@ createFlipbookDir tmpDir trackName =
 
 
 -- TODO: Possibly generalize the CartoM computations in Composition and below.
-wholeMapDiagram :: (Monad m) => [Tile] -> CartoT m (Diagram B)
+wholeMapDiagram :: Monad m => [Tile] -> CartoT m (Diagram B)
 wholeMapDiagram tiles = mapRWST (return . runIdentity) $ do
     params <- ask
     let minBounds :: (Double, Double)
