@@ -445,11 +445,9 @@ setup initDir tmpDir w = void $ do
                 throwError "Bad file size: RPL files must have between 1826 and 13828 bytes."
             return fileExt
 
-    -- Output from the main action, input for the next run.
-    (eRenState, fireRenState) <- liftIO newEvent
-    bRenState <- Pm.def `stepper` eRenState
-
-    -- Main action outcome handlers.
+    -- Main action outcome handlers. Ideally, these handlers should
+    -- only deal with what is inconvenient to do through the event
+    -- network.
 
     -- TODO: We probably don't need to pass the rendering state here.
     -- ExceptT failures always happen before any rendering is done, so
@@ -461,9 +459,7 @@ setup initDir tmpDir w = void $ do
             mapM_ (removeAttr "href" . element)
                 [lnkTrk, lnkTerrTrk, lnkFlipbook]
 
-            liftIO $ do
-                fireRenState st
-                appendToLog w
+            liftIO $ appendToLog w
 
             void $ element btnGo # set UI.enabled True
 
@@ -491,9 +487,7 @@ setup initDir tmpDir w = void $ do
             maybe (element lnkFlipbook # removeAttr "href")
                 ((element lnkFlipbook #) . set UI.href) mFlipbookUri
 
-            liftIO $ do
-                fireRenState st
-                appendToLog w
+            liftIO $ appendToLog w
 
             void $ element btnGo # set UI.enabled True
 
@@ -503,6 +497,11 @@ setup initDir tmpDir w = void $ do
 
     (eRenderingSuccess, notifyRenderingSuccess) <- liftIO newEvent
     onEvent eRenderingSuccess handleRenderingSuccess
+
+    -- Output from the main action, input for the next run.
+    let eRenState = ((\(_, _, st, _) -> st) <$> eRenderingSuccess)
+            `union` (fst <$> eRenderingFailure)
+    bRenState <- Pm.def `stepper` eRenState
 
     -- The main action proper.
 
