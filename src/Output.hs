@@ -71,12 +71,13 @@ writeImageOutput trackName trkBS = do
     -- Whether to render a regular map or an animation flipbook.
     postInfo <- case fbks of
         [] -> do
+            startTime <- liftIO getCPUTime
+
             let outRelPath = case outType of
                     PNG -> "stunts-cartography-map.png"
                     SVG -> "stunts-cartography-map.svg"
                 outFile = tmpDir </> outRelPath
 
-            startTime <- liftIO getCPUTime
             wholeMap <- wholeMapDiagram tiles
             liftIO $ renderBE outFile (mkWidth renWidth) wholeMap
             endTime <- liftIO getCPUTime
@@ -98,16 +99,21 @@ writeImageOutput trackName trkBS = do
 
         _ -> do
             startTime <- liftIO getCPUTime
+
             wholeMap <- wholeMapDiagram tiles
 
-            -- Ignoring the output type, at least for now.
             modify Pm.incrementNumberOfRuns
             fbkRelDir <- createFlipbookDir tmpDir trackName
             let fbkDir = tmpDir </> fbkRelDir
+                outExt = case outType of
+                    PNG -> "png"
+                    SVG -> "svg"
 
-            -- Five digits are enough for Stunts replays of any length.
-            let renderPage (ix, pg) = renderBE
-                    (fbkDir </> (printf "%05d.png" ix)) (mkWidth renWidth) pg
+                -- Five digits are enough for Stunts replays of any length.
+                renderPage (ix, pg) = renderBE
+                    (fbkDir </> (printf "%05d.%s" ix outExt))
+                    (mkWidth renWidth)
+                    pg
 
             -- fbks is, in effect, mconcat'ed twice (first through
             -- zipFlipbookPages and then through concatFlipbookBackdrops)
@@ -119,7 +125,7 @@ writeImageOutput trackName trkBS = do
                 zip ([0..] :: [Int]) . map (withEnvelope wholeMap) $
                     zipFlipbookPages fbks
 
-            let backdropRelFile = fbkRelDir </> "backdrop.png"
+            let backdropRelFile = fbkRelDir </> printf "backdrop.%s" outExt
                 backdropFile = tmpDir </> backdropRelFile
                 fullBackdrop = concatFlipbookBackdrops fbks <> wholeMap
             liftIO $ renderBE backdropFile (mkWidth renWidth) fullBackdrop
