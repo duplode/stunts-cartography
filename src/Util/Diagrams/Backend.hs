@@ -2,20 +2,25 @@
 module Util.Diagrams.Backend
     ( BEDia
     , renderBE
-    , OutputType(PNG, SVG)
+    , OutputType(..)
+    , defaultOutputType
+    , alternativeOutputTypes
     , forkRender
     ) where
 
-import Diagrams.Prelude
+import qualified Data.List.NonEmpty as NonEmpty
+
+import Util.Diagrams.Backend.Common (OutputType(..))
 # if defined(CAIRO_BACKEND)
-import Util.Diagrams.Backend.Cairo (BEDia, renderBE, forkRender)
+import Util.Diagrams.Backend.Cairo (BEDia, renderBE, forkRender, outputTypes)
 # elif defined(SVG_BACKEND)
-import Util.Diagrams.Backend.SVG (BEDia, renderBE, forkRender)
+import Util.Diagrams.Backend.SVG (BEDia, renderBE, forkRender, outputTypes)
 # elif defined(RASTERIFIC_BACKEND)
-import Util.Diagrams.Backend.Rasterific (BEDia, renderBE, forkRender)
+import Util.Diagrams.Backend.Rasterific (BEDia, renderBE, forkRender, outputTypes)
 # endif
 
-data OutputType
-    = PNG
-    | SVG
-    deriving (Eq, Ord, Show, Read, Enum, Bounded)
+defaultOutputType :: OutputType
+defaultOutputType = NonEmpty.head outputTypes
+
+alternativeOutputTypes :: [OutputType]
+alternativeOutputTypes = NonEmpty.tail outputTypes

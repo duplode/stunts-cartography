@@ -86,6 +86,7 @@ Executable sc-trk-viewer
                     ,Util.Threepenny.Flexbox
                     ,Util.SVGFonts
                     ,Util.Diagrams.Backend
+                    ,Util.Diagrams.Backend.Common
                     ,Paths
                     ,Paths_stunts_cartography
 

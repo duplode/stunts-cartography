@@ -19,9 +19,6 @@ import Data.Text (Text)
 import Data.Function (on)
 import Data.Map (Map)
 import qualified Data.Map as M
-import Data.Sequence (Seq, (><))
-import qualified Data.Sequence as Seq
-import qualified Data.Foldable as Fold
 import Data.Default.Class
 import Diagrams.Prelude
 
@@ -72,7 +69,7 @@ defaultRenderingParameters = RenderingParameters
     , pixelsPerTile = 32 -- TODO: Slight misnomer.
     , drawGridLines = True
     , drawIndices = True
-    , outputType = PNG
+    , outputType = defaultOutputType
     , xTileBounds = (0, 29)
     , yTileBounds = (0, 29)
     , annotationSpecs = []

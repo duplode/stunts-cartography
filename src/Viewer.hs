@@ -11,7 +11,7 @@ import Control.Monad.Except
 import Control.Exception (catch, SomeException)
 import Data.Maybe (fromJust, fromMaybe, isJust)
 import Data.Monoid
-import Data.List (sort)
+import Data.List (find)
 import Text.Read (readMaybe)
 import Text.Printf (printf)
 import System.Directory
@@ -33,7 +33,8 @@ import Graphics.UI.Threepenny.Ext.Flexbox
 import qualified Clay as Clay hiding (Clay.Flexbox)
 import qualified Clay.Flexbox as Flex
 
-import Util.Diagrams.Backend (OutputType(..), forkRender)
+import Util.Diagrams.Backend (forkRender
+    , OutputType(..), defaultOutputType, alternativeOutputTypes)
 import Util.Reactive.Threepenny (concatE, union, setter)
 import Util.Threepenny.Flexbox
 import Output
@@ -129,12 +130,19 @@ setup initDir tmpDir w = void $ do
     --alertifySetup w "static/lib/"
 
     -- Output type and tile resolution caption.
+    -- defaultOutputType and alternativeOutputTypes depend on the
+    -- diagrams backend, so that only available types will be
+    -- presented.
     selOutput <-
         UI.select # set UI.name "output-format-select"
             # set UI.id_ "output-format-select" #+
-                [ UI.option # set UI.selected True #+ [string "PNG"]
-                , UI.option #+ [string "SVG"]
-                ]
+                ([ UI.option # set UI.selected True
+                        #+ [string (show defaultOutputType)]]
+                    ++ map (\ot -> UI.option #+ [string (show ot)])
+                        alternativeOutputTypes)
+            # if null alternativeOutputTypes
+                then set UI.enabled False
+                else id
 
     let eSelOutput = UI.selectionChange selOutput
     bOutType <- (intToOutputType . fromMaybe (-1) <$>)
@@ -156,7 +164,7 @@ setup initDir tmpDir w = void $ do
             let toPxPtText x =
                     case x of
                         SVG -> "Points per tile:"
-                        _   -> "Pixels per tile:" -- PNG
+                        PNG -> "Pixels per tile:"
             in toPxPtText <$> bOutType
 
     strPxPtPerTile <- string "" # sink text bPxPtText
@@ -662,9 +670,12 @@ loadTrackImage outType outPath = case outType of
 
 intToOutputType :: Int -> OutputType
 intToOutputType n = case n of
-        0 -> PNG
-        1 -> SVG
-        _ -> error "Unknown output format."
+    0 -> defaultOutputType
+    _ -> case find ((n ==) . fst) altAssocs of
+        Just (_, ot) -> ot
+        _ -> error "Viewer.intToOutputType: out of bounds"
+    where
+    altAssocs = zip [1..] alternativeOutputTypes
 
 -- The order in the case statement matches that in the style-preset-select.
 intToPresetRenderingParams :: Int -> Pm.RenderingParameters
