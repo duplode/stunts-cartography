@@ -24,6 +24,7 @@ import System.Exit (exitSuccess)
 import Data.Char (toUpper)
 import qualified Data.Text as Text
 import qualified Data.ByteString.Lazy as LB
+import Control.Concurrent (forkOS)
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
@@ -38,6 +39,7 @@ import Output
 import Track (Horizon(..), terrainTrkSimple)
 import qualified Parameters as Pm
 import Annotation (Annotation)
+import Annotation.Flipbook (SomeFlipbook)
 import Annotation.Parser (parseAnnotations, parseFlipbook)
 import Types.CartoM
 import Paths (versionString, isPortableBuild, getDataDir)
@@ -420,11 +422,94 @@ setup initDir tmpDir w = void $ do
             ]
         ]
 
+    -- Main action validation.
+    let validateAndIdentifyExtension :: MonadIO m => FilePath -> ExceptT String m String
+        validateAndIdentifyExtension trkPath = do
+            trkExists <- liftIO $ doesFileExist trkPath
+            unless trkExists . void $
+                throwError "File does not exist."
+
+            let fileExt = map toUpper $ takeExtension trkPath
+                extIsKnown = fileExt == ".TRK" || fileExt == ".RPL"
+            unless extIsKnown . void $
+                throwError "Bad file extension: should be .TRK or .RPL, in upper or lower case."
+
+            fileSize <- liftIO $ getFileSize trkPath
+            let trkSizeIsCorrect = fileSize >= 1802 && fileSize <= 13802
+                badTRKSize = fileExt == ".TRK" && not trkSizeIsCorrect
+            when badTRKSize . void $
+                throwError "Bad file size: TRK files must have between 1802 and 13802 bytes."
+            let rplSizeIsCorrect = fileSize >= 1826 && fileSize <= 13828
+                badRPLSize = fileExt == ".RPL" && not rplSizeIsCorrect
+            when badRPLSize . void $
+                throwError "Bad file size: RPL files must have between 1826 and 13828 bytes."
+            return fileExt
+
+    -- Output from the main action, input for the next run.
+    (eRenState, fireRenState) <- liftIO newEvent
+    bRenState <- Pm.def `stepper` eRenState
+
+    -- Main action outcome handlers.
+
+    -- TODO: We probably don't need to pass the rendering state here.
+    -- ExceptT failures always happen before any rendering is done, so
+    -- the rendering state isn't changed when they happen.
+    let handleRenderingFailure :: (Pm.RenderingState, Pm.RenderingLog) -> UI ()
+        handleRenderingFailure (st, w) = do
+            element theBody #. "blank-horizon"
+            element imgMap # set UI.src "static/images/failure.png"
+            mapM_ (removeAttr "href" . element)
+                [lnkTrk, lnkTerrTrk, lnkFlipbook]
+
+            liftIO $ do
+                fireRenState st
+                appendToLog w
+
+            void $ element btnGo # set UI.enabled True
+
+        handleRenderingSuccess
+            :: (Pm.RenderingParameters, Pm.PostRenderInfo
+                , Pm.RenderingState, Pm.RenderingLog)
+            -> UI ()
+        handleRenderingSuccess (params, postRender, st, w) = do
+            -- TODO: Integrate as much as we can of this to the event
+            -- network.
+            when (isJust $ Pm.flipbookRelPath postRender) $ alertifySuccess
+                "Flipbook ready! Use the flipbook link on the left to save it."
+            element theBody #. horizonClass (Pm.renderedTrackHorizon postRender)
+            let outType = Pm.outputType params
+            trackImage <- loadTrackImage outType
+                (tmpDir </> Pm.outputRelPath postRender)
+            trkUri <- loadTmpTrk tmpDir postRender
+            terrainUri <- loadTmpTerrainTrk tmpDir postRender
+            mFlipbookUri <- maybe (return Nothing)
+                ((Just <$>) . loadFile "application/zip" . (tmpDir </>))
+                (Pm.flipbookRelPath postRender)
+            element imgMap # set UI.src trackImage
+            element lnkTrk # set UI.href trkUri
+            element lnkTerrTrk # set UI.href terrainUri
+            maybe (element lnkFlipbook # removeAttr "href")
+                ((element lnkFlipbook #) . set UI.href) mFlipbookUri
+
+            liftIO $ do
+                fireRenState st
+                appendToLog w
+
+            void $ element btnGo # set UI.enabled True
+
+    -- Outcomes of the main action.
+    (eRenderingFailure, notifyRenderingFailure) <- liftIO newEvent
+    onEvent eRenderingFailure handleRenderingFailure
+
+    (eRenderingSuccess, notifyRenderingSuccess) <- liftIO newEvent
+    onEvent eRenderingSuccess handleRenderingSuccess
+
     -- The main action proper.
 
-    let runRenderMap :: Pm.RenderingParameters -> Pm.RenderingState
-                     -> UI (Pm.RenderingState, Pm.RenderingLog)
-        runRenderMap params st = do
+    -- TODO: It should be possible to untangle some of what follows by
+    -- making better use of the event network.
+    let runRenderMap :: (Pm.RenderingParameters, Pm.RenderingState) -> UI ()
+        runRenderMap (params, st) = do
 
             element btnGo # set UI.enabled False
 
@@ -432,96 +517,89 @@ setup initDir tmpDir w = void $ do
             let basePath = Pm.baseDirectory params
                 trkPath = basePath </> trkRelPath
 
-            outcome <- runExceptT $ do
+            eitImgWriter <- runExceptT $ do
 
-                trkExists <- liftIO $ doesFileExist trkPath
-                unless trkExists . void $
-                    throwError "File does not exist."
-
-                let fileExt = map toUpper $ takeExtension trkPath
-                    extIsKnown = fileExt == ".TRK" || fileExt == ".RPL"
-                unless extIsKnown . void $
-                    throwError "Bad file extension: should be .TRK or .RPL, in upper or lower case."
-
-                fileSize <- liftIO $ getFileSize trkPath
-                let trkSizeIsCorrect = fileSize >= 1802 && fileSize <= 13802
-                    badTRKSize = fileExt == ".TRK" && not trkSizeIsCorrect
-                when badTRKSize . void $
-                    throwError "Bad file size: TRK files must have between 1802 and 13802 bytes."
-                let rplSizeIsCorrect = fileSize >= 1826 && fileSize <= 13828
-                    badRPLSize = fileExt == ".RPL" && not rplSizeIsCorrect
-                when badRPLSize . void $
-                    throwError "Bad file size: RPL files must have between 1826 and 13828 bytes."
+                -- Note that the trkPath file need not necessarily be
+                -- a TRK. It is also acceptable for it to be a RPL.
+                fileExt <- validateAndIdentifyExtension trkPath
 
                 -- Decide on input format.
-                let imgWriter :: FilePath -> CartoT (ExceptT String UI) Pm.PostRenderInfo
+                let imgWriter :: FilePath -> CartoT (ExceptT String IO) Pm.PostRenderInfo
                     imgWriter = case fileExt of
                         ".TRK" -> writeImageFromTrk
                         ".RPL" -> writeImageFromRpl
                         _      -> error "Unrecognized input extension."
 
-                -- Parse annotations and render the map.
-                let goCarto :: CartoT (ExceptT String UI) Pm.PostRenderInfo
-                    goCarto = do
-                        anns <- (lift . lift $ txaAnns # get value)
-                            >>= parseAnnotations
-                        fbks <- (lift . lift $ txaFlipbook # get value)
-                            >>= parseFlipbook
-                        lift . lift $ unless (null fbks) $ alertifyLog'
-                            "Flipbook rendering usually takes a few minutes. Please stand by..."
-                            StandardLog 10000
-                        lift . lift $ flushCallBuffer
-                        RWS.local (\p -> p
+                return imgWriter  -- We stop here, before the actual render.
+
+            case eitImgWriter of
+                Left errorMsg -> liftIO $
+                    notifyRenderingFailure (st, Pm.logFromString errorMsg)
+
+                Right imgWriter -> do
+                    -- Parse annotations and render the map.
+                    let parseAnns :: CartoT UI ([Annotation], [SomeFlipbook])
+                        parseAnns = do
+                            -- The signatures of functions like parseAnnotations are
+                            -- far more specific than they need to be. For instance,
+                            -- parseAnnotations only needs logging, not state or
+                            -- environment. That's pretty annoying.
+                            anns <- lift (txaAnns # get value) >>= parseAnnotations
+                            fbks <- lift (txaFlipbook # get value) >>= parseFlipbook
+                            lift $ unless (null fbks) $ alertifyLog'
+                                "Flipbook rendering usually takes a few minutes. Please stand by..."
+                                StandardLog 10000
+                            lift $ flushCallBuffer
+                            return (anns, fbks)
+
+                    -- We know st' and st are the same, but the types of parseAnns
+                    -- is too concrete to express that.
+                    ((anns, fbks), st', w) <- RWS.runRWST parseAnns params st
+                    -- TODO: It would probably make sense to fire an event to update
+                    -- bRenParams with the parsed annotations, should we ever need
+                    -- to use them anywhere else.
+                    let params' = params
                             { Pm.annotationSpecs = anns
                             , Pm.flipbookSpec = fbks
-                            }) $ imgWriter trkPath
-                (postRender,st',logW) <- RWS.runRWST goCarto params st
+                            }
 
-                -- Update the UI.
-                lift $ do
-                    when (isJust $ Pm.flipbookRelPath postRender) $ alertifySuccess
-                        "Flipbook ready! Use the flipbook link on the left to save it."
-                    element theBody #. horizonClass (Pm.renderedTrackHorizon postRender)
-                    let outType = Pm.outputType params
-                    trackImage <- loadTrackImage outType
-                        (tmpDir </> Pm.outputRelPath postRender)
-                    trkUri <- loadTmpTrk tmpDir postRender
-                    terrainUri <- loadTmpTerrainTrk tmpDir postRender
-                    mFlipbookUri <- maybe (return Nothing)
-                        ((Just <$>) . loadFile "application/zip" . (tmpDir </>))
-                        (Pm.flipbookRelPath postRender)
-                    element imgMap # set UI.src trackImage
-                    element lnkTrk # set UI.href trkUri
-                    element lnkTerrTrk # set UI.href terrainUri
-                    maybe (element lnkFlipbook # removeAttr "href")
-                        ((element lnkFlipbook #) . set UI.href) mFlipbookUri
+                    -- We don't bail out on an annotation parsing failure. That
+                    -- makes sense in at least some situations. For instance, if an
+                    -- annotation syntax error is made, it is not unreasonable to
+                    -- want to see the base map as it is fixed.
+                    --
+                    -- We re-tell w rather than using appendToLog right here to
+                    -- avoid a stray newline in the output.
 
-                    return (st', logW)
+                    -- The monadic layer discontinuties here all have to do with the
+                    -- need for the crucial, potentially long running computation
+                    -- that follows to happen in IO rather than UI, so that we can
+                    -- give it to forkOS and stop it from blocking the event
+                    -- processing queue.
+                    --
+                    -- We use forkOS rather than forkIO because cairo uses
+                    -- thread-local state. See https://stackoverflow.com/q/41485126
+                    -- and https://stackoverflow.com/q/25726017
+                    let goCarto :: CartoT (ExceptT String IO) Pm.PostRenderInfo
+                        goCarto = do
+                            RWS.tell w
+                            imgWriter trkPath
 
-                `catchError` \errorMsg -> do
-
-                    lift $ do
-                        element theBody #. "blank-horizon"
-                        element imgMap # set UI.src "static/images/failure.png"
-                        mapM_ (removeAttr "href" . element)
-                            [lnkTrk, lnkTerrTrk, lnkFlipbook]
-
-                    throwError errorMsg
-
-            element btnGo # set UI.enabled True
-
-            return $ either ((,) st . Pm.logFromString) id outcome
-
+                    liftIO . void . forkOS $ do
+                        eitResult <- runExceptT $ RWS.runRWST goCarto params' st'
+                        case eitResult of
+                            Left errorMsg ->
+                                notifyRenderingFailure (st', Pm.logFromString errorMsg)
+                            Right (postRender, st'', w') ->
+                                notifyRenderingSuccess (params', postRender, st'', w')
 
     -- Collecting the parameters and firing the main action.
 
     mdo
         let eRenParams = bRenParams <@ eGo
 
-        -- Output from the main action, input for the next run.
-        (eRenState, fireRenState) <- liftIO newEvent
-        bRenState <- Pm.def `stepper` eRenState
-
+        -- If the element style parameters were changed, clear the
+        -- caches.
         let (eRenParamsDiffEStyle, eRenParamsSameEStyle) = split $
                 (\es -> \p -> if Pm.toElemStyle p /= es
                     then Left p else Right p) <$> bRenEStyle <@> eRenParams
@@ -544,11 +622,9 @@ setup initDir tmpDir w = void $ do
 
         -- Firing the main action.
 
-        -- TODO: This handler delays the DOM update that is triggered
-        -- by eClearLog.
-        onEvent eParamsAndStateAfterEStyleCheck $ \(p, st) -> do
-            (st', w) <- runRenderMap p st
-            liftIO $ fireRenState st' >> appendToLog w
+        -- TODO: Does this handler delay the DOM update that is triggered
+        -- by eClearLog?
+        onEvent eParamsAndStateAfterEStyleCheck runRenderMap
 
 loadTmpTrkBase :: (String -> String) -> (LB.ByteString -> LB.ByteString)
                -> FilePath -> Pm.PostRenderInfo -> UI String

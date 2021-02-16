@@ -119,7 +119,8 @@ Executable sc-trk-viewer
                     ,extra >= 1.7.9
                     ,clay >= 0.13
 
-  CPP-OPTIONS:        -DCABAL
+  GHC-Options:        -threaded
+  CPP-Options:        -DCABAL
   if flag (resourcesWithExecutables)
     CPP-Options:      -DRESOURCES_WITH_EXECUTABLES
   if flag (svg)
