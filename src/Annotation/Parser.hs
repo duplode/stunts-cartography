@@ -30,10 +30,15 @@ import Data.Colour (Colour)
 import Data.Colour.Names (readColourName, yellow)
 import Data.Colour.SRGB (sRGB24read)
 import Types.CartoM
-import Control.Monad.RWS (tell, asks)
+import Control.Monad.Writer.Class (MonadWriter, tell)
+import Control.Monad.Reader.Class (MonadReader, asks)
 import qualified Parameters as Pm
 
-parseAnnotations :: MonadIO m => String -> CartoT m [Annotation]
+-- The constraints on m can be thought of as "CartoT, but it shouldn't
+-- touch the rendering state".
+parseAnnotations
+    :: (MonadIO m, MonadWriter Pm.RenderingLog m, MonadReader Pm.RenderingParameters m)
+    => String -> m [Annotation]
 parseAnnotations input = do
     result <- runPT annotations () "" input
     case result of
@@ -46,10 +51,14 @@ parseAnnotations input = do
         Right anns -> return anns
 
 -- TODO: Add better error messages.
-annotations :: MonadIO m => ParsecT String u (CartoT m) [Annotation]
+annotations
+    :: (MonadIO m, MonadWriter Pm.RenderingLog m, MonadReader Pm.RenderingParameters m)
+    => ParsecT String u m [Annotation]
 annotations = whiteSpace >> pAnnotation `manyTill` eof
 
-pAnnotation :: MonadIO m => ParsecT String u (CartoT m) Annotation
+pAnnotation
+    :: (MonadIO m, MonadWriter Pm.RenderingLog m, MonadReader Pm.RenderingParameters m)
+    => ParsecT String u m Annotation
 pAnnotation = (try (annotation <$> car)
     <|> try (annotation <$> seg)
     <|> try (annotation <$> splitSeg)
@@ -253,7 +262,9 @@ splitDir :: Monad m => ParsecT String u m CardinalDirection
 splitDir = cardinalDir "^"
 
 
-traceSpec :: MonadIO m => TraceMode -> ParsecT String u (CartoT m) TraceAnnotation
+traceSpec
+    :: (MonadIO m, MonadWriter Pm.RenderingLog m, MonadReader Pm.RenderingParameters m)
+    => TraceMode -> ParsecT String u m TraceAnnotation
 traceSpec traceMode = do
     symbol "Trace"
     opt <- runPermParser $
@@ -366,7 +377,9 @@ flipbookCaption = do
     braces standaloneCaption
 
 -- Flipbook parsers.
-parseFlipbook :: (MonadIO m) => String -> CartoT m [SomeFlipbook]
+parseFlipbook
+    :: (MonadIO m, MonadWriter Pm.RenderingLog m, MonadReader Pm.RenderingParameters m)
+    => String -> m [SomeFlipbook]
 parseFlipbook input = do
     result <- runPT flipbookSpec () "" input
     case result of
@@ -378,7 +391,9 @@ parseFlipbook input = do
             return def
         Right fbks -> return fbks
 
-flipbookSpec :: MonadIO m => ParsecT String u (CartoT m) [SomeFlipbook]
+flipbookSpec
+    :: (MonadIO m, MonadWriter Pm.RenderingLog m, MonadReader Pm.RenderingParameters m)
+    => ParsecT String u m [SomeFlipbook]
 flipbookSpec = whiteSpace >> many (SomeFlipbook <$> traceSpec FlipbookTrace)
 
 floatOrInteger :: Stream s m Char => ParsecT s u m Double

@@ -541,12 +541,12 @@ setup initDir tmpDir w = void $ do
 
                 Right imgWriter -> do
                     -- Parse annotations and render the map.
+                    -- Ideally, we'd give parseAnns a signature which expressed how
+                    -- it can't affect the rendering state. That, however, would
+                    -- require either an orphan MonadUI instance or making CartoT
+                    -- a newtype. The latter might end up happening eventually.
                     let parseAnns :: CartoT UI ([Annotation], [SomeFlipbook])
                         parseAnns = do
-                            -- The signatures of functions like parseAnnotations are
-                            -- far more specific than they need to be. For instance,
-                            -- parseAnnotations only needs logging, not state or
-                            -- environment. That's pretty annoying.
                             anns <- lift (txaAnns # get value) >>= parseAnnotations
                             fbks <- lift (txaFlipbook # get value) >>= parseFlipbook
                             lift $ unless (null fbks) $ alertifyLog'
@@ -555,8 +555,8 @@ setup initDir tmpDir w = void $ do
                             lift $ flushCallBuffer
                             return (anns, fbks)
 
-                    -- We know st' and st are the same, but the types of parseAnns
-                    -- is too concrete to express that.
+                    -- We know the computation can't possibly change the state, but
+                    -- runRWST has no awareness of that.
                     ((anns, fbks), st', w) <- RWS.runRWST parseAnns params st
                     -- TODO: It would probably make sense to fire an event to update
                     -- bRenParams with the parsed annotations, should we ever need
