@@ -33,7 +33,7 @@ import Graphics.UI.Threepenny.Ext.Flexbox
 import qualified Clay as Clay hiding (Clay.Flexbox)
 import qualified Clay.Flexbox as Flex
 
-import Util.Diagrams.Backend (OutputType(..))
+import Util.Diagrams.Backend (OutputType(..), forkRender)
 import Util.Reactive.Threepenny (concatE, union, setter)
 import Util.Threepenny.Flexbox
 import Output
@@ -581,15 +581,17 @@ setup initDir tmpDir w = void $ do
                     -- give it to forkOS and stop it from blocking the event
                     -- processing queue.
                     --
-                    -- We use forkOS rather than forkIO because cairo uses
-                    -- thread-local state. See https://stackoverflow.com/q/41485126
+                    -- When the program is built with the diagrams-cairo backend
+                    -- forkRender is forkOS rather than forkIO. That is so because
+                    -- cairo uses thread-local state. See
+                    -- https://stackoverflow.com/q/41485126
                     -- and https://stackoverflow.com/q/25726017
                     let goCarto :: CartoT (ExceptT String IO) Pm.PostRenderInfo
                         goCarto = do
                             RWS.tell w
                             imgWriter trkPath
 
-                    liftIO . void . forkOS $ do
+                    liftIO . void . forkRender $ do
                         eitResult <- runExceptT $ RWS.runRWST goCarto params' st'
                         case eitResult of
                             Left errorMsg ->
