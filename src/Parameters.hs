@@ -12,7 +12,6 @@ module Parameters
     , incrementNumberOfRuns
     , RenderingLog(..)
     , logToString, logFromString, logToText, logFromText
-    , module Data.Default.Class
     ) where
 
 import qualified Data.Text as Text

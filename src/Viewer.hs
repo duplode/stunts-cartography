@@ -25,6 +25,7 @@ import Data.Char (toUpper)
 import qualified Data.Text as Text
 import qualified Data.ByteString.Lazy as LB
 import Control.Concurrent (forkOS)
+import Data.Default.Class
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
@@ -161,12 +162,12 @@ setup initDir tmpDir w = void $ do
     strPxPtPerTile <- string "" # sink text bPxPtText
 
     bidPxPtPerTile <- BI.new (8, 128)
-    bPxPtPerTile   <- Pm.pixelsPerTile Pm.def `BI.userModel` bidPxPtPerTile
+    bPxPtPerTile   <- Pm.pixelsPerTile def `BI.userModel` bidPxPtPerTile
 
     -- Map bounds, grid and indices.
 
-    let (defMinX, defMaxX) = Pm.xTileBounds Pm.def
-        (defMinY, defMaxY) = Pm.yTileBounds Pm.def
+    let (defMinX, defMaxX) = Pm.xTileBounds def
+        (defMinY, defMaxY) = Pm.yTileBounds def
 
         styleBoundsInput = BI.setTextInputWidth 2
             . BI.formatBoundsCaption (const "")
@@ -187,25 +188,25 @@ setup initDir tmpDir w = void $ do
     chkDrawGrid <-
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-lines-chk"
             # set UI.id_ "grid-lines-chk"
-    bDrawGrid <- Pm.drawGridLines Pm.def `stepper` UI.checkedChange chkDrawGrid
+    bDrawGrid <- Pm.drawGridLines def `stepper` UI.checkedChange chkDrawGrid
     currentValue bDrawGrid >>= (element chkDrawGrid #) . set UI.checked
 
     chkDrawIndices <-
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
             # set UI.id_ "grid-indices-chk"
-    bDrawIndices <- Pm.drawIndices Pm.def `stepper` UI.checkedChange chkDrawIndices
+    bDrawIndices <- Pm.drawIndices def `stepper` UI.checkedChange chkDrawIndices
     currentValue bDrawIndices >>= (element chkDrawIndices #) . set UI.checked
 
     chkTransparentBg <-
         UI.input # set UI.type_ "checkbox" # set UI.name "transparent-bg-chk"
             # set UI.id_ "transparent-bg-chk"
-    bTransparentBg <- Pm.transparentBg Pm.def `stepper` UI.checkedChange chkTransparentBg
+    bTransparentBg <- Pm.transparentBg def `stepper` UI.checkedChange chkTransparentBg
     currentValue bTransparentBg >>= (element chkTransparentBg #) . set UI.checked
 
     chkTwoToneTerrain <-
         UI.input # set UI.type_ "checkbox" # set UI.name "two-tone-chk"
             # set UI.id_ "two-tone-chk"
-    bTwoToneTerrain <- Pm.twoToneTerrain Pm.def `stepper` UI.checkedChange chkTwoToneTerrain
+    bTwoToneTerrain <- Pm.twoToneTerrain def `stepper` UI.checkedChange chkTwoToneTerrain
     currentValue bTwoToneTerrain >>= (element chkTwoToneTerrain #) . set UI.checked
 
     -- Preset selection and ratio field initialization.
@@ -213,7 +214,7 @@ setup initDir tmpDir w = void $ do
                            -> Event (Pm.RenderingParameters)
                            -> (a, Event (a -> a))
         presetDefAndSetter fParam eParams =
-            (fParam Pm.def, setter $ fParam <$> eParams)
+            (fParam def, setter $ fParam <$> eParams)
 
         -- Note the result of applying trimFracPart here is used to
         -- initialise parameters, and not just to format text for the
@@ -261,7 +262,7 @@ setup initDir tmpDir w = void $ do
     -- Rendering parameters.
     -- Note that the annotations are parsed in a separate step.
 
-    let bRenParams = pure Pm.def {Pm.temporaryDirectory = tmpDir}
+    let bRenParams = pure def {Pm.temporaryDirectory = tmpDir}
             <**> ((\x -> \p -> p {Pm.baseDirectory = x}) <$> bBaseDir)
             <**> ((\x -> \p -> p {Pm.roadWidth = x}) <$> bRoadW)
             <**> ((\x -> \p -> p {Pm.bridgeHeight = x}) <$> bBridgeH)
@@ -485,7 +486,7 @@ setup initDir tmpDir w = void $ do
     -- Output from the main action, input for the next run.
     let eRenState = ((\(_, _, st, _) -> st) <$> eRenderingSuccess)
             `union` (fst <$> eRenderingFailure)
-    bRenState <- Pm.def `stepper` eRenState
+    bRenState <- def `stepper` eRenState
 
     -- Log handling.
     let eAppendToLog = ((\(_, _, _, w) -> w) <$> eRenderingSuccess)
@@ -623,7 +624,7 @@ setup initDir tmpDir w = void $ do
         -- Element style used in the *previous* run.
         -- Worth pointing out that we have no reason to care what
         -- it is before the first rendering.
-        bRenEStyle <- Pm.toElemStyle Pm.def `stepper` eRenEStyle
+        bRenEStyle <- Pm.toElemStyle def `stepper` eRenEStyle
 
         -- Firing the main action.
         onEvent eParamsAndStateAfterEStyleCheck runRenderMap
