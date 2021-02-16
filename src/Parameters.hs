@@ -12,7 +12,7 @@ module Parameters
     , incrementNumberOfRuns
     , RenderingLog(..)
     , logToString, logFromString, logToText, logFromText
-    , module Data.Default
+    , module Data.Default.Class
     ) where
 
 import qualified Data.Text as Text
@@ -23,7 +23,7 @@ import qualified Data.Map as M
 import Data.Sequence (Seq, (><))
 import qualified Data.Sequence as Seq
 import qualified Data.Foldable as Fold
-import Data.Default
+import Data.Default.Class
 import Diagrams.Prelude
 
 import Track (Horizon(..), Element, Terrain)

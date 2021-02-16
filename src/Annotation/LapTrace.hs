@@ -31,7 +31,7 @@ module Annotation.LapTrace
 import Control.Lens.Operators hiding ((#))
 import qualified Control.Lens as L
 import qualified Data.Map as M (Map, fromList, lookup, member, size)
-import Data.Default
+import Data.Default.Class
 import Data.List (sortBy, dropWhile, takeWhile)
 import Data.List.Extra (replace)
 import Data.Ord (comparing)

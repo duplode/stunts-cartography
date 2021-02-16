@@ -20,7 +20,7 @@ import Data.Maybe (fromMaybe)
 import Control.Monad.Trans
 import System.Directory (doesFileExist)
 import System.FilePath ((</>))
-import Data.Default
+import Data.Default.Class
 
 import Annotation
 import Annotation.LapTrace
@@ -29,7 +29,6 @@ import Annotation.Flipbook
 import Data.Colour (Colour)
 import Data.Colour.Names (readColourName, yellow)
 import Data.Colour.SRGB (sRGB24read)
-import Types.CartoM
 import Control.Monad.Writer.Class (MonadWriter, tell)
 import Control.Monad.Reader.Class (MonadReader, asks)
 import qualified Parameters as Pm

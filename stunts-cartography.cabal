@@ -103,7 +103,7 @@ Executable sc-trk-viewer
                     ,lens
                     ,aeson
                     ,colour
-                    ,data-default
+                    ,data-default-class
                     ,containers
                     ,text
                     ,bytestring
