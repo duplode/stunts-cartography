@@ -35,7 +35,7 @@ import qualified Clay.Flexbox as Flex
 
 import Util.Diagrams.Backend (forkRender
     , OutputType(..), defaultOutputType, alternativeOutputTypes)
-import Util.Reactive.Threepenny (concatE, union, setter)
+import Util.Reactive.Threepenny (concatE, union)
 import Util.Threepenny.Flexbox
 import Output
 import Track (Horizon(..), terrainTrkSimple)
@@ -217,7 +217,7 @@ setup initDir tmpDir w = void $ do
                            -> Event (Pm.RenderingParameters)
                            -> (a, Event (a -> a))
         presetDefAndSetter fParam eParams =
-            (fParam def, setter $ fParam <$> eParams)
+            (fParam def, const . fParam <$> eParams)
 
         -- Note the result of applying trimFracPart here is used to
         -- initialise parameters, and not just to format text for the

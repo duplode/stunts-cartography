@@ -23,7 +23,7 @@ import Control.Monad (void)
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
 
-import Util.Reactive.Threepenny (sinkWhen)
+import Util.Threepenny (sinkWhen)
 import Util.Threepenny.Flexbox
 
 data BoundedInput a = BoundedInput
