@@ -16,7 +16,6 @@ import Data.Maybe (fromMaybe)
 
 import Diagrams.Prelude
 
-import Util.Diagrams.Backend (BEDia)
 import Pics.Palette (sunroofCl, windshieldCl)
 
 -- The Acura sprite, used for ghost car tiles.

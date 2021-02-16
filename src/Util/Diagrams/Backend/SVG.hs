@@ -1,5 +1,5 @@
 module Util.Diagrams.Backend.SVG
-    ( BEDia
+    ( B
     , outputTypes
     , renderBE
     , forkRender
@@ -8,16 +8,14 @@ module Util.Diagrams.Backend.SVG
 import Data.List.NonEmpty (NonEmpty(..))
 import Control.Concurrent (forkIO, ThreadId)
 import Diagrams.Prelude
-import Diagrams.Backend.SVG (SVG, renderSVG)
+import Diagrams.Backend.SVG (B, renderSVG)
 
 import Util.Diagrams.Backend.Common (OutputType(..))
-
-type BEDia = SVG
 
 outputTypes :: NonEmpty OutputType
 outputTypes = SVG :| []
 
-renderBE :: FilePath -> SizeSpec V2 Double -> QDiagram BEDia V2 Double Any -> IO ()
+renderBE :: FilePath -> SizeSpec V2 Double -> QDiagram B V2 Double Any -> IO ()
 renderBE = renderSVG
 
 forkRender :: IO () -> IO ThreadId

@@ -81,7 +81,7 @@ import Data.Colour.RGBSpace.HSV
 import Graphics.SVGFonts (textSVG', TextOpts(..))
 
 import qualified Util.SVGFonts as Util (bit)
-import Util.Diagrams.Backend (BEDia)
+import Util.Diagrams.Backend (B)
 import Pics.MM
 
 data CardinalDirection = E
@@ -132,12 +132,12 @@ limitedPolychromeSV sv@(s, _) =
 
 newtype Annotation
     = Annotation
-    { annotationDiagram :: Diagram BEDia
+    { annotationDiagram :: Diagram B
     }
 
 class IsAnnotation a where
     annotation :: a -> Annotation
-    renderAnnotation :: a -> Diagram BEDia
+    renderAnnotation :: a -> Diagram B
 
     renderAnnotation = annotationDiagram . annotation
 
@@ -291,7 +291,7 @@ spriteDiagram
     -> Double         -- ^ Size.
     -> Maybe Double   -- ^ Line width. If 'Nothing', the value is
                       -- determined by the sprite implementation.
-    -> Diagram BEDia
+    -> Diagram B
 spriteDiagram spr = case spr of
     Acura -> acuraMarker
     XMarker -> xMarker

@@ -1,5 +1,5 @@
 module Util.Diagrams.Backend.Cairo
-    ( BEDia
+    ( B
     , outputTypes
     , renderBE
     , forkRender
@@ -8,16 +8,14 @@ module Util.Diagrams.Backend.Cairo
 import Data.List.NonEmpty (NonEmpty(..))
 import Control.Concurrent (forkOS, ThreadId)
 import Diagrams.Prelude
-import Diagrams.Backend.Cairo (Cairo, renderCairo)
+import Diagrams.Backend.Cairo (B, renderCairo)
 
 import Util.Diagrams.Backend.Common (OutputType(..))
-
-type BEDia = Cairo
 
 outputTypes :: NonEmpty OutputType
 outputTypes = PNG :| [SVG]
 
-renderBE :: FilePath -> SizeSpec V2 Double -> QDiagram BEDia V2 Double Any -> IO ()
+renderBE :: FilePath -> SizeSpec V2 Double -> QDiagram B V2 Double Any -> IO ()
 renderBE = renderCairo
 
 forkRender :: IO () -> IO ThreadId

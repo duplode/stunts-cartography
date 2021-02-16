@@ -138,8 +138,8 @@ data PostRenderInfo = PostRenderInfo
 -- Rendering state.
 
 data RenderingState = RenderingState
-    { elementCache :: Map Element (Diagram BEDia)
-    , terrainCache :: Map Terrain (Diagram BEDia)
+    { elementCache :: Map Element (Diagram B)
+    , terrainCache :: Map Terrain (Diagram B)
     , numberOfRuns :: Int
     }
 
@@ -159,11 +159,11 @@ clearElementCache st = st{ elementCache = M.empty }
 clearTerrainCache :: RenderingState -> RenderingState
 clearTerrainCache st = st{ terrainCache = M.empty }
 
-insertIntoElementCache :: Element -> Diagram BEDia
+insertIntoElementCache :: Element -> Diagram B
                        -> RenderingState -> RenderingState
 insertIntoElementCache el dia st = st{ elementCache = M.insert el dia $ elementCache st }
 
-insertIntoTerrainCache :: Terrain -> Diagram BEDia
+insertIntoTerrainCache :: Terrain -> Diagram B
                        -> RenderingState -> RenderingState
 insertIntoTerrainCache te dia st = st{ terrainCache = M.insert te dia $ terrainCache st }
 

@@ -34,7 +34,7 @@ import qualified Parameters as Pm
 import Annotation (annotationDiagram)
 import Annotation.Flipbook
 import Types.CartoM
-import Util.Diagrams.Backend (OutputType(..), BEDia, renderBE)
+import Util.Diagrams.Backend (OutputType(..), B, renderBE)
 
 writeImageFromTrk :: (MonadIO m, Functor m)
                   => FilePath -> CartoT (ExceptT String m) Pm.PostRenderInfo
@@ -166,7 +166,7 @@ createFlipbookDir tmpDir trackName =
 
 
 -- TODO: Possibly generalize the CartoM computations in Composition and below.
-wholeMapDiagram :: (Monad m) => [Tile] -> CartoT m (Diagram BEDia)
+wholeMapDiagram :: (Monad m) => [Tile] -> CartoT m (Diagram B)
 wholeMapDiagram tiles = mapRWST (return . runIdentity) $ do
     params <- ask
     let minBounds :: (Double, Double)

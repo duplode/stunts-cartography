@@ -20,7 +20,7 @@ import Pics.Palette
 import qualified Parameters as Pm
 import Pics.MM (acura)
 import Types.CartoM
-import Util.Diagrams.Backend (BEDia)
+import Util.Diagrams.Backend (B)
 
 -- Applies the specified orientation to a base picuture, which should have
 -- Q1 orientation and the desired chirality already applied.
@@ -112,7 +112,7 @@ baseElementPicNoO env = baseElementPicNoC env Q1
 -- orientations weren't it for the "vertical" offset in the bridge graphics.
 baseElementPic :: Chirality -> Orientation
                -> ElementSurface -> ElementType
-               -> CartoM (Diagram BEDia)
+               -> CartoM (Diagram B)
 baseElementPic c q sf et = do
     env <- ask
     return $ baseElementPic' env c q sf et
@@ -479,7 +479,7 @@ rightTriangle cl h =
     # alignB # centerX # reflectY # translateY (h / 2)
     # lwG 0 # fc cl
 
-getTilePic :: Tile -> CartoM (Diagram BEDia)
+getTilePic :: Tile -> CartoM (Diagram B)
 getTilePic tile =
     let c = getTileChirality tile
         q = getTileOrientation tile
