@@ -428,25 +428,34 @@ setup initDir tmpDir w = void $ do
 
     -- Main action outcome handlers. Ideally, these handlers should
     -- only deal with what is inconvenient to do through the event
-    -- network.
+    -- network. Right now, that amounts to:
+    --
+    -- - Everything that uses loadFile or loadDirectory, so that I
+    --   don't have to worry with what unsafeMapIO would do with them;
+    --   and
+    --
+    -- - The horizon background, so that it changes synchronously with
+    --   the map image.
 
     -- TODO: We probably don't need to pass the rendering state here.
     -- ExceptT failures always happen before any rendering is done, so
     -- the rendering state isn't changed when they happen.
     let handleRenderingFailure :: (Pm.RenderingState, Pm.RenderingLog) -> UI ()
-        handleRenderingFailure (st, w) = do
+        handleRenderingFailure _ = do
             element theBody #. "blank-horizon"
             element imgMap # set UI.src "static/images/failure.png"
             mapM_ (removeAttr "href" . element)
                 [lnkTrk, lnkTerrTrk, lnkFlipbook]
 
-            void $ element btnGo # set UI.enabled True
-
+        -- We pass the rendering parameters here instead of relying on
+        -- bRenParams to make sure we are using the same parameters
+        -- used for the rendering. bRenParams is affected by the
+        -- interface controls.
         handleRenderingSuccess
             :: (Pm.RenderingParameters, Pm.PostRenderInfo
                 , Pm.RenderingState, Pm.RenderingLog)
             -> UI ()
-        handleRenderingSuccess (params, postRender, st, w) = do
+        handleRenderingSuccess (params, postRender, _, _) = do
             -- TODO: Integrate as much as we can of this to the event
             -- network.
             when (isJust $ Pm.flipbookRelPath postRender) $ alertifySuccess
@@ -463,10 +472,8 @@ setup initDir tmpDir w = void $ do
             element imgMap # set UI.src trackImage
             element lnkTrk # set UI.href trkUri
             element lnkTerrTrk # set UI.href terrainUri
-            maybe (element lnkFlipbook # removeAttr "href")
+            void $ maybe (element lnkFlipbook # removeAttr "href")
                 ((element lnkFlipbook #) . set UI.href) mFlipbookUri
-
-            void $ element btnGo # set UI.enabled True
 
     -- Outcomes of the main action.
     (eRenderingFailure, notifyRenderingFailure) <- liftIO newEvent
@@ -480,7 +487,7 @@ setup initDir tmpDir w = void $ do
             `union` (fst <$> eRenderingFailure)
     bRenState <- Pm.def `stepper` eRenState
 
-    -- Log handling
+    -- Log handling.
     let eAppendToLog = ((\(_, _, _, w) -> w) <$> eRenderingSuccess)
             `union` (snd <$> eRenderingFailure)
 
@@ -497,14 +504,17 @@ setup initDir tmpDir w = void $ do
     bLogContents <- initialLogContents `accumB` (eClearLog `union` ePutLnLog)
     element txaLog # sink value_Text (Pm.logToText <$> bLogContents)
 
+    -- Draw button status.
+    bAllClear <- True `stepper` foldr union never
+        [False <$ eGo, True <$ eRenderingSuccess, True <$ eRenderingFailure]
+    element btnGo # sink UI.enabled bAllClear
+
     -- The main action proper.
 
     -- TODO: It should be possible to untangle some of what follows by
     -- making better use of the event network.
     let runRenderMap :: (Pm.RenderingParameters, Pm.RenderingState) -> UI ()
         runRenderMap (params, st) = do
-
-            element btnGo # set UI.enabled False
 
             trkRelPath <- currentValue bRelPath
             let basePath = Pm.baseDirectory params
@@ -587,12 +597,14 @@ setup initDir tmpDir w = void $ do
                                 notifyRenderingSuccess (params', postRender, st'', w')
 
     -- Collecting the parameters and firing the main action.
-
     mdo
+        -- Sampling with eGo ensures we are using the same parameters
+        -- given to the rendering computation.
         let eRenParams = bRenParams <@ eGo
 
         -- If the element style parameters were changed, clear the
-        -- caches.
+        -- caches. Note that the checks here also cover the terrain
+        -- style parameters, and that both caches are cleared.
         let (eRenParamsDiffEStyle, eRenParamsSameEStyle) = split $
                 (\es -> \p -> if Pm.toElemStyle p /= es
                     then Left p else Right p) <$> bRenEStyle <@> eRenParams
@@ -614,9 +626,6 @@ setup initDir tmpDir w = void $ do
         bRenEStyle <- Pm.toElemStyle Pm.def `stepper` eRenEStyle
 
         -- Firing the main action.
-
-        -- TODO: Does this handler delay the DOM update that is triggered
-        -- by eClearLog?
         onEvent eParamsAndStateAfterEStyleCheck runRenderMap
 
 loadTmpTrkBase :: (String -> String) -> (LB.ByteString -> LB.ByteString)
