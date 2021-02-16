@@ -16,13 +16,13 @@ repldump2carto, an auxiliary tool for generation of lap traces.
 
 * Executable: sc-trk-viewer
 * Starting it: launch it in a console window and navigate in a web browser to
-  http://localhost:10000 .
+  http://localhost:8023 .
 * Command line options: -d sets the initially selected directory. If you keep
   the program somewhere other than in a subdirectory of your Stunts folder, it
   may be useful to create a link/shortcut with a more convenient initial
   directory set. -p changes the port used by the application from the default
-  (10000), which might be necessary in case there is a conflict with some
-  other application.
+  (8023), which might be necessary in case there is a conflict with some other
+  application.
 * To generate a track map, fill both path fields as appropriate (the base path
   is prepended to the TRK or RPL file path, so that relative paths can be used
   during a session) and optionally change the rendering parameters. Then, click

@@ -9,7 +9,7 @@ import Control.Monad
 import qualified Control.Monad.RWS as RWS
 import Control.Monad.Except
 import Control.Exception (catch, SomeException)
-import Data.Maybe (fromJust, fromMaybe, isJust)
+import Data.Maybe (fromMaybe, isJust)
 import Data.Monoid
 import Data.List (find)
 import Text.Read (readMaybe)
@@ -69,7 +69,7 @@ data Flag = Port Int | InitDir FilePath | Help
 optionSpec :: [OptDescr Flag]
 optionSpec =
     [ Option ['p'] ["port"]
-        (ReqArg portp "PORT")  "port number (default 10000)"
+        (ReqArg portp "PORT")  "port number (default 8023)"
     , Option ['d'] ["initial-dir"]
         (ReqArg InitDir "DIR") "directory initially selected (default ..)"
     , Option ['h'] ["help"]
@@ -93,10 +93,14 @@ consoleHelp = usageInfo helpHeader optionSpec
 processOpts :: IO (Int, FilePath)
 processOpts = do
     (opts, _) <- viewerOpts =<< getArgs
-    (port, md) <- foldM (#) (10000, Nothing) $ map mkOptSetter opts
+    -- 8023 is the port Threepenny defaults to.
+    (port, md) <- foldM (#) (8023, Nothing) $ map mkOptSetter opts
     case md of
         Just d -> return (port, d)
         Nothing -> do
+            -- Using the parent of the current directory as a default
+            -- addresses the common use case in which the executable is
+            -- placed at a subdirectory of the Stunts directory.
             parentDir <- takeDirectory <$> getCurrentDirectory
             return (port, parentDir)
     where

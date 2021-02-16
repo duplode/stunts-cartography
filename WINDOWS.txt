@@ -6,7 +6,7 @@
 * Usage: copy this whole directory somewhere (the best place likely being your
   Stunts directory), launch the executable, authorize it if the Windows
   Firewall dialog shows up, and navigate in a browser to
-  http://localhost:10000 . More detailed usage notes are in the README.md
+  http://localhost:8023 . More detailed usage notes are in the README.md
   (for the track viewer) and REPLDUMP.md (for the repldump2carto tool), which
   can be opened by Notepad or any other text editor.
 
@@ -15,6 +15,6 @@
   support for WebSockets is required. Firefox and Chrome users should be fine
   with somewhat older browser versions (Firefox 11+, Chrome 16+).
 
-* Source repository: https://bitbucket.org/duplode/stunts-cartography .
+* Source repository: https://github.com/duplode/stunts-cartography .
 
 * Reporsitory changeset of this release: tagged as 0.4.0.1 .
