@@ -49,7 +49,7 @@ import qualified Widgets.BoundedInput as BI
 import qualified Widgets.FilePathPicker as FPP
 import Util.Threepenny.Alertify
 import Util.Threepenny.JQueryAutocomplete
-import Util.Threepenny (value_Text, removeAttr)
+import Util.Threepenny (value_Text, removeAttr, checkboxUserModel)
 
 main :: IO ()
 main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
@@ -191,26 +191,22 @@ setup initDir tmpDir w = void $ do
     chkDrawGrid <-
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-lines-chk"
             # set UI.id_ "grid-lines-chk"
-    bDrawGrid <- Pm.drawGridLines def `stepper` UI.checkedChange chkDrawGrid
-    currentValue bDrawGrid >>= (element chkDrawGrid #) . set UI.checked
+    bDrawGrid <- Pm.drawGridLines def `checkboxUserModel` chkDrawGrid
 
     chkDrawIndices <-
         UI.input # set UI.type_ "checkbox" # set UI.name "grid-indices-chk"
             # set UI.id_ "grid-indices-chk"
-    bDrawIndices <- Pm.drawIndices def `stepper` UI.checkedChange chkDrawIndices
-    currentValue bDrawIndices >>= (element chkDrawIndices #) . set UI.checked
+    bDrawIndices <- Pm.drawIndices def `checkboxUserModel` chkDrawIndices
 
     chkTransparentBg <-
         UI.input # set UI.type_ "checkbox" # set UI.name "transparent-bg-chk"
             # set UI.id_ "transparent-bg-chk"
-    bTransparentBg <- Pm.transparentBg def `stepper` UI.checkedChange chkTransparentBg
-    currentValue bTransparentBg >>= (element chkTransparentBg #) . set UI.checked
+    bTransparentBg <- Pm.transparentBg def `checkboxUserModel` chkTransparentBg
 
     chkTwoToneTerrain <-
         UI.input # set UI.type_ "checkbox" # set UI.name "two-tone-chk"
             # set UI.id_ "two-tone-chk"
-    bTwoToneTerrain <- Pm.twoToneTerrain def `stepper` UI.checkedChange chkTwoToneTerrain
-    currentValue bTwoToneTerrain >>= (element chkTwoToneTerrain #) . set UI.checked
+    bTwoToneTerrain <- Pm.twoToneTerrain def `checkboxUserModel` chkTwoToneTerrain
 
     -- Preset selection and ratio field initialization.
     let presetDefAndSetter :: (Pm.RenderingParameters -> a)
@@ -248,8 +244,9 @@ setup initDir tmpDir w = void $ do
     -- Rendering ratios
     let ratioModel fParam bi = do
             let (defRatio, eRatio) = presetDefAndSetterD fParam ePreset
-            -- TODO: Is this really necessary? Doesn't BI.simpleModel
-            -- already sink the event anyway?
+            -- TODO: The refresh presumably only matters if eRatio is
+            -- somehow fired while the input is being edited. It might
+            -- make sense to have a closer look at the need for it.
             eRatio' <- BI.withRefresh bi eRatio
             BI.simpleModel defRatio eRatio' bi
 

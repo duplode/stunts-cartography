@@ -2,11 +2,13 @@ module Util.Threepenny
     ( removeAttr
     , value_Text
     , sinkWhen
+    , checkboxUserModel
     ) where
 
 import Control.Monad (when)
 import Data.Text (Text)
 import Graphics.UI.Threepenny.Core
+import qualified Graphics.UI.Threepenny as UI
 import Reactive.Threepenny
 
 removeAttr :: String -> UI Element -> UI Element
@@ -32,3 +34,9 @@ sinkWhen bp attr bi mx = do
         runUI window $ when p $ set' attr i x
         onChange bpi $ \(p, i) -> runUI window $ when p $ set' attr i x
     return x
+
+-- Basic wiring for a checkbox.
+checkboxUserModel :: Bool -> Element -> UI (Behavior Bool)
+checkboxUserModel initial checkbox = do
+    element checkbox # set UI.checked initial
+    initial `stepper` UI.checkedChange checkbox
