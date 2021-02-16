@@ -282,30 +282,11 @@ setup initDir tmpDir w = void $ do
     btnGo <- UI.button #. "go-button" #+ [string "Draw map"]
     let eGo = UI.click btnGo
 
-    -- Log handling
-
-    (eAppendToLog, appendToLog) <- liftIO newEvent
-    (eStringToLog, stringToLog) <- liftIO newEvent
-
-    let appendLnTo line log = log <> line <> Pm.logFromString "\r\n"
-        ePutLnLog = concatE . map (appendLnTo <$>) $
-            [ eAppendToLog, Pm.logFromString <$> eStringToLog ]
-
-        -- The log is cleared at the beginning of the chain.
-        eClearLog = const mempty <$ eGo
-
-        initialLogContents = Pm.logFromString $
-            maybe "" (printf "Program version: %s\r\n") versionString
-    -- Note that if an eClearLog is simultaneous with an ePutLnLog the line
-    -- will not be appended.
-    bLogContents <- initialLogContents `accumB` (eClearLog `union` ePutLnLog)
+    -- Misc. interesting elements
 
     txaLog <-
         UI.textarea # set UI.id_ "log-text"
             # set UI.cols "72" # set UI.rows "6"
-            # sink value_Text (Pm.logToText <$> bLogContents)
-
-    -- Misc. interesting elements
 
     lnkTrk <-
         UI.a # set UI.id_ "save-trk-link" # set UI.target "_blank" #+
@@ -459,8 +440,6 @@ setup initDir tmpDir w = void $ do
             mapM_ (removeAttr "href" . element)
                 [lnkTrk, lnkTerrTrk, lnkFlipbook]
 
-            liftIO $ appendToLog w
-
             void $ element btnGo # set UI.enabled True
 
         handleRenderingSuccess
@@ -487,8 +466,6 @@ setup initDir tmpDir w = void $ do
             maybe (element lnkFlipbook # removeAttr "href")
                 ((element lnkFlipbook #) . set UI.href) mFlipbookUri
 
-            liftIO $ appendToLog w
-
             void $ element btnGo # set UI.enabled True
 
     -- Outcomes of the main action.
@@ -502,6 +479,23 @@ setup initDir tmpDir w = void $ do
     let eRenState = ((\(_, _, st, _) -> st) <$> eRenderingSuccess)
             `union` (fst <$> eRenderingFailure)
     bRenState <- Pm.def `stepper` eRenState
+
+    -- Log handling
+    let eAppendToLog = ((\(_, _, _, w) -> w) <$> eRenderingSuccess)
+            `union` (snd <$> eRenderingFailure)
+
+        appendLnTo line log = log <> line <> Pm.logFromString "\r\n"
+
+        ePutLnLog = appendLnTo <$> eAppendToLog
+        -- The log is cleared at the beginning of the chain.
+        eClearLog = const mempty <$ eGo
+
+        initialLogContents = Pm.logFromString $
+            maybe "" (printf "Program version: %s\r\n") versionString
+    -- Note that if an eClearLog is simultaneous with an ePutLnLog the line
+    -- will not be appended.
+    bLogContents <- initialLogContents `accumB` (eClearLog `union` ePutLnLog)
+    element txaLog # sink value_Text (Pm.logToText <$> bLogContents)
 
     -- The main action proper.
 
