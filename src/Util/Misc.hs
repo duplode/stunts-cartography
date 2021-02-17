@@ -1,5 +1,6 @@
 module Util.Misc
     ( bsChunksOf
+    , trimFracPart
     ) where
 
 import Data.List (splitAt, unfoldr)
@@ -10,3 +11,6 @@ bsChunksOf n = unfoldr $ \xs ->
     if LB.null xs
         then Nothing
         else Just $ LB.splitAt (fromIntegral n) xs
+
+trimFracPart :: RealFrac a => Int -> a -> a
+trimFracPart n = (/ 10^n) . realToFrac . truncate . (* 10^n)

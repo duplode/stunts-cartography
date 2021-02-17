@@ -33,6 +33,7 @@ import Graphics.UI.Threepenny.Ext.Flexbox
 import qualified Clay as Clay hiding (Clay.Flexbox)
 import qualified Clay.Flexbox as Flex
 
+import Util.Misc (trimFracPart)
 import Util.Diagrams.Backend (forkRender
     , OutputType(..), defaultOutputType, alternativeOutputTypes)
 import Util.Reactive.Threepenny (concatE, union)
@@ -49,7 +50,8 @@ import qualified Widgets.BoundedInput as BI
 import qualified Widgets.FilePathPicker as FPP
 import Util.Threepenny.Alertify
 import Util.Threepenny.JQueryAutocomplete
-import Util.Threepenny (value_Text, removeAttr, checkboxUserModel)
+import Util.Threepenny (value_Text, selectionChange', removeAttr
+    , checkboxUserModel)
 
 main :: IO ()
 main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
@@ -148,7 +150,7 @@ setup initDir tmpDir w = void $ do
                 then set UI.enabled False
                 else id
 
-    let eSelOutput = UI.selectionChange selOutput
+    let eSelOutput = selectionChange' selOutput
     bOutType <- (intToOutputType . fromMaybe (-1) <$>)
         <$> (Just 0 `stepper` eSelOutput)
 
@@ -218,7 +220,6 @@ setup initDir tmpDir w = void $ do
         -- Note the result of applying trimFracPart here is used to
         -- initialise parameters, and not just to format text for the
         -- interface.
-        trimFracPart n = (/ 10^n) . realToFrac . truncate . (* 10^n)
         presetDefAndSetterD fParam =
             (\(x, e) -> (trimFracPart 3 x, (trimFracPart 3 .) <$> e))
                 . presetDefAndSetter fParam
@@ -233,7 +234,7 @@ setup initDir tmpDir w = void $ do
                 , UI.option #+ [string "Traditional"]
                 ]
 
-    let eSelPreset = UI.selectionChange selPreset
+    let eSelPreset = selectionChange' selPreset
     bPreset <- (intToPresetRenderingParams . fromMaybe (-1) <$>)
         <$> (Just 0 `stepper` eSelPreset)
 

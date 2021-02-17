@@ -18,6 +18,8 @@ import Data.Aeson
 import Data.Maybe (fromJust)
 import Control.Monad (join, void)
 
+import Util.Threepenny (unsafeMapUI)
+
 -- Synchronously loading the library code and CSS.
 -- If you find this hack off-putting, an alternative is to specify them
 -- through the tpCustomHTML file in the Threepenny configuration.
@@ -108,8 +110,6 @@ autocompletechange = void . domEvent "autocompletechange"
 autocompleteValueChange :: Element -> Event String
 autocompleteValueChange el = unsafeMapUI el
     (const $ get value el) (domEvent "autocompletechange" el)
-
-unsafeMapUI el f = unsafeMapIO (\a -> getWindow el >>= \w -> runUI w (f a))
 
 -- autocompletecreate :: Element -> Event ()
 -- autocompletefocus :: Element -> Event (String, String)
