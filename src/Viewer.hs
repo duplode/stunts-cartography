@@ -133,7 +133,7 @@ setup initDir tmpDir w = void $ do
     --autocompleteSetup w "static/lib/"
     --alertifySetup w "static/lib/"
 
-    -- Output type and tile resolution caption.
+    -- Output type selection.
     -- defaultOutputType and alternativeOutputTypes depend on the
     -- diagrams backend, so that only available types will be
     -- presented.
@@ -534,7 +534,7 @@ setup initDir tmpDir w = void $ do
                         ".RPL" -> writeImageFromRpl
                         _      -> error "Unrecognized input extension."
 
-                return imgWriter  -- We stop here, before the actual render.
+                return imgWriter
 
             case eitImgWriter of
                 Left errorMsg -> liftIO $
@@ -553,7 +553,6 @@ setup initDir tmpDir w = void $ do
                             lift $ unless (null fbks) $ alertifyLog'
                                 "Flipbook rendering usually takes a few minutes. Please stand by..."
                                 StandardLog 10000
-                            lift $ flushCallBuffer
                             return (anns, fbks)
 
                     -- We know the computation can't possibly change the state, but
