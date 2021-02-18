@@ -85,12 +85,12 @@ new = do
     _itxBaseDir <-
         UI.input # set UI.type_ "text"
             #. "file-path-picker-base-path"
-            # setFlex childProps { cFlexGrow = 1 }
+            # setFlex (flexGrow 1)
 
     _itxRelativePath <-
         UI.input # set UI.type_ "text"
             #. "file-path-picker-relative-path"
-            # setFlex childProps { cFlexGrow = 1 }
+            # setFlex (flexGrow 1)
 
     _btnUp <-
         UI.button

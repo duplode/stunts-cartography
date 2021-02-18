@@ -317,8 +317,8 @@ setup initDir tmpDir w = void $ do
     theBody <- getBody w # set UI.id_ "the-body" #. "blank-horizon"
         # setFlex parentProps #+
         [ UI.div # set UI.id_ "left-bar"
-            # setFlex parentProps { pFlexDirection = Clay.column }
-            # setFlex childProps { cFlexGrow = 1 }
+            # setFlex (flexDirection Clay.column)
+            # setFlex (flexGrow 1)
             #+
             [ divVertFlex #+
                 [ rowFlex #+
@@ -350,20 +350,20 @@ setup initDir tmpDir w = void $ do
                 , rowFlex #+ [string "Indices?", element chkDrawIndices]
                 ]
             , divVertFlex #+
-                [ rowFlex # overrideFlex [PAlignItems Clay.center] [] #+
-                    [ divVertFlex # overrideFlex [PAlignItems Clay.center] [] #+
+                [ rowFlex # modifyFlex (alignItems Clay.center) #+
+                    [ divVertFlex # modifyFlex (alignItems Clay.center) #+
                         [string "Map bounds:", string "(0 - 29)"]
-                    , subRowFlex # overrideFlex [PAlignItems Clay.center] [] #+
-                        [ divVertFlex # overrideFlex [PAlignItems Clay.flexEnd] [] #+
+                    , subRowFlex # modifyFlex (alignItems Clay.center) #+
+                        [ divVertFlex # modifyFlex (alignItems Clay.flexEnd) #+
                             [ UI.span #. "ui-icon ui-icon-caret-1-nw"
                             , element biiMinX
                             , UI.span #. "ui-icon ui-icon-caret-1-sw"
                             ]
-                        , divVertFlex # overrideFlex [PAlignItems Clay.center] [] #+
+                        , divVertFlex # modifyFlex (alignItems Clay.center) #+
                             [ element biiMaxY
                             , element biiMinY
                             ]
-                        , divVertFlex # overrideFlex [PAlignItems Clay.flexStart] [] #+
+                        , divVertFlex # modifyFlex (alignItems Clay.flexStart) #+
                             [ UI.span #. "ui-icon ui-icon-caret-1-ne"
                             , element biiMaxX
                             , UI.span #. "ui-icon ui-icon-caret-1-se"
@@ -395,7 +395,7 @@ setup initDir tmpDir w = void $ do
                 ]
             ]
         , UI.div # set UI.id_ "main-wrap"
-            # setFlex parentProps { pFlexDirection = Clay.column } # setFlex childProps
+            # setFlex (flexDirection Clay.column) # setFlex childProps
             #+
             [ element imgMap
             , divVertFlex #+
