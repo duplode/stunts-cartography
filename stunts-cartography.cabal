@@ -119,6 +119,7 @@ Executable sc-trk-viewer
                     ,zlib
                     ,extra >= 1.7.9
                     ,clay >= 0.13
+                    ,optparse-applicative >= 0.14
 
   GHC-Options:        -threaded
   CPP-Options:        -DCABAL

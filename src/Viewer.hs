@@ -18,13 +18,10 @@ import System.Directory
     (doesFileExist, doesDirectoryExist, getFileSize ,getCurrentDirectory)
 import System.FilePath ((</>), takeExtension, addExtension,takeDirectory)
 import System.IO.Temp (withSystemTempDirectory)
-import System.Console.GetOpt
-import System.Environment (getArgs)
-import System.Exit (exitSuccess)
+import qualified Options.Applicative as Opts
 import Data.Char (toUpper)
 import qualified Data.Text as Text
 import qualified Data.ByteString.Lazy as LB
-import Control.Concurrent (forkOS)
 import Data.Default.Class
 
 import qualified Graphics.UI.Threepenny as UI
@@ -55,7 +52,13 @@ import Util.Threepenny (value_Text, selectionChange', removeAttr
 
 main :: IO ()
 main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
-    (port, initDir) <- processOpts
+    Options { portNumber = port, initialDirectory = mInitDir }
+        <- Opts.execParser opts
+    -- Defaulting to the parent of the current directory is convenient
+    -- if the executable is at a subdirectory of the Stunts directory.
+    initDir <- case mInitDir of
+        Just d -> return d
+        Nothing -> takeDirectory <$> getCurrentDirectory
     staticDir <- (</> "wwwroot") <$> getDataDir
     consoleGreeting $! port
     startGUI defaultConfig
@@ -64,53 +67,35 @@ main = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
         , jsStatic = Just staticDir
         } $ setup initDir tmpDir
 
--- Command line option processing.
-data Flag = Port Int | InitDir FilePath | Help
-    deriving (Show)
+data Options = Options
+    { portNumber :: Int
+    , initialDirectory :: Maybe FilePath
+    }
 
-optionSpec :: [OptDescr Flag]
-optionSpec =
-    [ Option ['p'] ["port"]
-        (ReqArg portp "PORT")  "port number (default 8023)"
-    , Option ['d'] ["initial-dir"]
-        (ReqArg InitDir "DIR") "directory initially selected (default ..)"
-    , Option ['h'] ["help"]
-        (NoArg Help)           "prints this help text."
-    ]
-    where
-    portp = Port . fromMaybe (error $ "bad port number " ++ consoleHelp)
-        . readMaybe
+baseOpts :: Opts.Parser Options
+baseOpts = Options
+    <$> Opts.option Opts.auto
+        ( Opts.short 'p'
+        <> Opts.long "port"
+        <> Opts.help "Port number"
+        <> Opts.showDefault
+        <> Opts.value 8023
+        <> Opts.metavar "INT"
+        )
+    <*> Opts.option (Opts.eitherReader (Right . Just))
+        ( Opts.short 'd'
+        <> Opts.long "directory"
+        <> Opts.help "Initial directory"
+        <> Opts.showDefaultWith (const "..")
+        <> Opts.value Nothing
+        <> Opts.metavar "DIRECTORY"
+        )
 
-viewerOpts :: [String] -> IO ([Flag], [String])
-viewerOpts argv =
-    case getOpt Permute optionSpec argv of
-        (o, [], [])  -> return (o, [])
-        (_, _, errs) -> ioError $ userError $ concat errs ++ consoleHelp
-
-consoleHelp :: String
-consoleHelp = usageInfo helpHeader optionSpec
-    where
-    helpHeader = "Usage: sc-trk-viewer [OPTION]..."
-
-processOpts :: IO (Int, FilePath)
-processOpts = do
-    (opts, _) <- viewerOpts =<< getArgs
-    -- 8023 is the port Threepenny defaults to.
-    (port, md) <- foldM (#) (8023, Nothing) $ map mkOptSetter opts
-    case md of
-        Just d -> return (port, d)
-        Nothing -> do
-            -- Using the parent of the current directory as a default
-            -- addresses the common use case in which the executable is
-            -- placed at a subdirectory of the Stunts directory.
-            parentDir <- takeDirectory <$> getCurrentDirectory
-            return (port, parentDir)
-    where
-    mkOptSetter :: Flag -> ((Int, Maybe FilePath) -> IO (Int, Maybe FilePath))
-    mkOptSetter flag = case flag of
-        Port p    -> return . (\(_, md) -> (p, md))
-        InitDir d -> return . (\(p, _) -> (p, Just d))
-        Help      -> const $ putStrLn consoleHelp >> exitSuccess
+opts :: Opts.ParserInfo Options
+opts = Opts.info (baseOpts <**> Opts.helper)
+    ( Opts.fullDesc
+    <> Opts.progDesc "Generate and annotate Stunts track maps"
+    )
 
 consoleGreeting :: Int -> IO ()
 consoleGreeting port = do
