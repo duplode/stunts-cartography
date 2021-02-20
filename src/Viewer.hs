@@ -92,17 +92,19 @@ baseOpts = Options
         )
 
 opts :: Opts.ParserInfo Options
-opts = Opts.info (baseOpts <**> Opts.helper)
+opts = Opts.info (baseOpts <**> Opts.helper <**> optVersion)
     ( Opts.fullDesc
     <> Opts.progDesc "Generate and annotate Stunts track maps"
     )
+    where
+    optVersion = Opts.infoOption formattedVersionString
+        (Opts.long "version" <> Opts.help "Print version information")
 
 consoleGreeting :: Int -> IO ()
 consoleGreeting port = do
-    putStrLn $ "Welcome to Stunts Cartography"
-        ++ maybe "" (' ':) versionString ++ "."
-    putStrLn $ "Open your web browser and navigate to localhost:"
-        ++ show port ++ " to begin."
+    putStrLn $ printf "Welcome to %s." formattedVersionString
+    putStrLn $ printf "Open your web browser and navigate to localhost:\
+                      \%d to begin." port
     putStrLn ""
     when isPortableBuild $ do
         putStrLn "This is a portable build."
@@ -112,10 +114,14 @@ consoleGreeting port = do
                  \in the directory of the executable."
         putStrLn ""
 
+formattedVersionString :: String
+formattedVersionString = printf "Stunts Cartography %s(Viewer)"
+    (maybe "" (++ " ") versionString)
+
 setup :: FilePath -> FilePath -> Window -> UI ()
 setup initDir tmpDir w = void $ do
 
-    return w # set title "Stunts Cartography - Track Viewer"
+    return w # set title "Stunts Cartography (Viewer)"
     --UI.addStyleSheet w "viewer.css"
     --autocompleteSetup w "static/lib/"
     --alertifySetup w "static/lib/"
