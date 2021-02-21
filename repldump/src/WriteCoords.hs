@@ -18,19 +18,35 @@ import GameState
 import Paths
 
 main = do
-    Options { inputFiles = paths } <- Opts.execParser opts
-    mapM_ writeCoords paths
+    Options { inputFiles = paths, carToFollow = follow }
+        <- Opts.execParser opts
+    mapM_ (writeCoords follow) paths
 
-data Options = Options { inputFiles :: NonEmpty FilePath }
+data Options = Options
+    { inputFiles :: NonEmpty FilePath
+    , carToFollow :: CarToFollow
+    }
+
+data CarToFollow = Player | Opponent
+
+-- TODO: Use opponentFlag once we get repldump to export opponent data.
+baseOpts :: Opts.Parser Options
+baseOpts = Options <$> argsFiles <*> pure Player
 
 -- TODO: Once it becomes possible to use optparse-applicative-0.16,
 -- switch from NE.some1 to the version in Options.Applicative.NonEmpty.
-baseOpts :: Opts.Parser Options
-baseOpts = Options
-    <$> NE.some1 ((Opts.argument Opts.str)
-        ( Opts.help "Binary repldump output files"
-        <> Opts.metavar "FILES..."
-        ))
+argsFiles :: Opts.Parser (NonEmpty FilePath)
+argsFiles = NE.some1 ((Opts.argument Opts.str)
+    ( Opts.help "Binary repldump output files"
+    <> Opts.metavar "FILES..."
+    ))
+
+opponentFlag :: Opts.Parser CarToFollow
+opponentFlag = Opts.flag Player Opponent
+    ( Opts.short 't'
+    <> Opts.long "opponent"
+    <> Opts.help "Generate opponent trace"
+    )
 
 opts :: Opts.ParserInfo Options
 opts = Opts.info (baseOpts <**> Opts.helper <**> optVersion)
@@ -45,14 +61,15 @@ formattedVersionString :: String
 formattedVersionString = printf "Stunts Cartography %s(repldump2carto)"
     (maybe "" (++ " ") versionString)
 
-writeCoords :: FilePath -> IO ()
-writeCoords path = do
+writeCoords :: CarToFollow -> FilePath -> IO ()
+writeCoords follow path = do
     exists <- doesFileExist path
     if not exists
         then putStrLn $ path ++ " does not exist."
         else do
+            gss <- parseFile path
             let outPath = path `replaceExtension` ".dat"
-            parseFile path >>= T.writeFile outPath . coordsToTextSimple
+            T.writeFile outPath (coordsToTextSimple follow gss)
 
 textFrom3D :: (Show a) => (a, a, a) -> Text
 textFrom3D (x, y, z) = T.intercalate (T.pack "\t") $
@@ -99,14 +116,18 @@ forgeInitialCarState cs = case cs of
 -- axes. This function might get it wrong if there are angles near
 -- 45 degrees in the second frame. That is extremely unlikely to happen
 -- in practice, though.
+alignAngleToGrid :: Int -> Int
 alignAngleToGrid ang = 256 * (quad + dif `div` 128)
     where
     (quad, dif) = ang `divMod` 256
 
 -- TODO: Rewrite this in a more sensible manner.
-coordsToTextSimple :: [GameState] -> Text
-coordsToTextSimple gs =
-    returnA
+coordsToTextSimple :: CarToFollow -> [GameState] -> Text
+coordsToTextSimple follow gs =
+    let fCar = case follow of
+            Player -> player
+            Opponent -> opponent
+    in returnA
     >>> map curPos
         &&& (map rot
             &&& (map curSpeed
@@ -123,4 +144,4 @@ coordsToTextSimple gs =
     >>> second (arr (uncurry $ zipWith T.append))
     >>> arr (uncurry $ zipWith T.append)
     >>> arr T.unlines
-        $ forgeInitialCarState (map player gs)
+        $ forgeInitialCarState (map fCar gs)
