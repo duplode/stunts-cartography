@@ -144,7 +144,7 @@ getGameState = do
     jumps <- getUint16
     player <- getCarState
     opponent <- getCarState
-    gsData2 <- getUnstructured 0x16A
+    gsData2 <- getUnstructured 0x16E
 
     return $ GameState {..}
 
@@ -177,13 +177,9 @@ getCarState = do
     demandedGrip <- getUint16
     surfaceGripSum <- getUint16
     field48 <- getSint16
-    -- csData <- getUnstructured 0x88
     csData1 <- getUnstructured 0x74
     curGear <- getUint8
-    csData2 <- getUnstructured 0x13
-    -- TODO: The restunts notes suggest this byte count might be two
-    -- bytes ahead. To confirm that, we'd have to extract opponent data
-    -- and see whether it comes out correct.
+    csData2 <- getUnstructured 0x11
 
     return $ CarState {..}
 
