@@ -3,20 +3,47 @@ module Main
     ) where
 
 import Control.Arrow
+import Control.Applicative
 import System.FilePath
 import System.Directory
-import System.Environment (getArgs)
 import Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.IO as T
+import qualified Data.List.NonEmpty as NE
+import Data.List.NonEmpty (NonEmpty(..))
+import qualified Options.Applicative as Opts
+import Text.Printf
 
 import GameState
+import Paths
 
 main = do
-    args <- getArgs
-    case args of
-        []    -> putStrLn "Please specify at least one file."
-        paths -> mapM_ writeCoords paths
+    Options { inputFiles = paths } <- Opts.execParser opts
+    mapM_ writeCoords paths
+
+data Options = Options { inputFiles :: NonEmpty FilePath }
+
+-- TODO: Once it becomes possible to use optparse-applicative-0.16,
+-- switch from NE.some1 to the version in Options.Applicative.NonEmpty.
+baseOpts :: Opts.Parser Options
+baseOpts = Options
+    <$> NE.some1 ((Opts.argument Opts.str)
+        ( Opts.help "Binary repldump output files"
+        <> Opts.metavar "FILES..."
+        ))
+
+opts :: Opts.ParserInfo Options
+opts = Opts.info (baseOpts <**> Opts.helper <**> optVersion)
+    ( Opts.fullDesc
+    <> Opts.progDesc "Convert repldump output to Cartography trace input"
+    )
+    where
+    optVersion = Opts.infoOption formattedVersionString
+        (Opts.long "version" <> Opts.help "Print version information")
+
+formattedVersionString :: String
+formattedVersionString = printf "Stunts Cartography %s(repldump2carto)"
+    (maybe "" (++ " ") versionString)
 
 writeCoords :: FilePath -> IO ()
 writeCoords path = do

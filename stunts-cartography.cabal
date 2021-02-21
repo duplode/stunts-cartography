@@ -145,6 +145,9 @@ Executable repldump2carto
   Hs-Source-Dirs:    repldump/src
   Main-is:           WriteCoords.hs
   Other-Modules:     GameState
+                    ,Paths
+                    ,Paths_stunts_cartography
+  CPP-Options:        -DCABAL
 
   if flag (repldump2carto)
     Build-Depends:   base >= 4.6 && < 5
@@ -153,5 +156,6 @@ Executable repldump2carto
                     ,binary
                     ,directory
                     ,filepath
+                    ,optparse-applicative >= 0.14
   else
     Buildable:       False
