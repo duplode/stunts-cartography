@@ -351,17 +351,19 @@ carOnTrace
 carOnTrace mMoment = do
     spr <- sprite
     opt <- runPermParser $
-        (,,,,,,) <$> maybe (oncePerm lapMoment) (oncePerm . return) mMoment
-                 <*> optionMaybePerm colour
-                 <*> optionMaybePerm bg
-                 <*> optionMaybePerm size
-                 <*> optionMaybePerm invert
-                 <*> optionMaybePerm caption
-                 <*> manyPerm flipbookCaption
-    let (moment, mCl, bg, sz, inv, capt, saCapts) = opt
+        (,,,,,,,) <$> maybe (oncePerm lapMoment) (oncePerm . return) mMoment
+                  <*> optionMaybePerm colour
+                  <*> optionMaybePerm bg
+                  <*> optionMaybePerm size
+                  <*> optionMaybePerm lineWidth
+                  <*> optionMaybePerm invert
+                  <*> optionMaybePerm caption
+                  <*> manyPerm flipbookCaption
+    let (moment, mCl, bg, sz, mWid, inv, capt, saCapts) = opt
     return $ (momentToFrame moment
         , maybe id deepOverrideAnnColour mCl $ defAnn
             & maybe id (carAnnSize .~) sz
+            & carAnnLineWidth .~ mWid
             & maybe id (carAnnInvert .~) inv
             & maybe id (carAnnCaption .~) capt
             & maybe id (carAnnOpacity .~) bg
