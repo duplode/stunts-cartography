@@ -7,3 +7,11 @@ source-repository-package
     type: git
     location: https://github.com/duplode/threepenny-gui-flexbox.git
     tag: d22340c528ee3a5bd98143f1a3101190c7d0ac51
+
+source-repository-package
+    type: git
+    location: https://github.com/diagrams/diagrams-cairo.git
+    tag: 6d6cc74c27ce54635237d0a5fd2f80a8ad9d39d3
+
+allow-newer: snap-server:base, io-streams-haproxy:base
+    , cairo:Cabal, glib:Cabal, pango:Cabal
