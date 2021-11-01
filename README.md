@@ -53,7 +53,7 @@ repldump2carto, an auxiliary tool for generation of lap traces.
   functionality is meant to be used in conjunction with the auxiliary
   repldump2carto tool, which generates lap traces from raw simulation ouput.
 
-### repldump2carto
+### r2c (repldump2carto)
 
 * Command: stcarto r2c
 * A tool which bridges the gap between dstien's repldump, a DOS tool for
@@ -66,7 +66,7 @@ repldump2carto, an auxiliary tool for generation of lap traces.
 * For extra information, see the REPLDUMP.md file (in the repository, it is
   located at the repldump directory).
 
-### trackdata2carto
+### t2c (trackdata2carto)
 
 * Command: stcarto t2c
 * Just like repldump2carto, but for trackdata binary dumps. For now it exports
@@ -76,6 +76,18 @@ repldump2carto, an auxiliary tool for generation of lap traces.
   flag picking one of the trackdata structures to be exported.
 * For extra information on trackdata and how to obtain a binary dump of it, see
   [the relevant Stunts Wiki article](http://wiki.stunts.hu/index.php?title=Trackdata).
+
+### biggrid
+
+* Command: stcarto biggrid
+* A command line track map generator that can render multiple tracks side by
+  side on a grid.
+* Usage: in the command line, stcarto biggrid INPUT OUTPUT, where INPUT is a
+  text file with one TRK file path on each line (blank lines can be used to
+  introduce gaps in the grid), and OUTPUT is the destination path (PNG and SVG
+  are supported, depending on the stcarto build configuration). There are
+  several rendering oprions available; using the `-h` help flag will list
+  them.
 
 ## Repository content highlights
 
