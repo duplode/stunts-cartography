@@ -35,6 +35,7 @@ subMain = runRenderBigGrid
 
 data Options = Options
     { drawGridLines :: Bool
+    , rowSize :: Maybe Int
     , pixelsPerTile :: Double
     , inputFile :: FilePath
     , outputFile :: FilePath
@@ -42,7 +43,7 @@ data Options = Options
 
 baseOpts :: Opts.Parser Options
 baseOpts = Options
-    <$> gridLinesSwitch <*> pxptOption
+    <$> gridLinesSwitch <*> rowSizeOption <*> pxptOption
     <*> argInputFile <*> argOutputFile
 
 argInputFile :: Opts.Parser FilePath
@@ -64,6 +65,14 @@ gridLinesSwitch :: Opts.Parser Bool
 gridLinesSwitch = Opts.switch
     ( Opts.long "lines"
     <> Opts.help "Draw tile grid lines"
+    )
+
+rowSizeOption :: Opts.Parser (Maybe Int)
+rowSizeOption = Opts.option (Just <$> Opts.auto)
+    ( Opts.long "row"
+    <> Opts.metavar "N"
+    <> Opts.value Nothing
+    <> Opts.help "Number of maps per grid row (approximates a square by default)"
     )
 
 pxptOption :: Opts.Parser Double
@@ -111,7 +120,9 @@ writeImageOutput :: MonadIO m
                  -> [[Tile]]
                  -> CartoT (ExceptT String m) ()
 writeImageOutput o tiledTracks = do
-    let mapsPerRow = (floor . sqrt . fromIntegral) (length tiledTracks)
+    let mapsPerRow = case rowSize o of
+            Just n -> n
+            Nothing -> (floor . sqrt . fromIntegral) (length tiledTracks)
 
     -- The tile bounds are ignored, as we only render full maps here.
     outType <- asks Pm.outputType
