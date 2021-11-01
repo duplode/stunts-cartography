@@ -387,7 +387,7 @@ baseElementPic' env c q sf et = do
                 <> (
                     (reflectY roofArc <> roofArc) # scaleX 0.5 # scaleY 1.5
                     # lwG 0 # fc barnCl
-                    ||| rect (2/5) (1/2) # lc barnCl # fc barnCl)
+                    ||| rect (2/5) (1/2) # lwG 0.025 # lc barnCl # fc barnCl)
                 # centerXY
             OfficeBuilding ->
                 (
