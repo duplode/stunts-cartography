@@ -1,6 +1,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE LambdaCase #-}
 module BigGrid
     ( subMain
     , Options (..)
@@ -89,13 +90,13 @@ opts = Opts.info baseOpts
     <> Opts.progDesc "Arrange multiple track maps in a grid"
     )
 
+data GridObject = EmptyCell | TrackTiles [Tile]
+
 -- Similar to Viewer.setup.runRenderMap
 runRenderBigGrid :: Options -> IO ()
 runRenderBigGrid o = do
     paths <- lines <$> readFile (inputFile o)
-    absPaths <- mapM makeAbsolute paths
-
-    tiledTracks <- readTiles absPaths
+    tiledTracks <- readTiles paths
 
     -- This is still needed for the width correction.
     let outType = case toLower <$> takeExtension (outputFile o) of
@@ -117,7 +118,7 @@ runRenderBigGrid o = do
 -- Similar to Output.writeImageOutput, but factored differently.
 writeImageOutput :: MonadIO m
                  => Options
-                 -> [[Tile]]
+                 -> [GridObject]
                  -> CartoT (ExceptT String m) ()
 writeImageOutput o tiledTracks = do
     let mapsPerRow = case rowSize o of
@@ -133,23 +134,35 @@ writeImageOutput o tiledTracks = do
 
     let outFile = outputFile o
 
-    wholeMaps <- mapM wholeMapDiagram tiledTracks
+    wholeMaps <- forM tiledTracks $ \case
+        TrackTiles tiles -> wholeMapDiagram tiles
+        EmptyCell -> return cellFiller
     let bigGrid = arrangeBigGrid mapsPerRow wholeMaps
     liftIO $ renderBE outFile (mkWidth renWidth) bigGrid
 
-readTiles :: MonadIO m => [FilePath] -> m [[Tile]]
+-- TODO: If we ever want to fill empty cells with anything, the list of grid
+-- objects will have to be padded to the visual grid size.
+readTiles :: MonadIO m => [FilePath] -> m [GridObject]
 readTiles paths = forM paths $ \path -> do
-    trkBS <- liftIO $ LB.readFile path
-    let rawTrk = veryRawReadTrack trkBS
-        horizon = horizonFromRawTrack rawTrk
-        tilArr = rawTrackToTileArray rawTrk
-        tiles = map snd $ assocs tilArr
-    return tiles
+    let skipped = null path
+    if skipped
+        then return EmptyCell
+        else do
+            -- TODO: Existence checks, etc.
+            trkBS <- liftIO $ LB.readFile path
+            let rawTrk = veryRawReadTrack trkBS
+                horizon = horizonFromRawTrack rawTrk
+                tilArr = rawTrackToTileArray rawTrk
+                tiles = map snd (assocs tilArr)
+            return (TrackTiles tiles)
 
 arrangeBigGrid :: Int -> [QDiagram B V2 Double Any] -> QDiagram B V2 Double Any
 arrangeBigGrid n diags = chunksOf n diags
     # fmap hcat
     # vcat
+
+cellFiller :: QDiagram B V2 Double Any
+cellFiller = (strutX 30 # centerX <> strutY 30 # centerY) # alignL
 
 -- TODO: Add some extra configurability.
 bigGridParameters :: Pm.RenderingParameters
