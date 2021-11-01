@@ -84,8 +84,8 @@ Executable stcarto
                     ,Util.SVGFonts
                     ,Util.Diagrams.Backend
                     ,Util.Diagrams.Backend.Common
+                    ,Dump.GameState
                     ,Repldump
-                    ,Repldump.GameState
                     ,Paths
                     ,Paths_stunts_cartography
 

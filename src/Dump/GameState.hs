@@ -1,5 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-module Repldump.GameState
+module Dump.GameState
     ( Vec
     , VecWide
     , GameState(..)

@@ -19,7 +19,7 @@ import qualified Options.Applicative as Opts
 import qualified Options.Applicative.NonEmpty as Opts
 import Text.Printf
 
-import Repldump.GameState
+import Dump.GameState
 import Paths
 
 subMain :: Options -> IO ()
