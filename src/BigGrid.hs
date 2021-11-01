@@ -98,15 +98,16 @@ writeImageOutput :: MonadIO m
                  -> [[Tile]]
                  -> CartoT (ExceptT String m) ()
 writeImageOutput o tiledTracks = do
+    let mapsPerRow = (floor . sqrt . fromIntegral) (length tiledTracks)
+
+    -- The tile bounds are ignored, as we only render full maps here.
     outType <- asks Pm.outputType
     renWidthInTiles <- (\drawIx -> if drawIx then (2+) else id)
-        <$> asks Pm.drawIndices <*> asks (fst . Pm.deltaTileBounds)
+        <$> asks Pm.drawIndices <*> pure (30 * fromIntegral mapsPerRow)
     renWidth <- (renWidthInTiles * widthConversionFactor outType *)
         <$> asks Pm.pixelsPerTile
 
     let outFile = outputFile o
-
-    let mapsPerRow = (floor . sqrt . fromIntegral) (length tiledTracks)
 
     wholeMaps <- mapM wholeMapDiagram tiledTracks
     let bigGrid = arrangeBigGrid mapsPerRow wholeMaps
