@@ -34,14 +34,16 @@ subMain :: Options -> IO ()
 subMain = runRenderBigGrid
 
 data Options = Options
-    { pixelsPerTile :: Double
+    { drawGridLines :: Bool
+    , pixelsPerTile :: Double
     , inputFile :: FilePath
     , outputFile :: FilePath
     }
 
--- TODO: Use opponentFlag once we get repldump to export opponent data.
 baseOpts :: Opts.Parser Options
-baseOpts = Options <$> pxptOption <*> argInputFile <*> argOutputFile
+baseOpts = Options
+    <$> gridLinesSwitch <*> pxptOption
+    <*> argInputFile <*> argOutputFile
 
 argInputFile :: Opts.Parser FilePath
 argInputFile = Opts.argument Opts.str
@@ -57,6 +59,12 @@ argOutputFile = Opts.argument Opts.str
     where
     fmts = concat . intersperse ", " . map show $
         defaultOutputType : alternativeOutputTypes
+
+gridLinesSwitch :: Opts.Parser Bool
+gridLinesSwitch = Opts.switch
+    ( Opts.long "lines"
+    <> Opts.help "Draw tile grid lines"
+    )
 
 pxptOption :: Opts.Parser Double
 pxptOption = Opts.option Opts.auto
@@ -88,6 +96,7 @@ runRenderBigGrid o = do
         params = bigGridParameters
             { Pm.outputType = outType
             , Pm.pixelsPerTile = pixelsPerTile o
+            , Pm.drawGridLines = drawGridLines o
             }
 
     eitRender <- runExceptT $ do
@@ -131,9 +140,8 @@ arrangeBigGrid n diags = chunksOf n diags
     # fmap hcat
     # vcat
 
--- TODO: At a minimum, drawGridLines should be configurable.
+-- TODO: Add some extra configurability.
 bigGridParameters :: Pm.RenderingParameters
 bigGridParameters = def
-    { Pm.drawGridLines = True
-    , Pm.drawIndices = False
+    { Pm.drawIndices = False
     }
