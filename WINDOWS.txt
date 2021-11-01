@@ -1,15 +1,13 @@
 # Stunts Cartography - Win32 build
 
-* Included executables: stcarto.exe (vectorial track viewer) and
-  repldump2carto.exe (lap trace extractor).
+* Included executable: stcarto.exe
 
 * Usage: copy this whole directory somewhere (the best place likely being your
-  Stunts directory), launch the viewer (use the following command:
-  stcarto viewer), authorize it if the Windows Firewall dialog shows up, and
-  navigate in a browser to http://localhost:8023 . More detailed usage notes
-  are in the README.md (for the track viewer) and REPLDUMP.md (for the
-  repldump2carto tool), which can be opened by Notepad or any other text
-  editor.
+  Stunts directory), launch the viewer (use the following command: stcarto
+  viewer), authorize it if the Windows Firewall dialog shows up, and navigate
+  in a browser to http://localhost:8023 . More detailed usage notes are in
+  README.md and REPLDUMP.md (for the r2c command), which can be opened by
+  Notepad or any other text editor.
 
 * Browsers: we recommend you to use the most recent version of your browser of
   choice. If you use Internet Explorer, you will need at least IE10, as
@@ -18,4 +16,4 @@
 
 * Source repository: https://github.com/duplode/stunts-cartography .
 
-* Reporsitory changeset of this release: tagged as 0.4.0.1 .
+* Reporsitory changeset of this release: tagged as 0.4.0.3 .

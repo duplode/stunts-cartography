@@ -1,5 +1,9 @@
-module Main
-    ( main
+-- This is the would-be Main module of repldump2carto, formerly known
+-- as WriteCoords.
+module Repldump
+    ( subMain
+    , Options (..)
+    , opts
     ) where
 
 import Control.Arrow
@@ -15,12 +19,12 @@ import qualified Options.Applicative as Opts
 import qualified Options.Applicative.NonEmpty as Opts
 import Text.Printf
 
-import GameState
+import Repldump.GameState
 import Paths
 
-main = do
-    Options { inputFiles = paths, carToFollow = follow }
-        <- Opts.execParser opts
+subMain :: Options -> IO ()
+subMain o = do
+    let Options { inputFiles = paths, carToFollow = follow } = o
     mapM_ (writeCoords follow) paths
 
 data Options = Options
@@ -48,17 +52,10 @@ opponentFlag = Opts.flag Player Opponent
     )
 
 opts :: Opts.ParserInfo Options
-opts = Opts.info (baseOpts <**> Opts.helper <**> optVersion)
+opts = Opts.info baseOpts
     ( Opts.fullDesc
     <> Opts.progDesc "Convert repldump output to Cartography trace input"
     )
-    where
-    optVersion = Opts.infoOption formattedVersionString
-        (Opts.long "version" <> Opts.help "Print version information")
-
-formattedVersionString :: String
-formattedVersionString = printf "Stunts Cartography %s(repldump2carto)"
-    (maybe "" (++ " ") versionString)
 
 writeCoords :: CarToFollow -> FilePath -> IO ()
 writeCoords follow path = do

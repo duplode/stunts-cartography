@@ -55,13 +55,13 @@ repldump2carto, an auxiliary tool for generation of lap traces.
 
 ### repldump2carto
 
-* Executable: repldump2carto
+* Command: stcarto r2c
 * A tool which bridges the gap between dstien's repldump, a DOS tool for
   extraction of raw data from the game engine, and the Stunts Cartography
   track viewer. It generates lap traces for consumption of the flipbook
   functionality of the latter from the binary data files produced by the
   former.
-* Usage: in the command line, repldump2carto [FILE]..., where [FILE]...
+* Usage: in the command line, stcarto r2c [FILE]..., where [FILE]...
   stands for one or more files produced by repldump.
 * For extra information, see the REPLDUMP.md file (in the repository, it is
   located at the repldump directory).
