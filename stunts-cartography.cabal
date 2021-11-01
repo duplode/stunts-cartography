@@ -57,7 +57,7 @@ Source-Repository head
   location: https://github.com/duplode/stunts-cartography
 
 
-Executable sc-trk-viewer
+Executable stcarto
   Default-Language:  Haskell2010
   Main-is:           Viewer.hs
   Other-Modules:     Composition

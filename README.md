@@ -14,7 +14,7 @@ repldump2carto, an auxiliary tool for generation of lap traces.
 
 ### Track Viewer
 
-* Executable: sc-trk-viewer
+* Command: stcarto viewer
 * Starting it: launch it in a console window and navigate in a web browser to
   http://localhost:8023 .
 * Command line options: -d sets the initially selected directory. If you keep
