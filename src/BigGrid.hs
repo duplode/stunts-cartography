@@ -64,21 +64,21 @@ argOutputFile = Opts.argument Opts.str
 
 gridLinesSwitch :: Opts.Parser Bool
 gridLinesSwitch = Opts.switch
-    ( Opts.long "lines"
+    ( Opts.long "inner-grid"
     <> Opts.help "Draw tile grid lines"
     )
 
 rowSizeOption :: Opts.Parser (Maybe Int)
 rowSizeOption = Opts.option (Just <$> Opts.auto)
-    ( Opts.long "row"
+    ( Opts.long "cols"
     <> Opts.metavar "N"
     <> Opts.value Nothing
-    <> Opts.help "Number of maps per grid row (approximates a square by default)"
+    <> Opts.help "Number of grid columns (approximates a square by default)"
     )
 
 pxptOption :: Opts.Parser Double
 pxptOption = Opts.option Opts.auto
-    ( Opts.long "tile"
+    ( Opts.long "scale"
     <> Opts.metavar "N"
     <> Opts.value 32
     <> Opts.help "Tile size in pixels"
