@@ -84,6 +84,7 @@ Executable stcarto
                     ,Util.SVGFonts
                     ,Util.Diagrams.Backend
                     ,Util.Diagrams.Backend.Common
+                    ,Dump.Common
                     ,Dump.GameState
                     ,Dump.Trackdata
                     ,Repldump
