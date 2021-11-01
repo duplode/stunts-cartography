@@ -89,6 +89,7 @@ Executable stcarto
                     ,Dump.Trackdata
                     ,Repldump
                     ,Trackdata
+                    ,BigGrid
                     ,Paths
                     ,Paths_stunts_cartography
 

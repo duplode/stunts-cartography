@@ -4,6 +4,7 @@
 module Output
     ( writeImageFromTrk
     , writeImageFromRpl
+    , wholeMapDiagram
     ) where
 
 import Data.Array
