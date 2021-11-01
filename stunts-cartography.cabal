@@ -96,7 +96,7 @@ Executable sc-trk-viewer
                     ,threepenny-gui >= 0.8
                     ,threepenny-gui-flexbox >= 0.4
                     ,diagrams-core >= 1.4 && < 1.6
-                    ,diagrams-lib == 1.4.*
+                    ,diagrams-lib >= 1.4.4 && < 1.5
                     ,SVGFonts >= 1.7 && < 1.8
                     ,parsec >= 3.1.3 && < 3.2
                     ,parsec-permutation == 0.1.*
@@ -119,7 +119,7 @@ Executable sc-trk-viewer
                     ,zlib
                     ,extra >= 1.7.9
                     ,clay >= 0.13
-                    ,optparse-applicative >= 0.14
+                    ,optparse-applicative >= 0.16
 
   GHC-Options:        -threaded
   CPP-Options:        -DCABAL
@@ -127,15 +127,15 @@ Executable sc-trk-viewer
     CPP-Options:      -DRESOURCES_WITH_EXECUTABLES
   if flag (svg)
     Other-Modules:    Util.Diagrams.Backend.SVG
-    Build-Depends:    diagrams-svg == 1.4.*
+    Build-Depends:    diagrams-svg >= 1.4.3 && < 1.5
     CPP-Options:      -DSVG_BACKEND
   elif flag (rasterific)
     Other-Modules:    Util.Diagrams.Backend.Rasterific
-    Build-Depends:    diagrams-rasterific == 1.4.*
+    Build-Depends:    diagrams-rasterific >= 1.4.2.1 && < 1.5
     CPP-Options:      -DRASTERIFIC_BACKEND
   elif flag (cairo)
     Other-Modules:    Util.Diagrams.Backend.Cairo
-    Build-Depends:    diagrams-cairo == 1.4.*
+    Build-Depends:    diagrams-cairo >= 1.4.1.1 && < 1.5
     CPP-Options:      -DCAIRO_BACKEND
   else
     Build-Depends:    invalid-cabal-flag-settings < 0
@@ -156,6 +156,6 @@ Executable repldump2carto
                     ,binary
                     ,directory
                     ,filepath
-                    ,optparse-applicative >= 0.14
+                    ,optparse-applicative >= 0.16
   else
     Buildable:       False

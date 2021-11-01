@@ -12,6 +12,7 @@ import qualified Data.Text.Lazy.IO as T
 import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Options.Applicative as Opts
+import qualified Options.Applicative.NonEmpty as Opts
 import Text.Printf
 
 import GameState
@@ -33,10 +34,8 @@ data CarToFollow = Player | Opponent
 baseOpts :: Opts.Parser Options
 baseOpts = Options <$> argsFiles <*> pure Player
 
--- TODO: Once it becomes possible to use optparse-applicative-0.16,
--- switch from NE.some1 to the version in Options.Applicative.NonEmpty.
 argsFiles :: Opts.Parser (NonEmpty FilePath)
-argsFiles = NE.some1 ((Opts.argument Opts.str)
+argsFiles = Opts.some1 ((Opts.argument Opts.str)
     ( Opts.help "Binary repldump output files"
     <> Opts.metavar "FILES..."
     ))
