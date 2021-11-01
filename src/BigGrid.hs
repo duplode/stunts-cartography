@@ -11,11 +11,14 @@ import Data.Array
 import qualified Data.ByteString.Lazy as LB
 import Control.Monad.RWS hiding ((<>))
 import Control.Monad.Except
+import Data.List (intersperse)
 import Data.List.Extra (chunksOf)
+import Data.Char (toLower)
 import Data.Default.Class
 import System.Directory
 import System.FilePath
 import qualified Options.Applicative as Opts
+import Text.Printf
 
 import Diagrams.Prelude hiding (Options)
 
@@ -24,22 +27,21 @@ import Track
 import qualified Parameters as Pm
 import Types.CartoM
 import Util.Diagrams.Backend (OutputType(..), B, renderBE
-    , widthConversionFactor, defaultOutputType)
+    , widthConversionFactor, defaultOutputType, alternativeOutputTypes)
 
 -- TODO: This module is still very rough around the edges.
 subMain :: Options -> IO ()
 subMain = runRenderBigGrid
 
 data Options = Options
-    { outputType :: OutputType
-    , pixelsPerTile :: Double
+    { pixelsPerTile :: Double
     , inputFile :: FilePath
     , outputFile :: FilePath
     }
 
 -- TODO: Use opponentFlag once we get repldump to export opponent data.
 baseOpts :: Opts.Parser Options
-baseOpts = Options <$> svgFlag <*> pxptOption <*> argInputFile <*> argOutputFile
+baseOpts = Options <$> pxptOption <*> argInputFile <*> argOutputFile
 
 argInputFile :: Opts.Parser FilePath
 argInputFile = Opts.argument Opts.str
@@ -49,15 +51,12 @@ argInputFile = Opts.argument Opts.str
 
 argOutputFile :: Opts.Parser FilePath
 argOutputFile = Opts.argument Opts.str
-    ( Opts.help "Output image file"
+    ( Opts.help (printf "Output image file (available formats: %s)" fmts)
     <> Opts.metavar "OUTPUT"
     )
-
-svgFlag :: Opts.Parser OutputType
-svgFlag = Opts.flag defaultOutputType SVG
-    ( Opts.long "svg"
-    <> Opts.help "Generate SVG image"
-    )
+    where
+    fmts = concat . intersperse ", " . map show $
+        defaultOutputType : alternativeOutputTypes
 
 pxptOption :: Opts.Parser Double
 pxptOption = Opts.option Opts.auto
@@ -81,8 +80,13 @@ runRenderBigGrid o = do
 
     tiledTracks <- readTiles absPaths
 
-    let params = bigGridParameters
-            { Pm.outputType = outputType o
+    -- This is still needed for the width correction.
+    let outType = case toLower <$> takeExtension (outputFile o) of
+            ".svg" -> SVG
+            ".png" -> PNG
+            _ -> defaultOutputType
+        params = bigGridParameters
+            { Pm.outputType = outType
             , Pm.pixelsPerTile = pixelsPerTile o
             }
 
