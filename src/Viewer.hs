@@ -93,13 +93,10 @@ baseOpts = Options
         )
 
 opts :: Opts.ParserInfo Options
-opts = Opts.info (baseOpts <**> Opts.helper <**> optVersion)
+opts = Opts.info baseOpts
     ( Opts.fullDesc
     <> Opts.progDesc "Generate and annotate Stunts track maps"
     )
-    where
-    optVersion = Opts.infoOption formattedVersionString
-        (Opts.long "version" <> Opts.help "Print version information")
 
 consoleGreeting :: Int -> IO ()
 consoleGreeting port = do
