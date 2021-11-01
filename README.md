@@ -66,6 +66,17 @@ repldump2carto, an auxiliary tool for generation of lap traces.
 * For extra information, see the REPLDUMP.md file (in the repository, it is
   located at the repldump directory).
 
+### trackdata2carto
+
+* Command: stcarto t2c
+* Just like repldump2carto, but for trackdata binary dumps. For now it exports
+  trackdata09 and trackdata10 coordinates in the same format used by
+  repldump2carto.
+* Usage: in the command line, stcarto t2c (--09 | --10) [FILE]..., with the
+  flag picking one of the trackdata structures to be exported.
+* For extra information on trackdata and how to obtain a binary dump of it, see
+  [the relevant Stunts Wiki article](http://wiki.stunts.hu/index.php?title=Trackdata).
+
 ## Repository content highlights
 
 ### Modules

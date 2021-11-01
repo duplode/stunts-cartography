@@ -85,7 +85,9 @@ Executable stcarto
                     ,Util.Diagrams.Backend
                     ,Util.Diagrams.Backend.Common
                     ,Dump.GameState
+                    ,Dump.Trackdata
                     ,Repldump
+                    ,Trackdata
                     ,Paths
                     ,Paths_stunts_cartography
 
