@@ -1,8 +1,10 @@
 {-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
-module Main
-    ( main
+module Viewer
+    ( subMain
+    , Options (..)
+    , opts
     ) where
 
 import Control.Monad
@@ -50,16 +52,8 @@ import Util.Threepenny.JQueryAutocomplete
 import Util.Threepenny (value_Text, selectionChange', removeAttr
     , checkboxUserModel)
 
-main :: IO ()
-main = do
-    fullOpts <- Opts.customExecParser p outerOpts
-    case fullOpts of
-        Viewer o -> viewerMain o
-    where
-    p = Opts.prefs (Opts.showHelpOnError <> Opts.showHelpOnEmpty)
-
-viewerMain :: Options -> IO ()
-viewerMain o = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
+subMain :: Options -> IO ()
+subMain o = withSystemTempDirectory "stunts-cartography-" $ \tmpDir -> do
     let Options { portNumber = port, initialDirectory = mInitDir } = o
     -- Defaulting to the parent of the current directory is convenient
     -- if the executable is at a subdirectory of the Stunts directory.
@@ -78,21 +72,6 @@ data Options = Options
     { portNumber :: Int
     , initialDirectory :: Maybe FilePath
     }
-
-data Command = Viewer Options
-
-outerOpts :: Opts.ParserInfo Command
-outerOpts = Opts.info (commandOpts <**> Opts.helper <**> optVersion)
-    ( Opts.fullDesc
-    <> Opts.progDesc "Power tools for creating Stunts track maps"
-    )
-    where
-    commandOpts = Opts.hsubparser
-        ( Opts.command "viewer" (Viewer <$> viewerOpts)
-        <> mempty )
-    optVersion = Opts.infoOption formattedVersionString
-        (Opts.long "version" <> Opts.help "Print version information")
-
 
 baseOpts :: Opts.Parser Options
 baseOpts = Options
@@ -113,8 +92,8 @@ baseOpts = Options
         <> Opts.metavar "DIRECTORY"
         )
 
-viewerOpts :: Opts.ParserInfo Options
-viewerOpts = Opts.info (baseOpts <**> Opts.helper <**> optVersion)
+opts :: Opts.ParserInfo Options
+opts = Opts.info (baseOpts <**> Opts.helper <**> optVersion)
     ( Opts.fullDesc
     <> Opts.progDesc "Generate and annotate Stunts track maps"
     )

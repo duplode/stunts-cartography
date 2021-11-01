@@ -59,8 +59,9 @@ Source-Repository head
 
 Executable stcarto
   Default-Language:  Haskell2010
-  Main-is:           Viewer.hs
-  Other-Modules:     Composition
+  Main-is:           Main.hs
+  Other-Modules:     Viewer
+                    ,Composition
                     ,Output
                     ,Parameters
                     ,Types.CartoM
