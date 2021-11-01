@@ -1,8 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 module Dump.GameState
-    ( Vec
-    , VecWide
-    , GameState(..)
+    ( GameState(..)
     , CarState(..)
     , parseStates
     , parseFile

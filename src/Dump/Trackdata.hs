@@ -1,9 +1,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE LambdaCase #-}
 module Dump.Trackdata
-    ( Vec
-    , VecWide
-    , Trackdata (..)
+    ( Trackdata (..)
     , parseFile
     ) where
 

@@ -6,6 +6,7 @@ module Trackdata
     ) where
 
 import Dump.Trackdata
+import Dump.Common (Vec)
 
 import Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as T
