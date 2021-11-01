@@ -121,14 +121,16 @@ writeImageOutput :: MonadIO m
                  -> [GridObject]
                  -> CartoT (ExceptT String m) ()
 writeImageOutput o tiledTracks = do
-    let mapsPerRow = case rowSize o of
+    let nCells = length tiledTracks
+        nCols = case rowSize o of
             Just n -> n
-            Nothing -> (floor . sqrt . fromIntegral) (length tiledTracks)
+            Nothing -> (floor . sqrt . fromIntegral) nCells
+        nRows = (\(d, m) -> d + if m > 0 then 1 else 0) (nCells `divMod` nCols)
 
     -- The tile bounds are ignored, as we only render full maps here.
     outType <- asks Pm.outputType
     renWidthInTiles <- (\drawIx -> if drawIx then (2+) else id)
-        <$> asks Pm.drawIndices <*> pure (30 * fromIntegral mapsPerRow)
+        <$> asks Pm.drawIndices <*> pure (30 * fromIntegral nCols)
     renWidth <- (renWidthInTiles * widthConversionFactor outType *)
         <$> asks Pm.pixelsPerTile
 
@@ -137,7 +139,7 @@ writeImageOutput o tiledTracks = do
     wholeMaps <- forM tiledTracks $ \case
         TrackTiles tiles -> wholeMapDiagram tiles
         EmptyCell -> return cellFiller
-    let bigGrid = arrangeBigGrid mapsPerRow wholeMaps
+    let bigGrid = arrangeBigGrid (nRows, nCols) wholeMaps
     liftIO $ renderBE outFile (mkWidth renWidth) bigGrid
 
 -- TODO: If we ever want to fill empty cells with anything, the list of grid
@@ -156,13 +158,31 @@ readTiles paths = forM paths $ \path -> do
                 tiles = map snd (assocs tilArr)
             return (TrackTiles tiles)
 
-arrangeBigGrid :: Int -> [QDiagram B V2 Double Any] -> QDiagram B V2 Double Any
-arrangeBigGrid n diags = chunksOf n diags
-    # fmap hcat
-    # vcat
+arrangeBigGrid
+    :: (Int, Int)
+    -> [QDiagram B V2 Double Any]
+    -> QDiagram B V2 Double Any
+arrangeBigGrid (nRows, nCols) diags = gLines <> cells
+    where
+    cells = chunksOf nCols diags # fmap hcat # vcat # alignBL
+    gLines = bigGridLines (nRows, nCols)
+
 
 cellFiller :: QDiagram B V2 Double Any
-cellFiller = (strutX 30 # centerX <> strutY 30 # centerY) # alignL
+cellFiller = (strutX 30 # centerX <> strutY 30 # centerY) # alignBL
+
+bigGridLines
+    :: (Monoid' m, TrailLike (QDiagram B V2 Double m))
+    => (Int, Int)
+    -> QDiagram B V2 Double m
+bigGridLines (nRows, nCols) =
+    vcat' (with & sep .~ 30) (replicate nHoriz $ hrule sizeHoriz # lwG 0.01) # alignBL
+    <> hcat' (with & sep .~ 30) (replicate nVert $ vrule sizeVert # lwG 0.01) # alignBL
+    where
+    nHoriz = nRows + 1
+    nVert = nCols + 1
+    sizeHoriz = fromIntegral (30 * nCols)
+    sizeVert = fromIntegral (30 * nRows)
 
 -- TODO: Add some extra configurability.
 bigGridParameters :: Pm.RenderingParameters
