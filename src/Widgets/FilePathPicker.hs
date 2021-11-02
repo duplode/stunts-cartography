@@ -20,7 +20,6 @@ module Widgets.FilePathPicker
     , PickedPath(..)
     ) where
 
-import Data.List (sort)
 import System.Directory
 import System.Directory.Extra (listDirectories, listFiles)
 import System.FilePath
@@ -30,7 +29,7 @@ import Data.Char
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
 import Graphics.UI.Threepenny.Ext.Flexbox
-import qualified Clay.Flexbox as Flex
+--import qualified Clay.Flexbox as Flex
 
 import Util.Reactive.Threepenny
 import Util.Threepenny.JQueryAutocomplete

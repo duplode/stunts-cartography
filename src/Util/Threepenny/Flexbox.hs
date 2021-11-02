@@ -8,7 +8,7 @@ import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
 import Graphics.UI.Threepenny.Ext.Flexbox
 import qualified Clay as Clay hiding (Clay.Flexbox)
-import qualified Clay.Stylesheet as Clay (runS)
+--import qualified Clay.Stylesheet as Clay (runS)
 import qualified Clay.Flexbox as Flex
 
 rowFlex :: UI Element

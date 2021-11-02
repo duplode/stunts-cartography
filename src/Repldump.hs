@@ -7,20 +7,16 @@ module Repldump
     ) where
 
 import Control.Arrow
-import Control.Applicative
 import System.FilePath
 import System.Directory
 import Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.IO as T
-import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Options.Applicative as Opts
 import qualified Options.Applicative.NonEmpty as Opts
-import Text.Printf
 
 import Dump.GameState
-import Paths
 
 subMain :: Options -> IO ()
 subMain o = do

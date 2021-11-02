@@ -13,12 +13,9 @@ module Dump.Common
     ) where
 
 import Control.Monad
-import Control.Arrow
-import Control.Applicative
 import qualified Data.Binary as B
 import qualified Data.Binary.Get as B
 import qualified Data.ByteString.Lazy as BS
-import Data.Int
 
 type Vec = (Int, Int, Int)
 

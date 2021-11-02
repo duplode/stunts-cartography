@@ -15,8 +15,7 @@ module Util.Threepenny.JQueryAutocomplete
 import Graphics.UI.Threepenny.Core
 import qualified Graphics.UI.Threepenny as UI
 import Data.Aeson
-import Data.Maybe (fromJust)
-import Control.Monad (join, void)
+import Control.Monad (void)
 
 import Util.Threepenny (unsafeMapUI)
 

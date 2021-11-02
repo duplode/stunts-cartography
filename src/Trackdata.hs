@@ -11,7 +11,6 @@ import Dump.Common (Vec)
 import Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.IO as T
-import qualified Data.List.NonEmpty as NE
 import Data.List.NonEmpty (NonEmpty(..))
 import Control.Arrow
 import Control.Applicative

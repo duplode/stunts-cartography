@@ -11,7 +11,6 @@ import Control.Lens.Operators
 import qualified Control.Lens as L
 
 import Text.Parsec
-import Text.Parsec.Prim (runP)
 import qualified Text.Parsec.Token as P
 import Text.Parsec.Permutation
 
@@ -27,7 +26,7 @@ import Annotation.LapTrace
 import Annotation.LapTrace.Parser.Simple
 import Annotation.Flipbook
 import Data.Colour (Colour)
-import Data.Colour.Names (readColourName, yellow)
+import Data.Colour.Names (readColourName)
 import Data.Colour.SRGB (sRGB24read)
 import Control.Monad.Writer.Class (MonadWriter, tell)
 import Control.Monad.Reader.Class (MonadReader, asks)

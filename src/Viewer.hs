@@ -10,19 +10,15 @@ module Viewer
 import Control.Monad
 import qualified Control.Monad.RWS as RWS
 import Control.Monad.Except
-import Control.Exception (catch, SomeException)
 import Data.Maybe (fromMaybe, isJust)
-import Data.Monoid
 import Data.List (find)
-import Text.Read (readMaybe)
 import Text.Printf (printf)
 import System.Directory
-    (doesFileExist, doesDirectoryExist, getFileSize ,getCurrentDirectory)
+    (doesFileExist, getFileSize, getCurrentDirectory)
 import System.FilePath ((</>), takeExtension, addExtension,takeDirectory)
 import System.IO.Temp (withSystemTempDirectory)
 import qualified Options.Applicative as Opts
 import Data.Char (toUpper)
-import qualified Data.Text as Text
 import qualified Data.ByteString.Lazy as LB
 import Data.Default.Class
 
@@ -30,12 +26,11 @@ import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
 import Graphics.UI.Threepenny.Ext.Flexbox
 import qualified Clay as Clay hiding (Clay.Flexbox)
-import qualified Clay.Flexbox as Flex
 
 import Util.Misc (trimFracPart)
 import Util.Diagrams.Backend (forkRender
     , OutputType(..), defaultOutputType, alternativeOutputTypes)
-import Util.Reactive.Threepenny (concatE, union)
+import Util.Reactive.Threepenny (union)
 import Util.Threepenny.Flexbox
 import Output
 import Track (Horizon(..), terrainTrkSimple)
@@ -48,7 +43,6 @@ import Paths (versionString, isPortableBuild, getDataDir)
 import qualified Widgets.BoundedInput as BI
 import qualified Widgets.FilePathPicker as FPP
 import Util.Threepenny.Alertify
-import Util.Threepenny.JQueryAutocomplete
 import Util.Threepenny (value_Text, selectionChange', removeAttr
     , checkboxUserModel)
 

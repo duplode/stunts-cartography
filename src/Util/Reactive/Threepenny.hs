@@ -1,10 +1,6 @@
 module Util.Reactive.Threepenny where
 
-import Control.Monad (void, when)
-
 import Reactive.Threepenny
-import Graphics.UI.Threepenny.Core
-    (ReadWriteAttr, set', UI, runUI, askWindow, liftIOLater)
 
 union :: Event a -> Event a -> Event a
 union = unionWith const

@@ -6,8 +6,6 @@ module Annotation.LapTrace.Parser.Simple
     ) where
 
 import Text.Parsec
-import Text.Parsec.Char
-import Text.Parsec.Prim
 
 import Annotation.LapTrace.Vec
 

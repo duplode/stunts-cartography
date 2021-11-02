@@ -7,14 +7,12 @@ module Composition
     , gridLines
     ) where
 
-import Control.Monad (liftM)
 import Control.Monad.RWS hiding ((<>))
-import qualified Data.Map as M (lookup, insert)
+import qualified Data.Map as M (lookup)
 import Data.List.Extra (chunksOf)
 import Diagrams.Prelude
 import Track
 import Pics
-import Util.Misc
 import Pics.Palette (plainCl)
 import qualified Parameters as Pm
 import Types.CartoM

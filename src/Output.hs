@@ -9,8 +9,6 @@ module Output
 
 import Data.Array
 import Control.Arrow ((***))
-import Control.Monad (guard)
-import Control.Monad.Identity (runIdentity)
 import Control.Monad.RWS hiding ((<>))
 import Control.Monad.Except
 import Control.Exception (tryJust)
@@ -22,11 +20,9 @@ import Text.Printf (printf)
 import qualified Data.ByteString.Lazy as LB
 
 import Diagrams.Prelude
-import Diagrams.Core
 
 import Track (Tile, veryRawReadTrack, rawTrackToTileArray, horizonFromRawTrack
     , printHorizon)
-import Util.Misc
 import Util.Zip
 import Replay
 import Composition

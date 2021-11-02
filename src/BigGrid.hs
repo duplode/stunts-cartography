@@ -16,7 +16,6 @@ import Data.List (intersperse)
 import Data.List.Extra (chunksOf)
 import Data.Char (toLower)
 import Data.Default.Class
-import System.Directory
 import System.FilePath
 import qualified Options.Applicative as Opts
 import Text.Printf

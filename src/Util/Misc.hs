@@ -3,7 +3,7 @@ module Util.Misc
     , trimFracPart
     ) where
 
-import Data.List (splitAt, unfoldr)
+import Data.List (unfoldr)
 import qualified Data.ByteString.Lazy as LB
 
 bsChunksOf :: Int -> LB.ByteString -> [LB.ByteString]

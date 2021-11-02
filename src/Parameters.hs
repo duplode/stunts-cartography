@@ -16,7 +16,6 @@ module Parameters
 
 import qualified Data.Text as Text
 import Data.Text (Text)
-import Data.Function (on)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Default.Class
@@ -25,7 +24,7 @@ import Diagrams.Prelude
 import Track (Horizon(..), Element, Terrain)
 import qualified Data.ByteString.Lazy as LB
 import Annotation (Annotation)
-import Annotation.LapTrace (TraceAnnotation)
+--import Annotation.LapTrace (TraceAnnotation)
 import Annotation.Flipbook
 import Util.Diagrams.Backend
 

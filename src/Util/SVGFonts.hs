@@ -4,7 +4,7 @@ module Util.SVGFonts where
 import qualified Graphics.SVGFonts.Fonts as SVGFonts (bit)
 import Graphics.SVGFonts.ReadFont (PreparedFont)
 import Language.Haskell.TH.Syntax
-import Instances.TH.Lift
+import Instances.TH.Lift ()
 import Data.Serialize
 import Codec.Compression.Zlib
 import Data.Either (fromRight)

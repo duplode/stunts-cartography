@@ -6,7 +6,6 @@ module Pics
     , getTilePic
     ) where
 
-import Control.Monad (liftM)
 import Control.Monad.Reader
 import Diagrams.Prelude
 import Track (Orientation(..), Chirality(..), rotateOrientation

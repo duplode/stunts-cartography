@@ -76,7 +76,7 @@ module Annotation
 import Data.Maybe (fromMaybe)
 
 import Diagrams.Prelude hiding (E)
-import Data.Colour.SRGB
+--import Data.Colour.SRGB
 import Data.Colour.RGBSpace.HSV
 import Graphics.SVGFonts (textSVG', TextOpts(..))
 
