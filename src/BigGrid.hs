@@ -37,6 +37,7 @@ subMain = runRenderBigGrid
 data Options = Options
     { drawOuterGrid :: Bool
     , drawInnerGrid :: Bool
+    , renderStyle :: RenderStyle
     , rowSize :: Maybe Int
     , pixelsPerTile :: Double
     , inputFile :: FilePath
@@ -45,7 +46,7 @@ data Options = Options
 
 baseOpts :: Opts.Parser Options
 baseOpts = Options
-    <$> outerGridSwitch <*> gridLinesSwitch
+    <$> outerGridSwitch <*> gridLinesSwitch <*> renderStyleOption
     <*> rowSizeOption <*> pxptOption
     <*> argInputFile <*> argOutputFile
 
@@ -76,6 +77,17 @@ gridLinesSwitch = Opts.switch
     <> Opts.help "Draw tile grid lines"
     )
 
+data RenderStyle = Basic | Wider | Sloping | Classic
+    deriving (Read)
+
+renderStyleOption :: Opts.Parser RenderStyle
+renderStyleOption = Opts.option Opts.auto
+    ( Opts.long "style"
+    <> Opts.metavar "STYLE"
+    <> Opts.value Basic
+    <> Opts.help "Tile rendering style (one of Basic, Wider, Sloping and Classic)"
+    )
+
 rowSizeOption :: Opts.Parser (Maybe Int)
 rowSizeOption = Opts.option (Just <$> Opts.auto)
     ( Opts.long "cols"
@@ -98,6 +110,13 @@ opts = Opts.info baseOpts
     <> Opts.progDesc "Arrange multiple track maps in a grid"
     )
 
+startingParams :: RenderStyle -> Pm.RenderingParameters
+startingParams = \case
+    Basic -> Pm.defaultRenderingParameters
+    Wider -> Pm.widerRoadsRenderingParameters
+    Sloping -> Pm.slopingRampsRenderingParameters
+    Classic -> Pm.classicRenderingParameters
+
 data GridObject = EmptyCell | TrackTiles [Tile]
 
 -- Similar to Viewer.setup.runRenderMap
@@ -111,10 +130,11 @@ runRenderBigGrid o = do
             ".svg" -> SVG
             ".png" -> PNG
             _ -> defaultOutputType
-        params = bigGridParameters
+        params = (startingParams (renderStyle o))
             { Pm.outputType = outType
             , Pm.pixelsPerTile = pixelsPerTile o
             , Pm.drawGridLines = drawInnerGrid o
+            , Pm.drawIndices = False
             }
 
     eitRender <- runExceptT $ do
@@ -196,9 +216,3 @@ bigGridLines (nRows, nCols) =
     nVert = nCols + 1
     sizeHoriz = fromIntegral (30 * nCols)
     sizeVert = fromIntegral (30 * nRows)
-
--- TODO: Add some extra configurability.
-bigGridParameters :: Pm.RenderingParameters
-bigGridParameters = def
-    { Pm.drawIndices = False
-    }
