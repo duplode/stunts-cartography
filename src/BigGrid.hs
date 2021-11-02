@@ -35,7 +35,8 @@ subMain :: Options -> IO ()
 subMain = runRenderBigGrid
 
 data Options = Options
-    { drawGridLines :: Bool
+    { drawOuterGrid :: Bool
+    , drawInnerGrid :: Bool
     , rowSize :: Maybe Int
     , pixelsPerTile :: Double
     , inputFile :: FilePath
@@ -44,7 +45,8 @@ data Options = Options
 
 baseOpts :: Opts.Parser Options
 baseOpts = Options
-    <$> gridLinesSwitch <*> rowSizeOption <*> pxptOption
+    <$> outerGridSwitch <*> gridLinesSwitch
+    <*> rowSizeOption <*> pxptOption
     <*> argInputFile <*> argOutputFile
 
 argInputFile :: Opts.Parser FilePath
@@ -61,6 +63,12 @@ argOutputFile = Opts.argument Opts.str
     where
     fmts = concat . intersperse ", " . map show $
         defaultOutputType : alternativeOutputTypes
+
+outerGridSwitch :: Opts.Parser Bool
+outerGridSwitch = Opts.switch
+    ( Opts.long "outer-grid"
+    <> Opts.help "Draw track grid lines"
+    )
 
 gridLinesSwitch :: Opts.Parser Bool
 gridLinesSwitch = Opts.switch
@@ -106,7 +114,7 @@ runRenderBigGrid o = do
         params = bigGridParameters
             { Pm.outputType = outType
             , Pm.pixelsPerTile = pixelsPerTile o
-            , Pm.drawGridLines = drawGridLines o
+            , Pm.drawGridLines = drawInnerGrid o
             }
 
     eitRender <- runExceptT $ do
@@ -139,7 +147,10 @@ writeImageOutput o tiledTracks = do
     wholeMaps <- forM tiledTracks $ \case
         TrackTiles tiles -> wholeMapDiagram tiles
         EmptyCell -> return cellFiller
-    let bigGrid = arrangeBigGrid (nRows, nCols) wholeMaps
+    let bigGrid = arrangeBigGrid
+            (drawOuterGrid o)
+            (nRows, nCols)
+            wholeMaps
     liftIO $ renderBE outFile (mkWidth renWidth) bigGrid
 
 -- TODO: If we ever want to fill empty cells with anything, the list of grid
@@ -159,10 +170,12 @@ readTiles paths = forM paths $ \path -> do
             return (TrackTiles tiles)
 
 arrangeBigGrid
-    :: (Int, Int)
+    :: Bool
+    -> (Int, Int)
     -> [QDiagram B V2 Double Any]
     -> QDiagram B V2 Double Any
-arrangeBigGrid (nRows, nCols) diags = gLines <> cells
+arrangeBigGrid oGrid (nRows, nCols) diags
+    = (if oGrid then gLines else mempty) <> cells
     where
     cells = chunksOf nCols diags # fmap hcat # vcat # alignBL
     gLines = bigGridLines (nRows, nCols)
