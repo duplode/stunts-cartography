@@ -25,8 +25,7 @@ import Annotation.LapTrace.Vec
 --     * The optional integers are the player speed and gear.
 --
 -- The speed and gear fields are optional so that the parser accepts
--- repldump2carto output from version 0.4, as well as trackdata2carto
--- output.
+-- repldump2carto output from version 0.4.
 --
 -- All values are assumed to be in the appopriate internal game units.
 
