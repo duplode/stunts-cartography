@@ -85,6 +85,7 @@ Executable stcarto
                     ,Util.Diagrams.Backend
                     ,Util.Diagrams.Backend.Common
                     ,Dump.Common
+                    ,Dump.WriteCoords
                     ,Dump.GameState
                     ,Dump.Trackdata
                     ,Repldump
@@ -124,6 +125,7 @@ Executable stcarto
                     ,clay >= 0.13
                     ,optparse-applicative >= 0.16
                     ,binary
+                    ,contravariant
 
   GHC-Options:        -threaded
   CPP-Options:        -DCABAL

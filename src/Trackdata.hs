@@ -7,6 +7,7 @@ module Trackdata
 
 import Dump.Trackdata
 import Dump.Common (Vec)
+import Dump.WriteCoords
 
 import Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as T
@@ -18,6 +19,7 @@ import System.FilePath
 import System.Directory
 import qualified Options.Applicative as Opts
 import qualified Options.Applicative.NonEmpty as Opts
+import Data.Functor.Contravariant
 
 subMain :: Options -> IO ()
 subMain o = do
@@ -66,39 +68,19 @@ chooseTd = \case
     Td09 -> trackdata09
     Td10 -> trackdata10
 
-tdExtension :: TdChoice -> String
-tdExtension = \case
-    Td09 -> "td09"
-    Td10 -> "td10"
-
-textFrom3D :: (Show a) => (a, a, a) -> Text
-textFrom3D (x, y, z) = T.intercalate (T.pack "\t") $
-    map (T.pack . show) [x, y, z]
-
 scale3DVec :: Num a => a -> (a, a, a) -> (a, a, a)
 scale3DVec q (x, y, z) = (q*x, q*y, q*z)
 
 coordsToTextSimple :: TdChoice -> Trackdata -> Text
-coordsToTextSimple cho td =
-    let tdx = chooseTd cho
-    in returnA
-    >>> (scale3DVec 64 <$>) . tdx
-        &&& ((0, 0, 0) <$) . tdx
-            &&& (0 <$) . tdx
-                &&& (0 <$) . tdx
-    >>> map textFrom3D
-        *** map textFrom3D
-            *** map (T.pack . show)
-                *** map (T.pack . show)
-    >>> id
-        *** map (T.cons '\t')
-            *** map (T.cons '\t')
-                *** map (T.cons '\t')
-    >>> second (second (arr (uncurry $ zipWith T.append)))
-    >>> second (arr (uncurry $ zipWith T.append))
-    >>> arr (uncurry $ zipWith T.append)
-    >>> arr T.unlines
-        $ td
+coordsToTextSimple cho = T.unlines . map (getOp printer) . tdSelector
+    where
+    tdSelector = chooseTd cho
+    adapt = scale3DVec 64 &&& const (0, 0, 0) &&& const 0 &&& const 0
+    printer = adapt
+        >$< textFrom3D
+            `cglom` textFrom3D
+                `cglom` tShow
+                    `cglom` tShow
 
 writeCoords :: TdChoice -> FilePath -> IO ()
 writeCoords cho path = do
@@ -109,3 +91,8 @@ writeCoords cho path = do
             td <- parseFile path
             let outPath = path `replaceExtension` (tdExtension cho <> ".dat")
             T.writeFile outPath (coordsToTextSimple cho td)
+    where
+    tdExtension = \case
+        Td09 -> "td09"
+        Td10 -> "td10"
+

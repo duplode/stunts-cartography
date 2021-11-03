@@ -15,8 +15,10 @@ import qualified Data.Text.Lazy.IO as T
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Options.Applicative as Opts
 import qualified Options.Applicative.NonEmpty as Opts
+import Data.Functor.Contravariant
 
 import Dump.GameState
+import Dump.WriteCoords
 
 subMain :: Options -> IO ()
 subMain o = do
@@ -63,9 +65,11 @@ writeCoords follow path = do
             let outPath = path `replaceExtension` ".dat"
             T.writeFile outPath (coordsToTextSimple follow gss)
 
+{-
 textFrom3D :: (Show a) => (a, a, a) -> Text
 textFrom3D (x, y, z) = T.intercalate (T.pack "\t") $
     map (T.pack . show) [x, y, z]
+-}
 
 -- As it stands, repldump doesn't include the initial 0:00.00 frame in
 -- its output. That leaves us with two options: either follow suit and
@@ -113,27 +117,16 @@ alignAngleToGrid ang = 256 * (quad + dif `div` 128)
     where
     (quad, dif) = ang `divMod` 256
 
--- TODO: Rewrite this in a more sensible manner.
 coordsToTextSimple :: CarToFollow -> [GameState] -> Text
-coordsToTextSimple follow gs =
-    let fCar = case follow of
-            Player -> player
-            Opponent -> opponent
-    in returnA
-    >>> map curPos
-        &&& (map rot
-            &&& (map curSpeed
-                &&& map curGear))
-    >>> map textFrom3D
-        *** (map textFrom3D
-            *** (map (T.pack . show)
-                *** map (T.pack . show)))
-    >>> id
-        *** (map (T.cons '\t')
-            *** (map (T.cons '\t')
-                *** map (T.cons '\t')))
-    >>> second (second (arr (uncurry $ zipWith T.append)))
-    >>> second (arr (uncurry $ zipWith T.append))
-    >>> arr (uncurry $ zipWith T.append)
-    >>> arr T.unlines
-        $ forgeInitialCarState (map fCar gs)
+coordsToTextSimple follow = T.unlines . map (getOp printer) . setup
+    where
+    carSelector = case follow of
+        Player -> player
+        Opponent -> opponent
+    setup = forgeInitialCarState . map carSelector
+    adapt = curPos &&& rot &&& curSpeed &&& curGear
+    printer = adapt
+        >$< textFrom3D
+            `cglom` textFrom3D
+                `cglom` tShow
+                    `cglom` tShow
