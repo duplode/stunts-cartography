@@ -1,14 +1,12 @@
 Cabal-Version:       2.4
 Name:                stunts-cartography
 Version:             1.0.0.0
-Synopsis:            Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
-Description:         Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
+Synopsis:            Power tools for creating Stunts track maps.
+Description:         Power tools for creating Stunts track maps.
 Category:            Game, Graphics
 License:             BSD-3-Clause
 License-file:        LICENSE
 Author:              Daniel Mlot
-Maintainer:          Daniel Mlot
-Build-Type:          Simple
 Extra-Source-Files:  README.md
 Data-Dir:            .
 Data-Files:          wwwroot/css/*.css
@@ -51,7 +49,6 @@ flag rasterific
 Source-Repository head
   type: git
   location: https://github.com/duplode/stunts-cartography
-
 
 Executable stcarto
   Default-Language:  Haskell2010
@@ -125,7 +122,6 @@ Executable stcarto
                     ,clay >= 0.13
                     ,optparse-applicative >= 0.16
                     ,binary
-                    ,contravariant
 
   GHC-Options:        -threaded
   CPP-Options:        -DCABAL
