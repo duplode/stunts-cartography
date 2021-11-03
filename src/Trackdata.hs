@@ -19,7 +19,6 @@ import System.FilePath
 import System.Directory
 import qualified Options.Applicative as Opts
 import qualified Options.Applicative.NonEmpty as Opts
-import Data.Functor.Contravariant
 
 subMain :: Options -> IO ()
 subMain o = do
@@ -71,16 +70,16 @@ chooseTd = \case
 scale3DVec :: Num a => a -> (a, a, a) -> (a, a, a)
 scale3DVec q (x, y, z) = (q*x, q*y, q*z)
 
-coordsToTextSimple :: TdChoice -> Trackdata -> Text
-coordsToTextSimple cho = T.unlines . map (getOp printer) . tdSelector
+coordsToText :: TdChoice -> Trackdata -> Text
+coordsToText cho = T.unlines . map (printAsRow cells) . tdSelector
     where
     tdSelector = chooseTd cho
-    adapt = scale3DVec 64 &&& const (0, 0, 0) &&& const 0 &&& const 0
-    printer = adapt
-        >$< textFrom3D
-            `cglom` textFrom3D
-                `cglom` tShow
-                    `cglom` tShow
+    cells =
+        [ textFrom3D . scale3DVec 64
+        , textFrom3D . const (0, 0, 0)
+        , tShow . const 0
+        , tShow . const 0
+        ]
 
 writeCoords :: TdChoice -> FilePath -> IO ()
 writeCoords cho path = do
@@ -90,7 +89,7 @@ writeCoords cho path = do
         else do
             td <- parseFile path
             let outPath = path `replaceExtension` (tdExtension cho <> ".dat")
-            T.writeFile outPath (coordsToTextSimple cho td)
+            T.writeFile outPath (coordsToText cho td)
     where
     tdExtension = \case
         Td09 -> "td09"

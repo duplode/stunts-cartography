@@ -15,7 +15,6 @@ import qualified Data.Text.Lazy.IO as T
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Options.Applicative as Opts
 import qualified Options.Applicative.NonEmpty as Opts
-import Data.Functor.Contravariant
 
 import Dump.GameState
 import Dump.WriteCoords
@@ -63,13 +62,7 @@ writeCoords follow path = do
         else do
             gss <- parseFile path
             let outPath = path `replaceExtension` ".dat"
-            T.writeFile outPath (coordsToTextSimple follow gss)
-
-{-
-textFrom3D :: (Show a) => (a, a, a) -> Text
-textFrom3D (x, y, z) = T.intercalate (T.pack "\t") $
-    map (T.pack . show) [x, y, z]
--}
+            T.writeFile outPath (coordsToText follow gss)
 
 -- As it stands, repldump doesn't include the initial 0:00.00 frame in
 -- its output. That leaves us with two options: either follow suit and
@@ -117,16 +110,16 @@ alignAngleToGrid ang = 256 * (quad + dif `div` 128)
     where
     (quad, dif) = ang `divMod` 256
 
-coordsToTextSimple :: CarToFollow -> [GameState] -> Text
-coordsToTextSimple follow = T.unlines . map (getOp printer) . setup
+coordsToText :: CarToFollow -> [GameState] -> Text
+coordsToText follow = T.unlines . map (printAsRow cells) . setup
     where
     carSelector = case follow of
         Player -> player
         Opponent -> opponent
     setup = forgeInitialCarState . map carSelector
-    adapt = curPos &&& rot &&& curSpeed &&& curGear
-    printer = adapt
-        >$< textFrom3D
-            `cglom` textFrom3D
-                `cglom` tShow
-                    `cglom` tShow
+    cells =
+        [ textFrom3D . curPos
+        , textFrom3D . rot
+        , tShow . curSpeed
+        , tShow . curGear
+        ]
