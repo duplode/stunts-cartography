@@ -1,0 +1,4 @@
+A possible directory structure for distributing Windows builds, which we
+may switch to in the future. stcarto.bat is a launch script; the
+executable proper goes into app alongside wwwroot, and the DLLs go into
+lib.

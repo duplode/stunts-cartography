@@ -1,4 +1,4 @@
-# Stunts Cartography - Win32 build
+# Stunts Cartography - Win64 build
 
 * Included executable: stcarto.exe
 
@@ -14,6 +14,6 @@
   support for WebSockets is required. Firefox and Chrome users should be fine
   with somewhat older browser versions (Firefox 11+, Chrome 16+).
 
-* Source repository: https://github.com/duplode/stunts-cartography .
+* Source repository: https://github.com/duplode/stunts-cartography
 
-* Reporsitory changeset of this release: tagged as 0.4.0.3 .
+* Repository changeset of this release: tagged as 1.0.0.0

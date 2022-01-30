@@ -1,6 +1,6 @@
 Cabal-Version:       2.4
 Name:                stunts-cartography
-Version:             0.4.0.3
+Version:             1.0.0.0
 Synopsis:            Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
 Description:         Power tools for creating Stunts track maps. Built on Diagrams and Threepenny.
 Category:            Game, Graphics
