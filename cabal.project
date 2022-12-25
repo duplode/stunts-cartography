@@ -12,3 +12,13 @@ source-repository-package
     type: git
     location: https://github.com/sebastiaanvisser/clay
     tag: 0955e935cb596a1ba9c776b183c635a9d5feef1c
+
+source-repository-package
+    type: git
+    location: https://github.com/duplode/gtk2hs
+    tag: ad3872d536c5039aa45bd6b76550538987698019
+    subdir: tools
+
+allow-newer: diagrams-cairo:base, diagrams-cairo:lens
+    , pango:Cabal, glib:Cabal, cairo:Cabal
+    , pango:text, glib:text, cairo:text

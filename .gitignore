@@ -5,6 +5,9 @@
 *.swp
 
 *.svg
+*.png
+*.pdf
+Test.hs
 
 activate
 Main

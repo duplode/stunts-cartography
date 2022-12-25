@@ -137,7 +137,7 @@ Executable stcarto
     CPP-Options:      -DRASTERIFIC_BACKEND
   elif flag (cairo)
     Other-Modules:    Util.Diagrams.Backend.Cairo
-    Build-Depends:    diagrams-gi-cairo >= 1.4.2 && < 1.5
+    Build-Depends:    diagrams-cairo >= 1.4.2 && < 1.5
     CPP-Options:      -DCAIRO_BACKEND
   else
     Build-Depends:    invalid-cabal-flag-settings < 0
