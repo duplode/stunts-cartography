@@ -22,3 +22,5 @@ source-repository-package
 allow-newer: diagrams-cairo:base, diagrams-cairo:lens
     , pango:Cabal, glib:Cabal, cairo:Cabal
     , pango:text, glib:text, cairo:text
+
+constraints: cairo >= 0.13.8.2
