@@ -78,7 +78,8 @@ import Data.Maybe (fromMaybe)
 import Diagrams.Prelude hiding (E)
 --import Data.Colour.SRGB
 import Data.Colour.RGBSpace.HSV
-import Graphics.SVGFonts (textSVG', TextOpts(..))
+import Graphics.SVGFonts
+    (svgText, TextOpts(..), fit_height, set_envelope)
 
 import qualified Util.SVGFonts as Util (bit)
 import Util.Diagrams.Backend (B)
@@ -220,11 +221,10 @@ instance IsAnnotation CaptAnnotation where
     annotation ann = Annotation
         { annotationDiagram =
             let dirAlign = - cardinalDirToR2 (_captAnnAlignment ann)
-                captText = textSVG' with
-                        { textFont = Util.bit
-                        , textHeight = _captAnnSize ann
-                        } (_captAnnText ann)
-                    # stroke # fillRule EvenOdd
+                captText = _captAnnText ann
+                    # svgText with { textFont = Util.bit }
+                    # fit_height (_captAnnSize ann)
+                    # set_envelope # centerXY
                     # fc (_captAnnColour ann) # lwG 0
                 initialBounding = boundingRect captText
                 preframeFactor d z =

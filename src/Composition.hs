@@ -11,7 +11,8 @@ import Control.Monad.RWS hiding ((<>))
 import qualified Data.Map as M (lookup)
 import Data.List.Extra (chunksOf)
 import Diagrams.Prelude
-import Graphics.SVGFonts (textSVG', TextOpts(..))
+import Graphics.SVGFonts
+    (svgText, TextOpts(..), fit_height, set_envelope)
 import Track
 import Pics
 import Pics.Palette (plainCl)
@@ -114,12 +115,11 @@ yIndices (yMin, yMax) =
 
 indexCell n =
     square 1 # lwG 0
-    # atop (textSVG' with
-            { textFont = Util.bit
-            } (show n) 
-        # stroke # fillRule EvenOdd
-        # fc black # lwG 0
-        # scale 0.5)
+    # atop (show n
+        # svgText with { textFont = Util.bit }
+        # fit_height 0.75
+        # set_envelope # centerXY
+        # fc black # lwG 0)
 
 -- We'll likely want to have a second look at the details of the text
 -- rendering here.
