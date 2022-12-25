@@ -13,7 +13,9 @@ Data-Files:          wwwroot/css/*.css
                      wwwroot/css/alertify.core.css
                      wwwroot/css/alertify.default.css
                      wwwroot/*.html
-                     wwwroot/favicon*
+                     wwwroot/favicon-16x16.png
+                     wwwroot/favicon-32x32.png
+                     wwwroot/favicon.ico
                      wwwroot/images/*.png
                      wwwroot/lib/alertify.min.js
                      wwwroot/lib/README-alertify.md
@@ -22,7 +24,10 @@ Data-Files:          wwwroot/css/*.css
                      wwwroot/css/jquery-ui/jquery-ui.min.css
                      wwwroot/css/jquery-ui/images/*.png
                      wwwroot/css/jquery-ui/jquery-ui.icon-font.min.css
-                     wwwroot/css/jquery-ui/font/*
+                     wwwroot/css/jquery-ui/font/jquery-ui.eot
+                     wwwroot/css/jquery-ui/font/jquery-ui.ttf
+                     wwwroot/css/jquery-ui/font/jquery-ui.woff
+                     wwwroot/css/jquery-ui/font/jquery-ui.woff2
                      wwwroot/css/jquery-ui/README-jquery-ui-iconfont.md
 
 flag resourcesWithExecutables
