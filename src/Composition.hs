@@ -11,12 +11,14 @@ import Control.Monad.RWS hiding ((<>))
 import qualified Data.Map as M (lookup)
 import Data.List.Extra (chunksOf)
 import Diagrams.Prelude
+import Graphics.SVGFonts (textSVG', TextOpts(..))
 import Track
 import Pics
 import Pics.Palette (plainCl)
 import qualified Parameters as Pm
 import Types.CartoM
 import Util.Diagrams.Backend (B)
+import qualified Util.SVGFonts as Util (bit)
 
 renderTerrain :: [Tile] -> CartoM (Diagram B)
 renderTerrain tiles = do
@@ -112,4 +114,20 @@ yIndices (yMin, yMax) =
 
 indexCell n =
     square 1 # lwG 0
+    # atop (textSVG' with
+            { textFont = Util.bit
+            } (show n) 
+        # stroke # fillRule EvenOdd
+        # fc black # lwG 0
+        # scale 0.5)
+
+-- We'll likely want to have a second look at the details of the text
+-- rendering here.
+-- Below, for the sake of reference, is the old definition of
+-- indexCell, which stopped working properly with the cairo backend
+-- after the switch to diagrams-gi-cairo.
+{-
+indexCell n =
+    square 1 # lwG 0
     # atop (text (show n) # scale 0.5)
+-}
