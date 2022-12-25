@@ -10,8 +10,5 @@ source-repository-package
 
 source-repository-package
     type: git
-    location: https://github.com/diagrams/diagrams-cairo.git
-    tag: 6d6cc74c27ce54635237d0a5fd2f80a8ad9d39d3
-
-allow-newer: snap-server:base, io-streams-haproxy:base
-    , cairo:Cabal, glib:Cabal, pango:Cabal
+    location: https://github.com/sebastiaanvisser/clay
+    tag: 0955e935cb596a1ba9c776b183c635a9d5feef1c
