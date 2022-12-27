@@ -196,12 +196,25 @@ formatFrameAsGameTime x = (if mm > 0 then show mm ++ ":" else "")
     (sm, cc) = (5 * x) `quotRem` 100
     (mm, ss) = sm `quotRem` 60
 
-formatSpeed :: Double -> String
-formatSpeed = showDP 1
+-- The booleans here and in formatLengthInMetres sets whether the
+-- string will be padded to be five characters long. We'll want to swap
+-- this for a tidier implementation at some point.
+formatSpeed :: Bool -> Double -> String
+formatSpeed pad x = if pad
+    then replicate (5 - length notPadded) ' ' ++ notPadded
+    else notPadded
+    where
+    notPadded = showDP 1 x
 
 -- Exact tile to metre conversion.
-formatLengthInMetres :: Double -> String
-formatLengthInMetres = showDP 2 . (62.42304 *)
+-- It might be worth considering more carefully how much padding, and how
+-- many decimal digits, are useful here.
+formatLengthInMetres :: Bool -> Double -> String
+formatLengthInMetres pad x = if pad
+    then replicate (5 - length notPadded) ' ' ++ notPadded
+    else notPadded
+    where
+    notPadded = showDP 2 (62.42304 * x)
 
 replaceMagicStrings :: TextAnnotation a => TracePoint -> a -> a
 replaceMagicStrings p c =
@@ -209,8 +222,10 @@ replaceMagicStrings p c =
         ix = traceFrame p
     in c & annText %~ replace "{{FRAMENUMBER}}" (show ix)
         . replace "{{GAMETIME}}" (formatFrameAsGameTime ix)
-        . replace "{{HEIGHT}}" (formatLengthInMetres (tracePosY p))
-        . maybe id (replace "{{SPEED}}" . formatSpeed) (traceSpeed p)
+        . replace "{{HEIGHT}}" (formatLengthInMetres False (tracePosY p))
+        . replace "{{HEIGHT-PAD}}" (formatLengthInMetres True (tracePosY p))
+        . maybe id (replace "{{SPEED}}" . formatSpeed False) (traceSpeed p)
+        . maybe id (replace "{{SPEED-PAD}}" . formatSpeed True) (traceSpeed p)
         . maybe id (replace "{{GEAR}}" . show) (traceGear p)
 
 putCarOnTracePoint :: TracePoint -> CarAnnotation -> CarAnnotation

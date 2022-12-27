@@ -378,12 +378,22 @@ Below is a list of available substitutions:
       frames <code>n-1</code> and <code>n</code>.</td>
   </tr>
   <tr>
+    <td>{{SPEED-PAD}}</td>
+    <td>Same as <code>{{SPEED}}</code>, but padded to the left to a fixed
+      length of five characters.</td>
+  </tr>
+  <tr>
     <td>{{GEAR}}</td>
     <td>Current gear.
   </tr>
   <tr>
     <td>{{HEIGHT}}</td>
     <td>Height of the car relative to low ground, in metres.
+  </tr>
+  <tr>
+    <td>{{HEIGHT-PAD}}</td>
+    <td>Same as <code>{{HEIGHT}}</code>, but padded to the left to a fixed
+      length of five characters.</td>
   </tr>
 </table>
 
@@ -419,8 +429,8 @@ positions on the map.</p>
 <p>Unlike in the case of regular captions, there can be multiple frame-bound
 standalone captions per decoration:</p>
 
-<p><code>Trace :"070ZGUT.dat" #plum +{Car @20 &nbsp;{Text "{{SPEED}}mph" @2 29 $50}
-  &nbsp;{Text "Gear: {{GEAR}}" @2 27 $50}}</p></code>
+<p><code>Trace :"070ZGUT.dat" #plum +{Car @20 &amp;{Text "{{SPEED}}mph" @2 29 $50}
+  &amp;{Text "Gear: {{GEAR}}" @2 27 $50}}</p></code>
 
 <p>Frame-bound standalone captions for periodic decorations are only allowed
 in flipbook rendering, as described in the next section, with a slightly
