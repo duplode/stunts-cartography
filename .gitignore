@@ -39,6 +39,7 @@ dist_threepenny-expm/**
 
 laptrace/*.ods
 laptrace/*.dat
+data/galcarto/**
 
 cabal.sandbox.config
 .cabal-sandbox/*

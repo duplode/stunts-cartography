@@ -6,6 +6,7 @@ import qualified Viewer as Viewer
 import qualified Repldump as Repldump
 import qualified Trackdata as Trackdata
 import qualified BigGrid as BigGrid
+import qualified Gallery as Gallery
 import Paths (versionString)
 
 import qualified Options.Applicative as Opts
@@ -21,6 +22,7 @@ main = do
         Repldump o -> Repldump.subMain o
         Trackdata o -> Trackdata.subMain o
         BigGrid o -> BigGrid.subMain o
+        Gallery o -> Gallery.subMain o
     where
     p = Opts.prefs (Opts.showHelpOnError <> Opts.showHelpOnEmpty)
 
@@ -29,6 +31,7 @@ data Command
     | Repldump Repldump.Options
     | Trackdata Trackdata.Options
     | BigGrid BigGrid.Options
+    | Gallery Gallery.Options
 
 outerOpts :: Opts.ParserInfo Command
 outerOpts = Opts.info (commandOpts <**> Opts.helper <**> optVersion)
@@ -41,6 +44,7 @@ outerOpts = Opts.info (commandOpts <**> Opts.helper <**> optVersion)
         <> Opts.command "r2c" (Repldump <$> Repldump.opts)
         <> Opts.command "t2c" (Trackdata <$> Trackdata.opts)
         <> Opts.command "biggrid" (BigGrid <$> BigGrid.opts)
+        <> Opts.command "gallery" (Gallery <$> Gallery.opts)
         )
     optVersion = Opts.infoOption formattedVersionString
         (Opts.long "version" <> Opts.help "Print version information")
