@@ -8,7 +8,7 @@ module Viewer
     ) where
 
 import Control.Monad
-import qualified Control.Monad.RWS as RWS
+import qualified Control.Monad.RWS.Strict as RWS
 import Control.Monad.Except
 import Data.Maybe (fromMaybe, isJust)
 import Data.List (find)

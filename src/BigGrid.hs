@@ -10,7 +10,7 @@ module BigGrid
 
 import Data.Array
 import qualified Data.ByteString.Lazy as LB
-import Control.Monad.RWS hiding ((<>))
+import Control.Monad.RWS.Strict hiding ((<>))
 import Control.Monad.Except
 import Data.List (intersperse)
 import Data.List.Extra (chunksOf)

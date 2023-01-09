@@ -9,7 +9,7 @@ module Output
 
 import Data.Array
 import Control.Arrow ((***))
-import Control.Monad.RWS hiding ((<>))
+import Control.Monad.RWS.Strict hiding ((<>))
 import Control.Monad.Except
 import Control.Exception (tryJust)
 import System.FilePath (takeBaseName, (</>))

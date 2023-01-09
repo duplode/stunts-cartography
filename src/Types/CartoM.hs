@@ -1,6 +1,6 @@
 module Types.CartoM where
 
-import Control.Monad.RWS
+import Control.Monad.RWS.Strict
 import Control.Monad.Identity
 import Parameters
 

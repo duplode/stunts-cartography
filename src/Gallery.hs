@@ -9,7 +9,7 @@ import Data.Default.Class
 import Text.Printf (printf)
 import Data.Array (assocs)
 import Control.Monad (when, unless)
-import Control.Monad.RWS hiding ((<>))
+import Control.Monad.RWS.Strict hiding ((<>))
 import Control.Monad.Except
 import Data.Char (toUpper)
 import System.FilePath (takeFileName, takeBaseName, takeExtension
@@ -188,9 +188,12 @@ writeImageOutput trackName trkBS = do
             , Pm.flipbookRelPath = Nothing
             }
 
+    -- Disabled until we get to switch to RWS.CPS
+    {-
     tell . Pm.logFromString $ printf "Track name: %s\r\n" (Pm.trackName postInfo)
     tell . Pm.logFromString $ printf "Scenery: %s\r\n"
         (printHorizon (Pm.renderedTrackHorizon postInfo))
+        -}
 
     return postInfo
 
