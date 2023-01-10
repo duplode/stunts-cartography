@@ -89,6 +89,17 @@ repldump2carto, an auxiliary tool for generation of lap traces.
   several rendering oprions available; using the `-h` help flag will list
   them.
 
+### gallery
+
+* Command: stcarto gallery
+* A command line map generator which renders all tracks in a directory, in
+  separate images.
+* Usage: in the command line, stcarto gallery \[INPUTDIR\] \[OUTPUTDIR\]. Both
+  directory arguments are optional, with the input one defaulting to the
+  current directory, and the output one to INPUTDIR/galcarto. There are
+  several rendering oprions available; using the `-h` help flag will list
+  them.
+
 ## Repository content highlights
 
 ### Modules
