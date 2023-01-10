@@ -53,9 +53,9 @@ baseOpts = Options
 
 argInputDir :: Opts.Parser FilePath
 argInputDir = Opts.argument Opts.str
-    ( Opts.help "Directory to read track files from (defaults to parent)"
+    ( Opts.help "Directory to read track files from (defaults to current)"
     <> Opts.metavar "INPUTDIR"
-    <> Opts.value ".."
+    <> Opts.value "."
     )
 
 argOutputDir :: Opts.Parser (Maybe FilePath)
@@ -100,13 +100,13 @@ pxptOption = Opts.option Opts.auto
 svgSwitch :: Opts.Parser Bool
 svgSwitch = Opts.switch
     ( Opts.long "svg"
-    <> Opts.help "Generate SVG output (ignored by the Rasterific build)"
+    <> Opts.help "Generate SVG output (with the Carto build)"
     )
 
 opts :: Opts.ParserInfo Options
 opts = Opts.info baseOpts
     ( Opts.fullDesc
-    <> Opts.progDesc "Render all tracks from a dictionary"
+    <> Opts.progDesc "Render all tracks from a directory"
     )
 
 startingParams :: RenderStyle -> Pm.RenderingParameters
