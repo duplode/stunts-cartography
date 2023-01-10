@@ -62,7 +62,7 @@ writeImageOutput trackName trkBS = do
         <$> asks Pm.drawIndices <*> asks (fst . Pm.deltaTileBounds)
     renWidth <- (renWidthInTiles * widthConversionFactor outType *)
         <$> asks Pm.pixelsPerTile
-    tmpDir <- asks Pm.temporaryDirectory
+    tmpDir <- asks Pm.outputDirectory
 
     fbks <- asks Pm.flipbookSpec
     -- Whether to render a regular map or an animation flipbook.

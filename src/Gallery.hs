@@ -135,8 +135,7 @@ runRenderGallery o = do
             , Pm.pixelsPerTile = pixelsPerTile o
             , Pm.drawGridLines = drawGrid o
             , Pm.drawIndices = drawIndices o
-            -- TODO: This directory isn't actually temporary!
-            , Pm.temporaryDirectory = odir
+            , Pm.outputDirectory = odir
             }
 
     eitRender <- runExceptT $ do
@@ -170,7 +169,7 @@ writeImageOutput trackName trkBS = do
         <$> asks Pm.drawIndices <*> asks (fst . Pm.deltaTileBounds)
     renWidth <- (renWidthInTiles * widthConversionFactor outType *)
         <$> asks Pm.pixelsPerTile
-    outDir <- asks Pm.temporaryDirectory
+    outDir <- asks Pm.outputDirectory
 
     postInfo <- do
         let outRelPath = case outType of

@@ -248,7 +248,7 @@ setup initDir tmpDir w = void $ do
     -- Rendering parameters.
     -- Note that the annotations are parsed in a separate step.
 
-    let bRenParams = pure def {Pm.temporaryDirectory = tmpDir}
+    let bRenParams = pure def {Pm.outputDirectory = tmpDir}
             <**> ((\x -> \p -> p {Pm.baseDirectory = x}) <$> bBaseDir)
             <**> ((\x -> \p -> p {Pm.roadWidth = x}) <$> bRoadW)
             <**> ((\x -> \p -> p {Pm.bridgeHeight = x}) <$> bBridgeH)

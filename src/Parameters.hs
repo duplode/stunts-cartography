@@ -54,7 +54,7 @@ data RenderingParameters = RenderingParameters
     , pixelsPerTile :: Double
     , outputType :: OutputType
 
-    , temporaryDirectory :: FilePath
+    , outputDirectory :: FilePath
     , baseDirectory :: FilePath
     }
 
@@ -73,7 +73,7 @@ defaultRenderingParameters = RenderingParameters
     , yTileBounds = (0, 29)
     , annotationSpecs = []
     , flipbookSpec = []
-    , temporaryDirectory = "."
+    , outputDirectory = "."
     , baseDirectory = "."
     }
 
