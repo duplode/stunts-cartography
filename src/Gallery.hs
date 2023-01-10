@@ -36,20 +36,20 @@ subMain = runRenderGallery
 
 -- TODO: Consider deduplicating wrt BigGrid
 data Options = Options
-    { drawGrid :: Bool
+    { inputDir :: FilePath
+    , outputDir :: Maybe FilePath
+    , drawGrid :: Bool
     , drawIndices :: Bool
     , renderStyle :: RenderStyle
     , pixelsPerTile :: Double
     , generateSVG :: Bool
-    , inputDir :: FilePath
-    , outputDir :: Maybe FilePath
     }
 
 baseOpts :: Opts.Parser Options
 baseOpts = Options
-    <$> gridSwitch <*> indicesSwitch <*> renderStyleOption
+    <$> argInputDir <*> outputDirOption
+    <*> gridSwitch <*> indicesSwitch <*> renderStyleOption
     <*> pxptOption <*> svgSwitch
-    <*> argInputDir <*> argOutputDir
 
 argInputDir :: Opts.Parser FilePath
 argInputDir = Opts.argument Opts.str
@@ -58,9 +58,11 @@ argInputDir = Opts.argument Opts.str
     <> Opts.value "."
     )
 
-argOutputDir :: Opts.Parser (Maybe FilePath)
-argOutputDir = Opts.argument (Just <$> Opts.str)
-    ( Opts.help "Output directory (created if not existing, defaults to INPUTDIR/galcarto)"
+outputDirOption :: Opts.Parser (Maybe FilePath)
+outputDirOption = Opts.option (Just <$> Opts.str)
+    ( Opts.short 'o'
+    <> Opts.long "output-dir"
+    <> Opts.help "Output directory (created if not existing, defaults to INPUTDIR/galcarto)"
     <> Opts.metavar "OUTPUTDIR"
     <> Opts.value Nothing
     )
