@@ -93,7 +93,7 @@ Executable stcarto
                     ,Repldump
                     ,Trackdata
                     ,BigGrid
-		    ,Gallery
+                    ,Gallery
                     ,Paths
                     ,Paths_stunts_cartography
 
@@ -117,6 +117,7 @@ Executable stcarto
                     ,bytestring
                     ,array
                     ,mtl >= 2.2.1
+                    ,transformers >= 0.5.6.2
                     ,directory >= 1.2.7
                     ,filepath
                     ,temporary

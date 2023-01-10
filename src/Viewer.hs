@@ -8,7 +8,9 @@ module Viewer
     ) where
 
 import Control.Monad
-import qualified Control.Monad.RWS.Strict as RWS
+import qualified Control.Monad.Reader.Class as Reader
+import qualified Control.Monad.State.Class as State
+import qualified Control.Monad.Writer.Class as Writer
 import Control.Monad.Except
 import Data.Maybe (fromMaybe, isJust)
 import Data.List (find)
@@ -529,7 +531,7 @@ setup initDir tmpDir w = void $ do
                     -- Ideally, we'd give parseAnns a signature which expressed how
                     -- it can't affect the rendering state. That, however, would
                     -- require either an orphan MonadUI instance or making CartoT
-                    -- a newtype. The latter might end up happening eventually.
+                    -- a newtype. Note that the latter has, in fact, happened.
                     let parseAnns :: CartoT UI ([Annotation], [SomeFlipbook])
                         parseAnns = do
                             anns <- lift (txaAnns # get value) >>= parseAnnotations
@@ -540,8 +542,8 @@ setup initDir tmpDir w = void $ do
                             return (anns, fbks)
 
                     -- We know the computation can't possibly change the state, but
-                    -- runRWST has no awareness of that.
-                    ((anns, fbks), st', w) <- RWS.runRWST parseAnns params st
+                    -- runCartoT has no awareness of that.
+                    (((anns, fbks), st'), w) <- runCartoT parseAnns params st
                     -- TODO: It would probably make sense to fire an event to update
                     -- bRenParams with the parsed annotations, should we ever need
                     -- to use them anywhere else.
@@ -571,15 +573,15 @@ setup initDir tmpDir w = void $ do
                     -- and https://stackoverflow.com/q/25726017
                     let goCarto :: CartoT (ExceptT String IO) Pm.PostRenderInfo
                         goCarto = do
-                            RWS.tell w
+                            Writer.tell w
                             imgWriter trkPath
 
                     liftIO . void . forkRender $ do
-                        eitResult <- runExceptT $ RWS.runRWST goCarto params' st'
+                        eitResult <- runExceptT $ runCartoT goCarto params' st'
                         case eitResult of
                             Left errorMsg ->
                                 notifyRenderingFailure (st', Pm.logFromString errorMsg)
-                            Right (postRender, st'', w') ->
+                            Right ((postRender, st''), w') ->
                                 notifyRenderingSuccess (params', postRender, st'', w')
 
     -- Collecting the parameters and firing the main action.

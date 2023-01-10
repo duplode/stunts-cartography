@@ -171,7 +171,7 @@ createFlipbookDir tmpDir trackName =
 
 -- TODO: Possibly generalize the CartoM computations in Composition and below.
 wholeMapDiagram :: Monad m => [Tile] -> CartoT m (Diagram B)
-wholeMapDiagram tiles = mapRWST (return . runIdentity) $ do
+wholeMapDiagram tiles = mapCartoT (return . runIdentity) $ do
     params <- ask
     let minBounds :: (Double, Double)
         minBounds = fromIntegral *** fromIntegral $ Pm.minTileBounds params

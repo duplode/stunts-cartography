@@ -10,7 +10,8 @@ module BigGrid
 
 import Data.Array
 import qualified Data.ByteString.Lazy as LB
-import Control.Monad.RWS.Strict hiding ((<>))
+import Control.Monad.Reader.Class
+import Control.Monad.State.Class
 import Control.Monad.Except
 import Data.List (intersperse)
 import Data.List.Extra (chunksOf)
@@ -137,7 +138,7 @@ runRenderBigGrid o = do
             }
 
     eitRender <- runExceptT $ do
-        runRWST (writeImageOutput o tiledTracks) params def
+        runCartoT (writeImageOutput o tiledTracks) params def
     case eitRender of
         Left errorMsg -> error $ "BigGrid.runRenderBigGrid: " ++ errorMsg
         Right _ -> return ()

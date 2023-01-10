@@ -9,7 +9,9 @@ import Data.Default.Class
 import Text.Printf (printf)
 import Data.Array (assocs)
 import Control.Monad (when, unless)
-import Control.Monad.RWS.Strict hiding ((<>))
+import Control.Monad.Reader.Class
+import Control.Monad.State.Class
+import Control.Monad.Writer.Class
 import Control.Monad.Except
 import Data.Char (toUpper)
 import System.FilePath (takeFileName, takeBaseName, takeExtension
@@ -138,7 +140,7 @@ runRenderGallery o = do
             }
 
     eitRender <- runExceptT $ do
-        runRWST (mapM_ writeImageFromTrk trkPaths) params def
+        runCartoT (mapM_ writeImageFromTrk trkPaths) params def
     case eitRender of
         Left errorMsg -> error $ "BigGrid.runRenderGallery: " ++ errorMsg
         Right _ -> return ()
@@ -188,7 +190,7 @@ writeImageOutput trackName trkBS = do
             , Pm.flipbookRelPath = Nothing
             }
 
-    -- Disabled until we get to switch to RWS.CPS
+    -- We might want to log some extra information eventually.
     {-
     tell . Pm.logFromString $ printf "Track name: %s\r\n" (Pm.trackName postInfo)
     tell . Pm.logFromString $ printf "Scenery: %s\r\n"

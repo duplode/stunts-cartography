@@ -36,6 +36,8 @@ dist_threepenny-expm/**
 *.hp
 *.aux
 *.prof
+*.eventlog
+*.eventlog.html
 
 laptrace/*.ods
 laptrace/*.dat
