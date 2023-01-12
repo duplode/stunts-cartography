@@ -1,10 +1,10 @@
 # Stunts Cartography
 
 Power tools for track map rendering and analysis for the classic racing game
-[Stunts](http://scr.stunts.hu). Powered by
-[Diagrams](http://projects.haskell.org/diagrams/)
+[Stunts](https://scr.stunts.hu). Powered by
+[Diagrams](https://projects.haskell.org/diagrams/)
 (vectorial rendering backend) and
-[Threepenny](http://hackage.haskell.org/package/threepenny-gui)
+[Threepenny](https://hackage.haskell.org/package/threepenny-gui)
 (browser-hosted frontend).
 
 This suite currently is comprised by a fully funcional track viewer and
@@ -12,7 +12,7 @@ repldump2carto, an auxiliary tool for generation of lap traces.
 
 ## Suite components
 
-### Track Viewer
+### viewer (GUI track viewer)
 
 * Command: stcarto viewer
 * Starting it: launch it in a console window and navigate in a web browser to
@@ -25,24 +25,24 @@ repldump2carto, an auxiliary tool for generation of lap traces.
   application.
 * To generate a track map, fill both path fields as appropriate (the base path
   is prepended to the TRK or RPL file path, so that relative paths can be used
-  during a session) and optionally change the rendering parameters. Then, click
-  one of the buttons at the top to generate PNG or SVG output.
-* Picking an inexistent file or a TRK with size different from 1802 bytes (the
-  expected .TRK file size) will suspend the rendering. Invalid parameter
-  values, or values out of the ranges presented at the interface, will be
-  replaced by the respective default values.
-* Copies of both the track file and a bare terrain TRK are created as temporary
-  files, and can be saved elsewhere through the links on the side bar. That
-  allows for extracting tracks from replays. For that purpose, both replay
-  formats of Stunts are accepted.
+  during a session) and optionally change the rendering parameters. Then,
+  click one of the buttons at the top to generate PNG or SVG output.
+* Picking an inexistent file or a TRK too small or too large to be a proper
+  track file will suspend the rendering. Invalid parameter values, or values
+  out of the ranges presented at the interface, will be replaced by the
+  respective default values.
+* Copies of both the track file and a bare terrain TRK are created as
+  temporary files, and can be saved elsewhere through the links on the side
+  bar. That allows for extracting tracks from replays. For that purpose, both
+  replay formats of Stunts are accepted.
 * To save the track map, right click the image and choose "Save image as...",
   as it would be done in any regular web page.
-* The interface background colour changes according to the horizon of the track
-  being displayed.
-* The annotations box allows users to add some kinds of annotations to the maps
-  by specifying them with a simple syntax, described in the help page linked
-  from the program interface, without needing to use an image editor. It is
-  specially convenient for preparing race analysis maps.
+* The interface background colour changes according to the horizon of the
+  track being displayed.
+* The annotations box allows users to add some kinds of annotations to the
+  maps by specifying them with a simple syntax, described in the help page
+  linked from the program interface, without needing to use an image editor.
+  It is specially convenient for preparing race analysis maps.
 * The flipbook box instructs the program to generate, in addition to the track
   map, animation frames created by overlaying annotations over the path of a
   replay. Once the rendering is complete, which typically takes a few minutes,
@@ -75,7 +75,7 @@ repldump2carto, an auxiliary tool for generation of lap traces.
 * Usage: in the command line, stcarto t2c (--09 | --10) [FILE]..., with the
   flag picking one of the trackdata structures to be exported.
 * For extra information on trackdata and how to obtain a binary dump of it, see
-  [the relevant Stunts Wiki article](http://wiki.stunts.hu/index.php?title=Trackdata).
+  [the relevant Stunts Wiki article](https://wiki.stunts.hu/index.php?title=Trackdata).
 
 ### biggrid
 
@@ -94,7 +94,7 @@ repldump2carto, an auxiliary tool for generation of lap traces.
 * Command: stcarto gallery
 * A command line map generator which renders all tracks in a directory, in
   separate images.
-* Usage: in the command line, stcarto gallery \[INPUTDIR\]. Specifying the
+* Usage: in the command line, stcarto gallery [INPUTDIR]. Specifying the
   input directory is optional, defaulting to the current directory. The output
   directory can be specified with `-o`, with INPUTDIR/galcarto as default.
   There are several rendering oprions available; using the `-h` help flag will
@@ -130,6 +130,6 @@ repldump2carto, an auxiliary tool for generation of lap traces.
 
 ## In closing...
 
-Developed by Daniel Mlot, also known as Duplode. You might want to visit
-[The Southern Cross Stunts Trophy](http://scr.stunts.hu), my site dedicated to
+Developed by Daniel Mlot, also known as Duplode. You might want to visit [The
+Southern Cross Stunts Trophy](https://scr.stunts.hu), my site dedicated to
 this most wonderful of racing games.
