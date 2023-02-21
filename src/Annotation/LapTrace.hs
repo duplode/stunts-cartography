@@ -54,6 +54,7 @@ data TracePoint = TracePoint
     , traceRotXY :: Double
     , traceSpeed :: Maybe Double
     , traceGear :: Maybe Int
+    , traceRpm :: Maybe Int
     }
 
 data TraceMode = SingleFrameTrace | FlipbookTrace
@@ -216,6 +217,13 @@ formatLengthInMetres pad x = if pad
     where
     notPadded = showDP 2 (62.42304 * x)
 
+formatRpm :: Bool -> Int -> String
+formatRpm pad x = if pad
+    then replicate (5 - length notPadded) ' ' ++ notPadded
+    else notPadded
+    where
+    notPadded = show x
+
 replaceMagicStrings :: TextAnnotation a => TracePoint -> a -> a
 replaceMagicStrings p c =
     let txt = c ^. annText
@@ -227,6 +235,8 @@ replaceMagicStrings p c =
         . maybe id (replace "{{SPEED}}" . formatSpeed False) (traceSpeed p)
         . maybe id (replace "{{SPEED-PAD}}" . formatSpeed True) (traceSpeed p)
         . maybe id (replace "{{GEAR}}" . show) (traceGear p)
+        . maybe id (replace "{{RPM}}" . formatRpm False) (traceRpm p)
+        . maybe id (replace "{{RPM-PAD}}" . formatRpm True) (traceRpm p)
 
 putCarOnTracePoint :: TracePoint -> CarAnnotation -> CarAnnotation
 putCarOnTracePoint p =
@@ -247,6 +257,7 @@ tracePointsFromData dat = map mkPoint $ zip [0..] dat
         , traceRotXY = preTraceRot ptp ^. _3
         , traceSpeed = preTraceSpeed ptp
         , traceGear = preTraceGear ptp
+        , traceRpm = preTraceRpm ptp
         }
 
 initializeTrace :: TraceMode -> [PreTracePoint]

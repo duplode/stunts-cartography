@@ -89,7 +89,7 @@ forgeInitialCarState cs = case cs of
         , rotXZ = alignAngleToGrid (rotXZ c)
         , rotYZ = alignAngleToGrid (rotYZ c)
         , rotXY = alignAngleToGrid (rotXY c)
-        , curRpm = 0
+        , curRpm = idleRpm c
         , speedDiff = 0
         , coupledSpeed = 0
         , curSpeed = 0
@@ -122,4 +122,5 @@ coordsToText follow = T.unlines . map (printAsRow cells) . setup
         , textFrom3D . rot
         , tShow . curSpeed
         , tShow . curGear
+        , tShow . curRpm
         ]

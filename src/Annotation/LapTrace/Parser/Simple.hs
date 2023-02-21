@@ -22,7 +22,7 @@ import Annotation.LapTrace.Vec
 --
 --     * The next three are the player position vector.
 --
---     * The optional integers are the player speed and gear.
+--     * The optional integers are the player speed, gear and RPM.
 --
 -- The speed and gear fields are optional so that the parser accepts
 -- repldump2carto output from version 0.4.
@@ -46,23 +46,27 @@ vecWide = (,,) <$> colInteger <*> colInteger <*> colInteger
 
 frame
     :: Stream s m Char
-    => ParsecT s u m (VecWide, VecWide, Maybe Integer, Maybe Int)
-frame = (,,,)
+    => ParsecT s u m
+        (VecWide, VecWide, Maybe Integer, Maybe Int, Maybe Int)
+frame = (,,,,)
     <$> vecWide <*> vecWide
     <*> optionMaybe colInteger <*> optionMaybe colInteger
+    <*> optionMaybe colInteger
     <* eol
 
 rawtrace
     :: Stream s m Char
-    => ParsecT s u m [(VecWide, VecWide, Maybe Integer, Maybe Int)]
+    => ParsecT s u m
+        [(VecWide, VecWide, Maybe Integer, Maybe Int, Maybe Int)]
 rawtrace = frame `manyTill` eof
 
 laptrace :: Stream s m Char => ParsecT s u m [PreTracePoint]
 laptrace = map processFrame <$> rawtrace
     where
-    processFrame (xyz, rot, spd, gear) = PreTracePoint
+    processFrame (xyz, rot, spd, gear, rpm) = PreTracePoint
         { preTracePos = scaleRawCoords xyz
         , preTraceRot = scaleRawRot rot
         , preTraceSpeed = scaleRawSpeed <$> spd
         , preTraceGear = gear
+        , preTraceRpm = rpm
         }

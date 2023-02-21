@@ -21,6 +21,7 @@ data PreTracePoint = PreTracePoint
     , preTraceRot :: VecDouble
     , preTraceSpeed :: Maybe Double
     , preTraceGear :: Maybe Int
+    , preTraceRpm :: Maybe Int
     }
 
 fi :: (Integral a, Num b) => a -> b
