@@ -151,6 +151,9 @@ position can not be changed are
 <p><code><span class="anns-fixed anns-mandatory">Diamond</span>
  <span class="anns-mandatory">@7 7</span>
  *1 #pink</code></p>
+<p><code><span class="anns-fixed anns-mandatory">EqTriangle</span>
+ <span class="anns-mandatory">@9.5 5.5</span>
+ *0.75 #dfa5dc &gt;0.1</code></p>
 <p><code><span class="anns-fixed anns-mandatory">Dot</span>
  <span class="anns-mandatory">@13 13</span>
  *0.125 #yellow</code></p>
@@ -158,14 +161,18 @@ position can not be changed are
  <span class="anns-mandatory">@3 15</span>
  *1 ^45 #yellow</code> %</p>
 
-<p><code>X</code>, <code>Circle</code>, <code>Diamond</code>, <code>Dot</code>
-and <code>Arrow</code> can be used to add general purpose markers to the map.
-The syntax and available settings are the same as those for
-<code>Car</code>, with a few additional options for some of the markers: <code>Arrow</code> accepts an optional
-<code>%</code> setting which inverts the direction of the arrow. Arrows by
-default start at their location, as specified through <code>@</code>. With
-<code>%</code>, the arrow will end at the <code>@</code>-location and start
-at what would, without the <code>%</code>, have been its end point.</p>
+<p><code>X</code>, <code>Circle</code>, <code>Diamond</code>,
+<code>EqTriangle</code>, <code>Dot</code> and <code>Arrow</code> can be used to
+add general purpose markers to the map. The syntax and available settings are
+the same as those for <code>Car</code>, with a few additional options for some
+of the markers: <code>Arrow</code> accepts an optional <code>%</code> setting
+which inverts the direction of the arrow. Arrows by default start at their
+location, as specified through <code>@</code>. With <code>%</code>, the arrow
+will end at the <code>@</code>-location and start at what would, without the
+<code>%</code>, have been its end point.</p>
+
+<p>Note that in their default orientations <code>EqTriangle</code> points to
+the right and <code>Diamond</code> has its longer side laid out vertically.</p>
 
 <table>
   <tr>
@@ -178,8 +185,8 @@ at what would, without the <code>%</code>, have been its end point.</p>
       beginning at it.</td>
   </tr>
   <tr>
-    <td>&gt;</td><td>Line width</td><td><code>Arrow</code>, <code>Circle</code> and
-    <code>X</code></td>
+    <td>&gt;</td><td>Line width</td><td><code>Arrow</code>, <code>Circle</code>,
+      <code>EqTriangle</code> and <code>X</code></td>
     <td>Line width of the marker, in tiles. Note that, for arrows, the length
       of the arrow head is five times its line width.</td>
   </tr>
@@ -462,7 +469,7 @@ track map as well as any static annotations.</p>
   unchanging standalone captions, can be added to a flipbook through the
   annotations text area.</p></li>
 
-  <li><p>Periodic overlays in trace flipbooks can frame-bound standalone
+  <li><p>Periodic overlays in trace flipbooks can have frame-bound standalone
     captions, so that frame information can be displayed at fixed positions.
     As described in the subsection about frame decoration captions, they are
     introduced through <code>&amp;&nbsp;{&nbsp;}</code>, with the difference

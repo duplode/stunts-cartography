@@ -10,6 +10,7 @@ module Pics.MM
     , diamondMarker
     , dotMarker
     , arrowMarker
+    , eqTriangleMarker
     ) where
 
 import Data.Maybe (fromMaybe)
@@ -74,3 +75,12 @@ arrowMarker cl sz mWid = arrow' (with
     # fc cl # lc cl # lwG wid
     where
     wid = fromMaybe (min (1/20) (sz / 10)) mWid
+
+eqTriangleMarker cl sz mWid = polygon (with
+        & polyType .~ PolyRegular 3 (1/2)
+        & polyOrient .~ OrientTo unit_X
+    )
+    # strokePath
+    # lwG (fromMaybe (min (1/8) (sz / 4)) mWid) # lc cl
+    # centerXY
+    # scale sz

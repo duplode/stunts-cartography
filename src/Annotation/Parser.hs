@@ -69,7 +69,9 @@ annDelimiter = void (detectAnnStart <|> try semi) <|> eof
 
 detectAnnStart :: Stream s m Char => ParsecT s u m String
 detectAnnStart = choice . map (lookAhead . try . symbol) $
-    ["Car", "X", "Circle", "Diamond", "Dot", "Arrow", "Text", "Seg", "Split", "Trace"]
+    [ "Car", "X", "Circle", "Diamond", "Dot", "Arrow", "EqTriangle"
+    , "Text", "Seg", "Split", "Trace"
+    ]
 
 car :: Monad m => ParsecT String u m CarAnnotation
 car = do
@@ -101,6 +103,7 @@ sprite = try (Acura <$ symbol "Car")
     <|> try (DiamondMarker <$ symbol "Diamond")
     <|> try (DotMarker <$ symbol "Dot")
     <|> try (ArrowMarker <$ symbol "Arrow")
+    <|> try (EqTriangleMarker <$ symbol "EqTriangle")
 
 seg :: Monad m => ParsecT String u m SegAnnotation
 seg = do

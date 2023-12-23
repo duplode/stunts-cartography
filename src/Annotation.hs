@@ -283,6 +283,7 @@ data CarSprite
     | DiamondMarker
     | DotMarker
     | ArrowMarker
+    | EqTriangleMarker
     deriving (Eq, Show, Enum)
 
 spriteDiagram
@@ -299,6 +300,7 @@ spriteDiagram spr = case spr of
     DiamondMarker -> diamondMarker
     DotMarker -> dotMarker
     ArrowMarker -> arrowMarker
+    EqTriangleMarker -> eqTriangleMarker
 
 -- CarAnnotation isn't just for cars, as the base sprite can be changed
 -- while keeping the same functionality. It might be a good idea to
