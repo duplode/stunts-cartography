@@ -122,8 +122,7 @@ repldump2carto, an auxiliary tool for generation of lap traces.
   extracted from game data to be used for lap trace annotations (the .dat
   files). The paths are meant to be overlaid on the track which shares part of
   their file name.
-* repldump: source tree and additional documentation on repldump2carto and the
-  procedures needed to generate a lap trace from a Stunts replay.
+* repldump: notes and helpers for using repldump along with the r2c command.
 * wwwroot: HTML, CSS, images and other files used to compose the interface.
   Includes some in-program documenation, such as the annotation syntax
   description.
