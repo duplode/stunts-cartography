@@ -25,6 +25,7 @@ import System.Directory.Extra (listDirectories, listFiles)
 import System.FilePath
 import Control.Monad
 import Data.Char
+import System.IO.Error
 
 import qualified Graphics.UI.Threepenny as UI
 import Graphics.UI.Threepenny.Core
@@ -237,20 +238,25 @@ blankDirToDot dir = if null dir then "." else dir
 -- This implementation assumes we already checked that the directory
 -- exists.
 getDirListing :: FilePath -> IO [FilePath]
-getDirListing dir = map removeLeadingDot <$> listDirectories dir
+getDirListing dir = catchIOError
+    (map removeLeadingDot <$> listDirectories dir)
+    (\e -> if isPermissionError e then return [] else ioError e)
     where
     removeLeadingDot
         | dir == "." = makeRelative "."
         | otherwise = id
 
 getFileListing :: FilePath -> IO [FilePath]
-getFileListing dir = fmap (fmap takeFileName . filterTrkRpl) $ do
-    let dir' = blankDirToDot dir
-    exists <- doesDirectoryExist dir'
-    if exists
-        then listFiles dir'
-        else return []
+getFileListing dir = catchIOError
+    getFileListing'
+    (\e -> if isPermissionError e then return [] else ioError e)
     where
+    getFileListing' = fmap (fmap takeFileName . filterTrkRpl) $ do
+        let dir' = blankDirToDot dir
+        exists <- doesDirectoryExist dir'
+        if exists
+            then listFiles dir'
+            else return []
     -- TODO: This should be customisable, presumably through new.
     filterTrkRpl :: [FilePath] -> [FilePath]
     filterTrkRpl = filter $ (\x -> x == ".TRK" || x == ".RPL")
