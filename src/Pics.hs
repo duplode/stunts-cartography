@@ -8,6 +8,8 @@ module Pics
 
 import Control.Monad.Reader
 import Diagrams.Prelude
+import Graphics.SVGFonts
+    (svgText, TextOpts(..), fit_height, set_envelope)
 import Track (Orientation(..), Chirality(..), rotateOrientation
              , ElementType(..), ElementSurface(..), ElementAttribute(..)
              , TerrainType(..)
@@ -20,6 +22,7 @@ import qualified Parameters as Pm
 import Pics.MM (acura)
 import Types.CartoM
 import Util.Diagrams.Backend (B)
+import qualified Util.SVGFonts as Util (bit)
 
 -- Applies the specified orientation to a base picuture, which should have
 -- Q1 orientation and the desired chirality already applied.
@@ -433,8 +436,12 @@ baseElementPic' env c q sf et = do
                     # alignL)
                 # centerXY
             Joe's ->
-                let neonSign = text "Joe's" # scale (1/6) # fc neonCl
-                        <> rect (3/5) (3/10)
+                let signText = "Joe's"
+                        # svgText with { textFont = Util.bit }
+                        # fit_height (9/40)
+                        # set_envelope # centerXY
+                        # fc neonCl # lwG 0
+                    neonSign = signText <> rect (3/5) (3/10)
                         # lwG 0 # fc miscDarkCl
                 in (
                         (
