@@ -1,3 +1,19 @@
+## 1.1.0.0 (2023-12-xx)
+
+* gallery CLI subcommand, for rendering all tracks in a directory in one
+  go.
+
+* Current RPM can now be shown in annotation captions.
+
+* Left padding for changeable fields in annotation captions.
+
+* Equilateral triangle marker annotations.
+
+* Fixes for some Windows-specific minor annoyances.
+
+* Updates for building with GHC 9.x.y and recent versions of
+  dependencies.
+
 ## 1.0.0.0 (2022-01-30)
 
 * biggrid CLI subcommand, for rendering multiple tracks in a single map.

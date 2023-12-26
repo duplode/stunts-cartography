@@ -1,4 +1,4 @@
-Build notes for Windows as of 1.0.0.0. 
+Build notes for Windows as of 1.1.0.0. 
 These will eventually be laid out in a neater way.
 
 * Install msys2 (and update its packages, etc.)
@@ -12,6 +12,8 @@ These will eventually be laid out in a neater way.
   * Use the MSYS shell to use pacman, and only for that
   
   * Install the GTK packages with pacman
+
+  * strip can be obtained by installing mingw64/mingw-w64-x86_64-binutils
 
 * Install ghcup, selecting the installed msys2
 
