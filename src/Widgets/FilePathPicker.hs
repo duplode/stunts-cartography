@@ -21,7 +21,7 @@ module Widgets.FilePathPicker
     ) where
 
 import System.Directory
-import System.Directory.Extra (listDirectories, listFiles)
+import System.Directory.Extra (listContents)
 import System.FilePath
 import Control.Monad
 import Data.Char
@@ -239,7 +239,7 @@ blankDirToDot dir = if null dir then "." else dir
 -- exists.
 getDirListing :: FilePath -> IO [FilePath]
 getDirListing dir = catchIOError
-    (map removeLeadingDot <$> listDirectories dir)
+    (map removeLeadingDot <$> listDirectories' dir)
     (\e -> if isPermissionError e then return [] else ioError e)
     where
     removeLeadingDot
@@ -255,7 +255,7 @@ getFileListing dir = catchIOError
         let dir' = blankDirToDot dir
         exists <- doesDirectoryExist dir'
         if exists
-            then listFiles dir'
+            then listFiles' dir'
             else return []
     -- TODO: This should be customisable, presumably through new.
     filterTrkRpl :: [FilePath] -> [FilePath]
@@ -275,6 +275,28 @@ completionDir dir = do
                     (\xs -> guard (not $ null xs) >> init xs) dir'
             exists' <- doesDirectoryExist dir''
             return $ guard exists' >> Just dir''
+
+-- Using this and listDirectories' instead of the corresponding functions from
+-- System.Directory.Extra in order to skip files that take inordinately long
+-- to be tested.
+listFiles' :: FilePath -> IO [FilePath]
+listFiles' = filterM (testWithWindowsSkip doesFileExist) <=< listContents
+
+listDirectories' :: FilePath -> IO [FilePath]
+listDirectories' = filterM (testWithWindowsSkip doesDirectoryExist) <=< listContents
+
+-- TODO: Figure out something more robust than this.
+testWithWindowsSkip :: (FilePath -> IO Bool) -> FilePath -> IO Bool
+testWithWindowsSkip f p = if notSkippable
+    then f p
+    else return False
+    where
+    notSkippable =
+        let e = takeExtension p
+            n = takeFileName p
+        in e /= ".sys" && e /= ".log" && e /= ".tmp"
+            && n /= "hiberfil.sys" && n /= "pagefile.sys" && n /= "swapfile.sys"
+            && n /= "DumpStack.log" && n /= "DumpStack.log.tmp"
 
 scrollToEnd :: Element -> UI ()
 scrollToEnd el = runFunction $ fun el
