@@ -13,6 +13,7 @@ import Control.Monad.Reader.Class
 import Control.Monad.State.Class
 import Control.Monad.Writer.Class
 import Control.Monad.Except
+import Control.Monad.IO.Class
 import Data.Char (toUpper)
 import System.FilePath (takeFileName, takeBaseName, takeExtension
     , (</>), (<.>))

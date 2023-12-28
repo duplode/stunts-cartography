@@ -12,6 +12,7 @@ import qualified Control.Monad.Reader.Class as Reader
 import qualified Control.Monad.State.Class as State
 import qualified Control.Monad.Writer.Class as Writer
 import Control.Monad.Except
+import Control.Monad.Trans
 import Data.Maybe (fromMaybe, isJust)
 import Data.List (find)
 import Text.Printf (printf)

@@ -26,7 +26,7 @@ renderTerrain tiles = do
     omitBg <- asks Pm.transparentBg
     let bg = (if omitBg then phantom else id) plainStripe
         terrRows = map (beneath bg . catTiles)
-            `liftM` mapM (mapM getCachedTerrPic) (chunksOf 30 tiles)
+            <$> mapM (mapM getCachedTerrPic) (chunksOf 30 tiles)
     catRows <$> terrRows
 {-
 renderTerrain :: [Tile] -> CartoM (Diagram B R2)
@@ -37,7 +37,7 @@ renderTerrain tiles = do
 renderElements :: [Tile] -> CartoM (Diagram B)
 renderElements tiles = do
     let makeElementRows ts = map catTiles
-            `liftM` mapM (mapM getCachedElemPic) (chunksOf 30 ts)
+            <$> mapM (mapM getCachedElemPic) (chunksOf 30 ts)
         (seTiles, leTiles) = separateTilesBySize tiles
     smallElementRows <- makeElementRows seTiles
     largeElementRows <- makeElementRows leTiles

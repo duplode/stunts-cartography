@@ -495,7 +495,7 @@ getTilePic tile =
     # reflectByChirality c
     # moveOriginBySize q (getTileSize tile)
     # rotateByOrient q
-    ) `liftM` baseElementPic c q sf et
+    ) <$> baseElementPic c q sf et
     -- Moving the origin as below seems to work if we don't care about where
     -- the `emptySquare`s of large elements end up.
     -- # moveOriginBySize Q1 (getTileSize tile)

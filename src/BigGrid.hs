@@ -13,6 +13,8 @@ import qualified Data.ByteString.Lazy as LB
 import Control.Monad.Reader.Class
 import Control.Monad.State.Class
 import Control.Monad.Except
+import Control.Monad.IO.Class
+import Data.Traversable (forM)
 import Data.List (intersperse)
 import Data.List.Extra (chunksOf)
 import Data.Char (toLower)

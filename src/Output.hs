@@ -11,6 +11,7 @@ import Data.Array
 import Control.Arrow ((***))
 import Control.Monad.RWS.Strict hiding ((<>))
 import Control.Monad.Except
+import Control.Monad (guard)
 import Control.Exception (tryJust)
 import System.FilePath (takeBaseName, (</>))
 import System.Directory (createDirectory)
