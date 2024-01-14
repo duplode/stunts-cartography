@@ -21,6 +21,8 @@ These will eventually be laid out in a neater way.
 
 * Build the program with cabal
 
+  * Don't forget to pass -fresourcesWithExecutables to make a portable package
+
 * Use https://stackoverflow.com/a/50130668 to find the DLLs used by the exe
 
   * `ldd mygtkapp.exe | grep '\/mingw.*\.dll' -o | xargs -I{} cp "{}" .` on the 

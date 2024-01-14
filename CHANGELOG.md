@@ -1,4 +1,4 @@
-## 1.1.0.0 (2023-12-xx)
+## 1.1.0.0 (2024-01-13)
 
 * gallery CLI subcommand, for rendering all tracks in a directory in one
   go.
@@ -11,7 +11,7 @@
 
 * Fixes for some Windows-specific minor annoyances.
 
-* Updates for building with GHC 9.x.y and recent versions of
+* Updates for building with GHC 9.6.4 and recent versions of
   dependencies.
 
 ## 1.0.0.0 (2022-01-30)
