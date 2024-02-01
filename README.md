@@ -7,9 +7,6 @@ Power tools for track map rendering and analysis for the classic racing game
 [Threepenny](https://hackage.haskell.org/package/threepenny-gui)
 (browser-hosted frontend).
 
-This suite currently is comprised by a fully funcional track viewer and
-repldump2carto, an auxiliary tool for generation of lap traces.
-
 ## Suite components
 
 ### viewer (GUI track viewer)
@@ -26,7 +23,10 @@ repldump2carto, an auxiliary tool for generation of lap traces.
 * To generate a track map, fill both path fields as appropriate (the base path
   is prepended to the TRK or RPL file path, so that relative paths can be used
   during a session) and optionally change the rendering parameters. Then,
-  click one of the buttons at the top to generate PNG or SVG output.
+  click the "Draw map" at the top to generate the map.
+* For Cartography builds using cairo, as in the default configuration, it is
+  possible to choose whether the output will be PNG or SVG. For other build
+  configurations, the format is fixed to to one of those two.
 * Picking an inexistent file or a TRK too small or too large to be a proper
   track file will suspend the rendering. Invalid parameter values, or values
   out of the ranges presented at the interface, will be replaced by the
